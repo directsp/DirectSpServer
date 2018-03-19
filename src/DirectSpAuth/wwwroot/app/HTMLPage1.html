@@ -1,0 +1,25 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <script src="js/jquery-3.1.1.js"></script>
+    <script src="js/spapp.js"></script>
+    <script src="TestPaginator.js"></script>
+
+    <script type="text/javascript">
+
+        function init() {
+            spApp.isApiLogEnabled = true;
+            var test = new directSp.TestPaginator();
+            test.start();
+        }
+
+    </script>
+</head>
+<body onload="init()">
+    Test
+</body>
+</html>

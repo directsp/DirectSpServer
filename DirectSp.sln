@@ -1,0 +1,53 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27004.2009
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{BB4458FE-EDBF-42CA-B499-AAA824D98966}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D2A7FBD8-4A60-4EB4-B2C2-1FD21E2D1FA7}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DirectSpAuth", "src\DirectSpAuth\DirectSpAuth.csproj", "{AF91C33B-72C5-44F5-8237-9173875375EA}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DirectSpService", "src\DirectSpService\DirectSpService.csproj", "{D922CDBF-8707-4FC9-93D2-E1E4CBA901E1}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DirectSpLib", "src\DirectSpLib\DirectSpLib.csproj", "{A1618CDD-CED9-467F-81C1-5F19DC673716}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DirectSpClientNet", "src\DirectSpClientNet\DirectSpClientNet.csproj", "{A1DC58D5-AAB0-47EB-84A4-9A6403A40FCC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AF91C33B-72C5-44F5-8237-9173875375EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AF91C33B-72C5-44F5-8237-9173875375EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AF91C33B-72C5-44F5-8237-9173875375EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AF91C33B-72C5-44F5-8237-9173875375EA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D922CDBF-8707-4FC9-93D2-E1E4CBA901E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D922CDBF-8707-4FC9-93D2-E1E4CBA901E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D922CDBF-8707-4FC9-93D2-E1E4CBA901E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D922CDBF-8707-4FC9-93D2-E1E4CBA901E1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1618CDD-CED9-467F-81C1-5F19DC673716}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1618CDD-CED9-467F-81C1-5F19DC673716}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1618CDD-CED9-467F-81C1-5F19DC673716}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1618CDD-CED9-467F-81C1-5F19DC673716}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1DC58D5-AAB0-47EB-84A4-9A6403A40FCC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1DC58D5-AAB0-47EB-84A4-9A6403A40FCC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1DC58D5-AAB0-47EB-84A4-9A6403A40FCC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1DC58D5-AAB0-47EB-84A4-9A6403A40FCC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{AF91C33B-72C5-44F5-8237-9173875375EA} = {BB4458FE-EDBF-42CA-B499-AAA824D98966}
+		{D922CDBF-8707-4FC9-93D2-E1E4CBA901E1} = {BB4458FE-EDBF-42CA-B499-AAA824D98966}
+		{A1618CDD-CED9-467F-81C1-5F19DC673716} = {BB4458FE-EDBF-42CA-B499-AAA824D98966}
+		{A1DC58D5-AAB0-47EB-84A4-9A6403A40FCC} = {BB4458FE-EDBF-42CA-B499-AAA824D98966}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {DD9CDE84-440B-4E86-9E7F-48E46C64B807}
+	EndGlobalSection
+EndGlobal
