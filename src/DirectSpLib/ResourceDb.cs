@@ -25,14 +25,14 @@ namespace DirectSpLib
             }
         }
 
-        public static SpInfo[] System_ApiMetadata(SqlConnection connection, string context)
+        public static SpInfo[] System_Api(SqlConnection connection, string context)
         {
-            using (var command = new SqlCommand("api.System_ApiMetadata", connection))
+            using (var command = new SqlCommand("api.System_Api", connection))
             {
                 var sqlParameters = new List<SqlParameter>()
                 {
                     new SqlParameter("@Context",SqlDbType.NVarChar, -1) { Direction = ParameterDirection.InputOutput, Value = context },
-                    new SqlParameter("@ApiMetadata", SqlDbType.NVarChar, -1) { Direction = ParameterDirection.Output},
+                    new SqlParameter("@Api", SqlDbType.NVarChar, -1) { Direction = ParameterDirection.Output},
                 };
 
                 //create command and run it
@@ -41,7 +41,7 @@ namespace DirectSpLib
                 var res = command.ExecuteNonQuery();
 
                 context = sqlParameters.Find(x => x.ParameterName == "@Context").Value as string; //context
-                var Metadata = sqlParameters.Find(x => x.ParameterName == "@ApiMetadata").Value as string;
+                var Metadata = sqlParameters.Find(x => x.ParameterName == "@Api").Value as string;
                 Metadata = Metadata.Replace("\"sql_variant\"", "\"variant\"");
                 var ret = JsonConvert.DeserializeObject<SpInfo[]>(Metadata);
                 return ret;

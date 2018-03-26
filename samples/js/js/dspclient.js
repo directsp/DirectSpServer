@@ -946,7 +946,7 @@ directSp.DirectSpClient.prototype.help = function (criteria) {
     //Load apiMetadata
     if (this._apiMetadata == null) {
         var _this = this;
-        this.invokeApi("System_ApiMetadata")
+        this.invokeApi("System_Api")
             .done(function (data) {
                 _this._apiMetadata = data.apiMetadata;
                 _this.help(criteria);

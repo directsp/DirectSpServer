@@ -99,7 +99,7 @@ namespace DirectSpLib
             using (var sqlConnection = new SqlConnection(ConnectionStringReadOnly))
             {
                 sqlConnection.Open();
-                var spList = ResourceDb.System_ApiMetadata(sqlConnection, AppUserContext.ToString());
+                var spList = ResourceDb.System_Api(sqlConnection, AppUserContext.ToString());
                 foreach (var item in spList)
                     storeProcedures.Add(item.SchemaName + "." + item.ProcedureName, item);
                 _StoreProcedures = storeProcedures;
