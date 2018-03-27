@@ -1,12 +1,8 @@
-﻿using DirectSpLib;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using Newtonsoft.Json;
 using DirectSpLib.Entities;
-using Newtonsoft.Json.Linq;
-using System.Linq;
 
 namespace DirectSpLib
 {
