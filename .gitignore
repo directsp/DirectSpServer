@@ -4,3 +4,4 @@ obj
 *.cer
 Publish*.bat
 appsettings.json
+/DirectSpClientNetTest
