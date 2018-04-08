@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace DirectSpClientNet
+namespace DirectSp.DirectSpClient
 {
     enum OpenIdScope
     {

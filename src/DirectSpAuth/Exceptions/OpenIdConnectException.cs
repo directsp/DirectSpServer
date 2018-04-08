@@ -1,12 +1,12 @@
 ﻿using AspNet.Security.OpenIdConnect.Primitives;
 using Newtonsoft.Json;
-using DirectSpLib.Entities;
+using DirectSp.Core.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace DirectSpAuth.Exceptions
+namespace DirectSp.AuthServer.Exceptions
 {
     public class OpenIdConnectException : Exception
     {

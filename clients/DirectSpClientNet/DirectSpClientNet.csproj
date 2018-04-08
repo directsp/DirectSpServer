@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>DirectSpClient</AssemblyName>
+    <RootNamespace>DirectSp.DirectSpClient</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

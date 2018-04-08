@@ -1,17 +1,14 @@
-﻿using DirectSpAuth.Exceptions;
-using Microsoft.AspNetCore.Cryptography.KeyDerivation;
+﻿using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Newtonsoft.Json;
-using DirectSpLib;
-using DirectSpLib.Entities;
-using DirectSpLib.Exceptions;
 using System;
 using System.Collections.Generic;
-using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
-using DirectSpAuth.Entities;
+using DirectSp.AuthServer.Entities;
+using DirectSp.Core.Entities;
+using DirectSp.Core;
 
-namespace DirectSpAuth
+namespace DirectSp.AuthServer
 {
     public static class AuthDB
     {

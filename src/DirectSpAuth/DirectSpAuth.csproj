@@ -6,7 +6,7 @@
     <AssemblyName>DirectSpAuth</AssemblyName>
     <OutputType>Exe</OutputType>
     <PackageId>DirectSpAuth</PackageId>
-    <RootNamespace>DirectSpAuth</RootNamespace>
+    <RootNamespace>DirectSp.AuthServer</RootNamespace>
     <Authors>DirectSp</Authors>
     <Company>DirectSp</Company>
     <Product>DirectSpAuth</Product>
@@ -41,12 +41,12 @@
     <PackageReference Include="AspNet.Security.OpenIdConnect.Extensions" Version="2.0.0-rc2-final" />
     <PackageReference Include="AspNet.Security.OpenIdConnect.Primitives" Version="2.0.0-rc2-final" />
     <PackageReference Include="AspNet.Security.OpenIdConnect.Server" Version="2.0.0-rc2-final" />
-    <PackageReference Include="Microsoft.AspNetCore.All" Version="2.0.5" />
-    <PackageReference Include="System.Data.SqlClient" Version="4.4.2" />
+    <PackageReference Include="Microsoft.AspNetCore.All" Version="2.0.6" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.4.3" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DirectSpLib\DirectSpLib.csproj" />
+    <ProjectReference Include="..\DirectSpCore\DirectSpCore.csproj" />
   </ItemGroup>
 
   <ItemGroup>

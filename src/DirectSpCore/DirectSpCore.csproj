@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <Company>DirectSp</Company>
+    <Authors>DirectSp</Authors>
+    <RootNamespace>DirectSp.Core</RootNamespace>
+    <AssemblyName>DirectSpCore</AssemblyName>
+    <Version>2.0.0</Version>
+    <PackageId>DirectSpCore</PackageId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DNTCaptcha.Core" Version="1.4.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.4.3" />
+    <PackageReference Include="System.Security.Claims" Version="4.3.0" />
+  </ItemGroup>
+
+</Project>

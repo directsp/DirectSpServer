@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Builder;
 using System.Net;
 
-namespace DirectSpAuth
+namespace DirectSp.AuthServer
 {
     public class Program
     {

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace DirectSpAuth.Entities
+namespace DirectSp.AuthServer.Entities
 {
     public class User
     {

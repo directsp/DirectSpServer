@@ -1,4 +1,4 @@
-﻿namespace DirectSpClientNet.Entities
+﻿namespace DirectSp.DirectSpClient.Entities
 {
     public class AuthTokens
     {

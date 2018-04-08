@@ -1,11 +1,11 @@
-﻿using DirectSpAuth.Settings;
+﻿using DirectSp.AuthServer.Settings;
 using Microsoft.Extensions.Configuration;
-using DirectSpLib;
-using DirectSpLib.Entities;
+using DirectSp.Core;
+using DirectSp.Core.Entities;
 using System;
 using System.Security.Cryptography.X509Certificates;
 
-namespace DirectSpAuth
+namespace DirectSp.AuthServer
 {
     public static class App
     {

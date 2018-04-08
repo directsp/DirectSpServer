@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
-using DirectSpLib.InternalDb;
+using DirectSp.Core.InternalDb;
 
 //Test: password flow => OK
 //Test: client_credentials flow >= OK
@@ -18,7 +18,7 @@ using DirectSpLib.InternalDb;
 //Test: AsymetricSign >= OK
 //Test: SymetricSign >= NO
 
-namespace DirectSpAuth
+namespace DirectSp.AuthServer
 {
     public class Startup
     {

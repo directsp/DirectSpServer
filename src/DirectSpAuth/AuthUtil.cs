@@ -5,7 +5,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
-namespace DirectSpAuth
+namespace DirectSp.AuthServer
 {
     public static class AuthUtil
     {

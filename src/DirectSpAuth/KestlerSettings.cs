@@ -1,4 +1,4 @@
-﻿namespace DirectSpAuth
+﻿namespace DirectSp.AuthServer
 {
     public class KestlerSettings
     {

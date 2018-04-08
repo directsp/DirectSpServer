@@ -1,12 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using DirectSpLib.Entities;
+using DirectSp.Core.Entities;
 using System.Threading.Tasks;
-using DirectSpLib;
+using DirectSp.Core;
 
-namespace DirectSpAuth.Controllers
+namespace DirectSp.AuthServer.Controllers
 {
-    public class ApiController : DirectSpLib.Controllers.ApiController
+    public class ApiController : DirectSp.Core.Controllers.ApiController
     {
         protected override SpInvoker SpInvoker { get { return App.SpInvoker; } }
 

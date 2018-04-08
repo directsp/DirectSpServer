@@ -1,7 +1,7 @@
 ﻿using AspNet.Security.OpenIdConnect.Extensions;
 using AspNet.Security.OpenIdConnect.Primitives;
 using AspNet.Security.OpenIdConnect.Server;
-using DirectSpAuth.Exceptions;
+using DirectSp.AuthServer.Exceptions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Extensions;
@@ -17,7 +17,7 @@ using System.Web;
 
 // For more information on enabling Web API for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
 
-namespace DirectSpAuth.Controllers
+namespace DirectSp.AuthServer.Controllers
 {
     public class AuthorizationController : Controller
     {

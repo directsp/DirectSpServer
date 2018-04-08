@@ -1,7 +1,7 @@
 ﻿using Microsoft.IdentityModel.Tokens;
 using System;
 
-namespace DirectSpAuth.Settings
+namespace DirectSp.AuthServer.Settings
 {
     public class AppSettings
     {

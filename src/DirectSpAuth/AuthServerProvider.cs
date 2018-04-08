@@ -6,10 +6,10 @@ using AspNet.Security.OpenIdConnect.Primitives;
 using System.Security.Claims;
 using AspNet.Security.OpenIdConnect.Extensions;
 using Microsoft.AspNetCore.Authentication;
-using DirectSpAuth.Exceptions;
-using DirectSpLib.Entities;
+using DirectSp.AuthServer.Exceptions;
+using DirectSp.Core.Entities;
 
-namespace DirectSpAuth
+namespace DirectSp.AuthServer
 {
     public class AuthServerProvider : OpenIdConnectServerProvider
     {

@@ -1,11 +1,11 @@
-﻿using DirectSpAuth;
-using DirectSpAuth.Entities;
+﻿using DirectSp.AuthServer;
+using DirectSp.AuthServer.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace DirectSpAuth
+namespace DirectSp.AuthServer
 {
     public static class ScopeManager
     {

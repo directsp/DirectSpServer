@@ -1,4 +1,4 @@
-﻿namespace DirectSpClientNet
+﻿namespace DirectSp.DirectSpClient
 {
     public class InvokeOptions
     {

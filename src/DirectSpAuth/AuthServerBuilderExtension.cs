@@ -6,7 +6,7 @@ using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Cryptography.X509Certificates;
 
-namespace DirectSpAuth
+namespace DirectSp.AuthServer
 {
     public static class AuthServerBuilderExtension
     {

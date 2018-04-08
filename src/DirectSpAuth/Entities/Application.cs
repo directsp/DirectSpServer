@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 
-namespace DirectSpAuth.Entities
+namespace DirectSp.AuthServer.Entities
 {
     public class Application
     {

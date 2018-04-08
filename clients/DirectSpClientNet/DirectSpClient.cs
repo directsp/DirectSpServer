@@ -1,4 +1,4 @@
-﻿using DirectSpClientNet.Entities;
+﻿using DirectSp.DirectSpClient.Entities;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -6,7 +6,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DirectSpClientNet
+namespace DirectSp.DirectSpClient
 {
     public class DirectSpClient
     {
