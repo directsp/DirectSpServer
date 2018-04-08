@@ -138,9 +138,12 @@ namespace DirectSp.DirectSpClient
             // set defaults
             if (invokeParams.invokeOptions == null) invokeParams.invokeOptions = new InvokeOptions();
 
+            //report
+            if (isLogEnabled) Console.WriteLine($"\nDirectSp: invokeApi (Request)\ninvokeParams: {JsonConvert.SerializeObject(invokeParams)}");
+
             //call 
-            var requestContent = new StringContent(JsonConvert.SerializeObject(invokeParams), Encoding.UTF8, "application/json");
             var httpClient = new HttpClient();
+            var requestContent = new StringContent(JsonConvert.SerializeObject(invokeParams), Encoding.UTF8, "application/json");
             httpClient.DefaultRequestHeaders.Add("authorization", authHeader);
             var response = await httpClient.PostAsync(resourceApiUri, requestContent);
             var responseContent = await response.Content.ReadAsStringAsync();
@@ -149,7 +152,9 @@ namespace DirectSp.DirectSpClient
             if (!response.IsSuccessStatusCode)
                 throw DirectSpException.fromHttpResponse(response.StatusCode, responseContent);
 
-            return JsonConvert.DeserializeObject(responseContent);
+            var ret = JsonConvert.DeserializeObject(responseContent);
+            if (isLogEnabled) Console.WriteLine($"\nDirectSp: invokeApi (Response)\ninvokeParams: {requestContent}\nResult: {ret}");
+            return ret;
         }
 
         private async Task<bool> updateUserInfo(bool tryRefreshToken = true)
@@ -177,7 +182,7 @@ namespace DirectSp.DirectSpClient
             var responseContent = await response.Content.ReadAsStringAsync();
             userInfo = JObject.Parse(responseContent);
             if (isLogEnabled)
-                Console.WriteLine("DirectSp: userInfo: {0}", userInfo);
+                Console.WriteLine($"DirectSp: userInfo: {userInfo}");
             return true;
         }
 
