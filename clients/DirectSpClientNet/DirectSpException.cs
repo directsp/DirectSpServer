@@ -24,6 +24,12 @@ namespace DirectSp.DirectSpClient
             }
         }
 
+        internal static DirectSpException fromHttpResponse(HttpResponseMessage httpResponse)
+        {
+            var responseContent = httpResponse.Content.ReadAsStringAsync().Result;
+            return httpResponse.IsSuccessStatusCode ? fromHttpResponse(httpResponse.StatusCode, responseContent) : null;
+        }
+
         internal static DirectSpException fromHttpResponse(HttpStatusCode statusCode, string content)
         {
             //parse content as OpenId exception
