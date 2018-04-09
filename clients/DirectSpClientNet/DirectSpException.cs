@@ -26,8 +26,11 @@ namespace DirectSp.Client
 
         internal static DirectSpException fromHttpResponse(HttpResponseMessage httpResponse)
         {
+            if (httpResponse.IsSuccessStatusCode)
+                throw new InvalidOperationException("fromHttpResponse should not be called on success mode");
+
             var responseContent = httpResponse.Content.ReadAsStringAsync().Result;
-            return httpResponse.IsSuccessStatusCode ? fromHttpResponse(httpResponse.StatusCode, responseContent) : null;
+            return fromHttpResponse(httpResponse.StatusCode, responseContent);
         }
 
         internal static DirectSpException fromHttpResponse(HttpStatusCode statusCode, string content)
