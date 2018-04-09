@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace DirectSp.DirectSpClient
+namespace DirectSp.Client
 {
     public enum RecordsetFormat
     {

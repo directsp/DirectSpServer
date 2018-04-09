@@ -4,13 +4,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace DirectSp.DirectSpClient
+namespace DirectSp.Client
 {
-    internal class SpCall
+    public class SpCall
     {
         public string method { get; set; }
 
         [JsonProperty("params")]
-        public object args { get; set; } = new object();
+        public object param { get; set; } = new object();
     }
 }

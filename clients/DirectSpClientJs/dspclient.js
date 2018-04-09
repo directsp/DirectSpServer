@@ -848,7 +848,7 @@ directSp.DirectSpClient.prototype.invokeApi2 = function (spCall, invokeOptions) 
     if (spCall == null) throw "spCall is expected";
     if (spCall.method == null) throw "method is expected";
     if (spCall.params == null) spCall.params = {};
-    if (this.resourceApiUri == null) throw "spApp.resourceApiUri is not set";
+    if (this.resourceApiUri == null) throw "dspClient.resourceApiUri is not set";
 
     //set defaults
     if (invokeOptions == null) invokeOptions = {};
@@ -1024,7 +1024,7 @@ directSp.DirectSpClient.prototype._help = function (procedureMetadata) {
     str += "\n\t" + this._formatHelpParam("recordset", "array", maxParamNameLength);
 
     //sample
-    var sample = 'spApp.invokeApi("$(procname)", { $(parameters) })';
+    var sample = 'dspClient.invokeApi("$(procname)", { $(parameters) })';
     var sampleParam = [];
     for (i = 0; i < inputParams.length; i++)
         sampleParam.push(inputParams[i] + ': ' + '$' + inputParams[i]);
@@ -1107,7 +1107,7 @@ directSp.DirectSpClient.prototype._ajaxHelper = function (ajaxOptions) {
 
             //raise onCaptcha event
             var captchaControllerOptions = {
-                DirectSp: _this,
+                dspClient: _this,
                 ajaxOptions: ajaxOptions,
                 deferred: deferred,
                 captchaId: data.errorData.captchaId,
@@ -1230,9 +1230,9 @@ directSp.DirectSpClient.prototype._processPagination = function (spCall, invokeO
 // *********************
 // **** Paginator
 // *********************
-directSp.DirectSpClient.Paginator = function (spApp, spCall, invokeOptions) {
+directSp.DirectSpClient.Paginator = function (dspClient, spCall, invokeOptions) {
 
-    this._spApp = spApp;
+    this._dspClient = dspClient;
     this._apiCall = spCall;
     this._invokeOptions = invokeOptions;
     this._pagePromises = [];
@@ -1316,7 +1316,7 @@ directSp.DirectSpClient.Paginator.prototype.downloadAsTsv = function () {
         autoDownload: true
     };
 
-    var promise = this._spApp.invokeApi2(this._apiCall, newInvokeOptions);
+    var promise = this._dspClient.invokeApi2(this._apiCall, newInvokeOptions);
     return promise;
 },
 
@@ -1407,7 +1407,7 @@ directSp.DirectSpClient.Paginator.prototype.goPage = function (pageNo) {
 
         //invokeApi
         this._isInvoked = true;
-        this._spApp.invokeApi2(this._apiCall, invokeOptions)
+        this._dspClient.invokeApi2(this._apiCall, invokeOptions)
             .done(function (data) {
                 var recordset = data.recordset != null ? data.recordset : [];
 
@@ -1521,7 +1521,7 @@ directSp.DirectSpClient.CaptchaController.prototype.continue = function (captcha
 
     // retry original ajax
     var _this = this;
-    this._data.spApp._ajaxHelper(ajaxOptions)
+    this._data.dspClient._ajaxHelper(ajaxOptions)
         .done(function (data) {
             _this._data.deferred.resolve(data);
         })
@@ -1531,7 +1531,7 @@ directSp.DirectSpClient.CaptchaController.prototype.continue = function (captcha
 }
 
 directSp.DirectSpClient.CaptchaController.prototype.cancel = function () {
-    var error = this._data.spApp._convertToError("Captcha has been canceled by the user!");
+    var error = this._data.dspClient._convertToError("Captcha has been canceled by the user!");
     this._data.deferred.reject(error);
 }
 

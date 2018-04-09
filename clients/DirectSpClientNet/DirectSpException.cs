@@ -8,7 +8,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DirectSp.DirectSpClient
+namespace DirectSp.Client
 {
     class DirectSpException : Exception
     {
@@ -66,6 +66,7 @@ namespace DirectSp.DirectSpClient
                 statusCode = statusCode,
                 errorMessage = content
             };
+
             return ret;
         }
 

@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace DirectSp.Client
 {
-    internal class InvokeParams
+    internal class InvokeParamsBatch
     {
-        public SpCall spCall { get; set; }
+        public SpCall[] spCalls { get; set; }
         public InvokeOptions invokeOptions { get; set; } = new InvokeOptions();
     }
 }

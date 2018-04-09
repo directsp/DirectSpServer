@@ -1,4 +1,4 @@
-﻿using DirectSp.DirectSpClient.Entities;
+﻿using DirectSp.Client.Entities;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -7,7 +7,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DirectSp.DirectSpClient
+namespace DirectSp.Client
 {
     public class DirectSpClient
     {
@@ -19,6 +19,7 @@ namespace DirectSp.DirectSpClient
         public Uri userinfoEndpointUri { get; set; }
         public Uri logoutEndpointUri { get; set; }
         public Uri resourceApiUri { get; set; }
+
 
         private Uri _authBaseUri;
         public Uri authBaseUri
@@ -41,7 +42,10 @@ namespace DirectSp.DirectSpClient
             }
         }
 
+        private const long refreshClockSkew = 60;
+        private long _tokenCreatedUniversalTime;
         private AuthTokens _tokens;
+
         public AuthTokens tokens
         {
             get
@@ -51,6 +55,13 @@ namespace DirectSp.DirectSpClient
             set
             {
                 _tokens = value;
+
+
+                if (value != null)
+                {
+                    var jwt = _tokens.parseAccessToken();
+                    _tokenCreatedUniversalTime = jwt["exp"].Value<int>();
+                }
             }
         }
 
@@ -106,18 +117,18 @@ namespace DirectSp.DirectSpClient
             return responseContent;
         }
 
-        public async Task<object> invoke(string method, object args, InvokeOptions invokeOptions = null)
+        public async Task<object> invoke(string method, object param, InvokeOptions invokeOptions = null)
         {
             var spCall = new SpCall()
             {
-                args = args,
+                param = param,
                 method = method
             };
 
             return await invoke(spCall, invokeOptions);
         }
 
-        private async Task<object> invoke(SpCall spCall, InvokeOptions invokeOptions = null)
+        public async Task<object> invoke(SpCall spCall, InvokeOptions invokeOptions = null)
         {
             var invokeParams = new InvokeParams()
             {
@@ -128,58 +139,77 @@ namespace DirectSp.DirectSpClient
             return await invoke(invokeParams);
         }
 
+        public async Task<object> invoke(SpCall[] spCalls, InvokeOptions invokeOptions = null)
+        {
+            var invokeParamsBatch = new InvokeParamsBatch()
+            {
+                spCalls = spCalls,
+                invokeOptions = invokeOptions ?? new InvokeOptions()
+            };
+
+            var content = JsonConvert.SerializeObject(invokeParamsBatch);
+            return await invokePost("invokeBatch", content);
+        }
+
         private async Task<object> invoke(InvokeParams invokeParams)
         {
             if (invokeParams == null) throw new ArgumentNullException("invokeParam");
             if (invokeParams.spCall == null) throw new ArgumentNullException("invokeParams.spCall");
             if (string.IsNullOrWhiteSpace(invokeParams.spCall.method)) throw new ArgumentNullException("invokeParams.spCall.method");
-            if (resourceApiUri == null) throw new ArgumentNullException("resourceApiUri");
 
             // set defaults
-            if (invokeParams.invokeOptions == null) invokeParams.invokeOptions = new InvokeOptions();
+            if (invokeParams.invokeOptions == null)
+                invokeParams.invokeOptions = new InvokeOptions();
 
-            //report
-            if (isLogEnabled) Console.WriteLine($"\nDirectSp: invokeApi (Request)\ninvokeParams: {JsonConvert.SerializeObject(invokeParams)}");
+            var content = JsonConvert.SerializeObject(invokeParams);
+            return await invokePost(invokeParams.spCall.method, content);
+        }
 
-            //call 
+        private async Task<object> invokePost(string methodName, string content)
+        {
+            //validate
+            if (resourceApiUri == null) throw new ArgumentNullException("resourceApiUri");
+
+            // refreshing token
+            await refreshToken();
+
+            // report
+            if (isLogEnabled)
+                Console.WriteLine($"\nDirectSp: invokeApi (Request) - {methodName}\ninvokeParams: {content}");
+
+            // method uri
+            var methodUri = new UriBuilder(resourceApiUri);
+            methodUri.Path = methodUri.Path.Trim('/') + "/" + methodName;
+
+            // call 
             var httpClient = new HttpClient();
-            var requestContent = new StringContent(JsonConvert.SerializeObject(invokeParams), Encoding.UTF8, "application/json");
+            var requestContent = new StringContent(content, Encoding.UTF8, "application/json");
             httpClient.DefaultRequestHeaders.Add("authorization", authHeader);
-            var response = await httpClient.PostAsync(resourceApiUri, requestContent);
-            var responseContent = await response.Content.ReadAsStringAsync();
-
-            // check error
-            if (!response.IsSuccessStatusCode)
-                throw DirectSpException.fromHttpResponse(response.StatusCode, responseContent);
+            var response = await httpClient.PostAsync(methodUri.Uri, requestContent);
+            var responseContent = await getResponseString(response);
 
             var ret = JsonConvert.DeserializeObject(responseContent);
-            if (isLogEnabled) Console.WriteLine($"\nDirectSp: invokeApi (Response)\ninvokeParams: {requestContent}\nResult: {ret}");
+            if (isLogEnabled)
+                Console.WriteLine($"\nDirectSp: invokeApi (Response) - {methodName}\ninvokeParams: {requestContent}\nResult: {ret}");
             return ret;
         }
 
-        private async Task<bool> updateUserInfo(bool tryRefreshToken = true)
+
+        private async Task<bool> updateUserInfo()
         {
             //return false if token not exists
             if (!isAuthorized)
                 throw new DirectSpException() { errorName = "unauthorized", errorMessage = "Can not refresh token for unauthorized users" };
 
+            // refresh token
+            await refreshToken();
+
             var httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.Add("authorization", authHeader);
             var response = await httpClient.GetAsync(userinfoEndpointUri);
-            if (!response.IsSuccessStatusCode)
-            {
-                //refresh token
-                if (isTokenExpired(response) && tryRefreshToken)
-                {
-                    await refreshToken();
-                    return await updateUserInfo(false);
-                }
-
-                return false;
-            }
+            var responseContent = await getResponseString(response);
 
             //updating userInfo
-            var responseContent = await response.Content.ReadAsStringAsync();
             userInfo = JObject.Parse(responseContent);
             if (isLogEnabled)
                 Console.WriteLine($"DirectSp: userInfo: {userInfo}");
@@ -194,6 +224,12 @@ namespace DirectSp.DirectSpClient
                 tokens = null;
                 return;
             }
+
+            // check token expiration time
+            var st = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var t = (DateTime.Now.ToUniversalTime() - st);
+            if (_tokenCreatedUniversalTime - t.TotalSeconds > refreshClockSkew)
+                return;
 
             //Refreshing token
             Console.WriteLine("DirectSp: Refreshing current token ...");
