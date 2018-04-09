@@ -464,13 +464,17 @@ namespace DirectSp.Core
                     if (i > 0)
                         strBuilder.Append("\t");
                     var itemValue = ConvertDataFromDb(invokeOptions, dataReader.GetDataTypeName(i), dataReader.GetValue(i), fieldInfos[i].IsUseMoneyConversionRate);
-                    string itemValueString = itemValue?.ToString();
+                    string itemValueString = itemValue?.ToString().Trim();
 
                     //remove tabs
                     if (itemValue is string)
                     {
-                        itemValueString = $"=\"{itemValue}\"";
-                        itemValueString = itemValueString.ToString().Replace("\t", " ");
+                        itemValueString = itemValueString.Replace("\"", "\"\"");
+                        itemValueString = itemValueString.Replace("\t", " ");
+                        itemValueString = $"\"{itemValueString}\"";
+                        //add ="" if it was a number
+                        if (double.TryParse(itemValue.ToString(), out double t))
+                            itemValueString = $"={itemValueString}";
                     }
 
                     if (itemValue is DateTime)

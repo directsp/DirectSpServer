@@ -11,6 +11,8 @@ namespace DirectSp.Client
 {
     public class DirectSpClient
     {
+        private const long refreshClockSkew = 60;
+
         public string[] authScopes { get; set; } = { OpenIdScope.profile.ToString(), OpenIdScope.offline_access.ToString() };
         public AuthType authType { get; set; } = AuthType.code;
 
@@ -42,10 +44,8 @@ namespace DirectSp.Client
             }
         }
 
-        private const long refreshClockSkew = 60;
-        private long _tokenCreatedUniversalTime;
+        public JObject accessTokenInfo { get; private set; }
         private AuthTokens _tokens;
-
         public AuthTokens tokens
         {
             get
@@ -55,19 +55,13 @@ namespace DirectSp.Client
             set
             {
                 _tokens = value;
-
-
-                if (value != null)
-                {
-                    var jwt = _tokens.parseAccessToken();
-                    _tokenCreatedUniversalTime = jwt["exp"].Value<int>();
-                }
+                accessTokenInfo = value?.parseAccessToken();
             }
         }
 
         public JObject userInfo { get; private set; }
         public string username { get; private set; }
-        public string userId { get { return userInfo?["sub"]?.Value<string>(); } }
+        public string userId { get { return accessTokenInfo?["sub"]?.Value<string>(); } }
         public string userDisplayName { get { return userInfo?["name"]?.Value<string>() ?? username; } }
         public string clientId { get; set; }
         public bool isAuthorized { get { return _tokens != null; } }
@@ -228,7 +222,8 @@ namespace DirectSp.Client
             // check token expiration time
             var st = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             var t = (DateTime.Now.ToUniversalTime() - st);
-            if (_tokenCreatedUniversalTime - t.TotalSeconds > refreshClockSkew)
+            var tokenCreatedUniversalTime = accessTokenInfo["exp"].Value<int>();
+            if (tokenCreatedUniversalTime - t.TotalSeconds > refreshClockSkew)
                 return;
 
             //Refreshing token

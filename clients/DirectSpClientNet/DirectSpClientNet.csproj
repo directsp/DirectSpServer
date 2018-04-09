@@ -9,7 +9,7 @@
     <PackageTags>DirectSp Client .NET</PackageTags>
     <Company>directsp.net</Company>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>1.0.4</Version>
+    <Version>1.0.5</Version>
     <FileVersion>1.0.0.0</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
