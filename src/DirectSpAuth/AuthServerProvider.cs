@@ -233,7 +233,7 @@ namespace DirectSp.AuthServer
                     context.Email = user.Email;
 
                 if (context.Ticket.HasScope(OpenIdConnectConstants.Scopes.Phone))
-                    context.PhoneNumber = user.Mobile;
+                    context.PhoneNumber = user.MobileNumber;
             }
             catch (Exception ex)
             {

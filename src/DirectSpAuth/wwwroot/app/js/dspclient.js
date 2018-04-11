@@ -575,13 +575,12 @@ directSp.DirectSpClient.prototype.signInByPasswordGrant = function (username, pa
     };
 
     //create request param
-    var requestParam = {
-        grant_type: "password",
-        username: username,
-        password: password,
-        scope: this.authScope,
-        client_id: this.clientId,
-    };
+    const requestParam = new URLSearchParams();
+    requestParam.set("username", username);
+    requestParam.set("password", password);
+    requestParam.set("grant_type", "password");
+    requestParam.set("scope", this.authScope);
+    requestParam.set("client_id", this.clientId);
 
     var deferred = new jQuery.Deferred();
     var _this = this;
@@ -1166,7 +1165,34 @@ directSp.DirectSpClient.prototype._ajaxHelper3 = function (ajaxOptions) {
 
 //override the following code if we are going to change JQuery
 directSp.DirectSpClient.prototype._ajaxProvider = function (ajaxOptions) {
-    return jQuery.ajax(ajaxOptions);
+
+    var deferred = new jQuery.Deferred();
+
+    debugger;
+    var fetchOptions = {
+        body: ajaxOptions.data,
+        method: 'POST',
+        //mode: "cors",
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'authorization': this.authHeader,
+        }
+    };
+
+    //return jQuery.ajax(ajaxOptions);
+    fetch(ajaxOptions.url, fetchOptions)
+        .then(function (response) {
+            response.json()
+                .then(data => { return response.ok ? Promise.resolve(data) : Promise.reject(data); })
+                .then(data => { deferred.resolve(data); })
+                .catch(data => { deferred.reject(data); })
+
+        })
+        .catch(function (error) {
+            deferred.reject(error);
+        });
+
+    return deferred.promise();
 };
 
 directSp.DirectSpClient.prototype._processApiHook = function (ajaxOptions, hookOptions) {
