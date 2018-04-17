@@ -46,7 +46,6 @@ directSp.DirectSpClient = function () {
         name: null
     };
 
-    this._isInitializing = true;
     this._tokens = null; //{ access_token: "", expires_in: 0, refresh_token: "", token_type: "" },
     this._lastPageUri = null;
     this._apiHook = function (method, params) { return null; }
@@ -244,7 +243,7 @@ directSp.DirectSpClient.prototype = {
         return this._authRequest;
     },
     get authRequestUri() {
-        return window.location.origin + "?" + jQuery.param(this._authRequest);
+        return window.location.origin + "?" + directSp.Convert.toQueryString(this._authRequest);
     },
     get isAuthRequest() {
         return this.authRequest.client_id != null && this.authRequest.state != null;
@@ -277,7 +276,6 @@ directSp.DirectSpClient.prototype = {
 directSp.DirectSpClient.prototype.init = function () {
     console.log("DirectSp: initializing ...");
     var _this = this;
-    this._isInitializing = true;
 
     //process error
     if (directSp.Uri.getParameterByName("error") != null) {
@@ -296,13 +294,12 @@ directSp.DirectSpClient.prototype.init = function () {
     return this._processAuthCallback()
         .then(result => {
             if (!_this.isAuthorized && _this._tokensLast)
-                return _this.setTokens(_this._tokensLast, true);
+                return _this.setTokens(_this._tokensLast);
         })
         .then(result => {
             _this._fireAuthorizedEvent();
         })
         .catch(error => {
-            _this._isInitializing = false;
             _this._fireAuthorizedEvent();
             throw error;
         });
@@ -319,10 +316,6 @@ directSp.DirectSpClient.prototype.throwAppError = function (error) {
 
 
 directSp.DirectSpClient.prototype._fireAuthorizedEvent = function () {
-
-    //don't fire in initializing state
-    if (_this._isInitializing)
-        return;
 
     var _this = this;
     setTimeout(function () {
@@ -355,19 +348,19 @@ directSp.DirectSpClient.prototype._resetUser = function () {
     this._save();
 };
 
-directSp.DirectSpClient.prototype._isTokenExpired = function (data) {
-    if (data == null)
+directSp.DirectSpClient.prototype._isTokenExpired = function (error) {
+    if (!error)
         return false;
 
     //check database AccessDeniedOrObjectNotExists error; it means token has been validated
-    if (data.errorName == "AccessDeniedOrObjectNotExists")
+    if (error.errorName == "AccessDeniedOrObjectNotExists")
         return false;
 
     //noinspection JSUnresolvedVariable
-    if (data.errorName == "invalid_grant")
+    if (error.errorName == "invalid_grant")
         return true;
 
-    return data.status == 401 || (data.statusText != null && data.statusText.toLowerCase() == "unauthorized");
+    return error.status == 401;
 };
 
 directSp.DirectSpClient.prototype._updateUserInfo = function () {
@@ -412,7 +405,7 @@ directSp.DirectSpClient.prototype._refreshToken = function () {
 
     //return false if token not exists
     if (this.tokens == null || this.tokens.refresh_token == null) {
-        return Promise.reject(this.createError("There is no token to refresh!"));
+        return Promise.resolve(null);
     }
 
     //Refreshing token
@@ -435,11 +428,12 @@ directSp.DirectSpClient.prototype._refreshToken = function () {
             cache: false
         })
         .then(data => {
-            _this.tokens = data;
+            _this.setTokens(data);
             return data;
         })
         .catch(error => {
-            _this.tokens = null;
+            // do not clear token and let caller knows that session is authorized but token is expired
+            // _this.setTokens(null); do not unmark
             throw error;
         });
 };
@@ -499,6 +493,7 @@ directSp.DirectSpClient.prototype._save = function () {
 };
 
 directSp.DirectSpClient.prototype.signInByPasswordGrant = function (username, password) {
+    var orgIsAuthorized = this.isAuthorized;
 
     //clear user info and tokens
     if (this.username != username) {
@@ -526,25 +521,36 @@ directSp.DirectSpClient.prototype.signInByPasswordGrant = function (username, pa
             data: requestParam,
             type: "POST",
             cache: false
-        }).then(result => {
-            _this.tokens = result;
+        })
+        .then(result => {
+            return _this.setTokens(result);
+        })
+        .then(result => {
+            _this._fireAuthorizedEvent();
+        })
+        .catch(result => {
+            _this.setTokens(null);
+            if (orgIsAuthorized)
+                _this._fireAuthorizedEvent();
+            throw result;
         });
 };
 
 //signOut but keep current username
 directSp.DirectSpClient.prototype.signOut = function (clearUser, redirect) {
-
     // set default
-    redirect = directSp.Utility.checkUndefined(redirect, true);
+    redirect = directSp.Convert.toBoolean(redirect, true);
+    clearUser = directSp.Convert.toBoolean(clearUser, false);
 
     // clear access_tokens
-    this.tokens = null;
+    _this.setTokens(null);
 
+    // clear all user info
     if (clearUser)
         this._resetUser();
 
     //redirect to signout page
-    if (redirect) {
+    if (redirect && this.authRedirectUri) {
         var params = {
             client_id: this.clientId,
             redirect_uri: this.authRedirectUri,
@@ -554,9 +560,11 @@ directSp.DirectSpClient.prototype.signOut = function (clearUser, redirect) {
         };
 
         this.isAutoSignIn = false; //let leave the page
-        window.location.href = this.logoutEndpointUri + "?" + jQuery.param(params);
+        window.location.href = this.logoutEndpointUri + "?" + directSp.Convert.toQueryString(params);
     }
 
+    // always fire AuthorizedEvent
+    this._fireAuthorizedEvent();
     return Promise.resolve();
 };
 
@@ -589,7 +597,7 @@ directSp.DirectSpClient.prototype.signIn = function () {
         response_type: this.authType,
         state: this._settings.sessionState
     };
-    window.location.href = this.authEndpointUri + "?" + jQuery.param(params);
+    window.location.href = this.authEndpointUri + "?" + directSp.Convert.toQueryString(params);
 };
 
 //navigate to directSp authorization server
@@ -610,7 +618,7 @@ directSp.DirectSpClient.prototype._processAuthCallback = function () {
     var state = directSp.Uri.getParameterByName("state");
     if (this._settings.sessionState != state) {
         console.error("DirectSp: Invalid sessionState!");
-        this.tokens = null;
+        this.setTokens(null);
         return Promise.reject(this.createError("Invalid sessionState!"));
     }
 
@@ -632,11 +640,10 @@ directSp.DirectSpClient.prototype._processAuthCallback = function () {
                 cache: false
             })
             .then(result => {
-                _this.tokens = result;
-                return true;
+                return _this.setTokens(result);
             })
             .catch(error => {
-                _this.tokens = null;
+                _this.setTokens(null);
                 throw error;
             });
     }
@@ -644,12 +651,11 @@ directSp.DirectSpClient.prototype._processAuthCallback = function () {
     //process implicit flow
     var access_token = directSp.Uri.getParameterByName("access_token");
     if (access_token != null) {
-        this.tokens = {
+        return _this.setTokens({
             access_token: access_token,
             token_type: directSp.Uri.getParameterByName("token_type"),
             expires_in: directSp.Uri.getParameterByName("expires_in")
-        };
-        return Promise.resolve(true);
+        });
     }
 
     //finish processAuthCallback without any result
@@ -842,9 +848,28 @@ directSp.DirectSpClient.prototype._ajax = function (ajaxOptions) {
     var _this = this;
     return this._ajax2(ajaxOptions)
         .catch(error => {
+            // try refresh token
+            if (_this._isTokenExpired(error)) {
+                ajaxOptions.headers.authorization = _this.authHeader;
+                return _this._refreshToken()._ajax2(ajaxOptions)
+            }
+            throw error;
+        })
+        .catch(error => {
             //log error
             if (_this.isLogEnabled)
                 console.error(ajaxOptions.url, ajaxOptions.data, error);
+
+            // signout if token is expired
+            if (_this._isTokenExpired(error)) {
+                if (_this.isAuthorized) {
+                    return _this.signOut()
+                        .then(result => {
+                            throw error;
+                        });
+                }
+                throw error;
+            }
 
             //check captcha error
             if (_this.onCaptcha) {
@@ -897,7 +922,6 @@ directSp.DirectSpClient.prototype._ajax2 = function (ajaxOptions) {
 
 };
 
-//override the following code if we are going to change JQuery
 directSp.DirectSpClient.prototype._ajaxProvider = function (ajaxOptions) {
 
     //debugger;
@@ -1568,19 +1592,25 @@ directSp.Uri.getFileName = function (uri) {
 
 // html
 directSp.Html = {};
-directSp.Html.submit = function (url, fields) {
-    var form = jQuery('<form>', {
-        action: url,
-        method: 'post'
-    });
-    jQuery.each(fields, function (key, val) {
-        jQuery('<input>').attr({
-            type: "hidden",
-            name: key,
-            value: val
-        }).appendTo(form);
-    });
-    $(document.body).append(form);
+directSp.Html.submit = function (url, params) {
+    var method = "post";
+
+    var form = document.createElement("form");
+    form.setAttribute("method", method);
+    form.setAttribute("action", url);
+
+    for (var key in params) {
+        if (params.hasOwnProperty(key)) {
+            var hiddenField = document.createElement("input");
+            hiddenField.setAttribute("type", "hidden");
+            hiddenField.setAttribute("name", key);
+            hiddenField.setAttribute("value", params[key]);
+
+            form.appendChild(hiddenField);
+        }
+    }
+
+    document.body.appendChild(form);
     form.submit();
 };
 
