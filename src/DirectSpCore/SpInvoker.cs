@@ -192,7 +192,7 @@ namespace DirectSp.Core
             var spName = Schema + "." + spCall.Method;
             var spInfo = FindSpInfo(spName);
             if (spInfo == null)
-                throw new Exception($"Could not find the SP: {spName}");
+                throw new SpException($"Could not find the API: {spName}");
 
             //check IsCaptcha by meta-data
             if ((spInfo.ExtendedProps.CaptchaMode == SpCaptchaMode.Always || spInfo.ExtendedProps.CaptchaMode == SpCaptchaMode.Auto) && !spi.IsCaptcha)

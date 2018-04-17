@@ -42,7 +42,7 @@ namespace DirectSp.Core.Exceptions
             SpCallError = spCallError;
         }
 
-        public SpException(string message, int status = StatusCodes.Status500InternalServerError)
+        public SpException(string message, int status = StatusCodes.Status400BadRequest)
         {
             SpCallError = new SpCallError()
             {
