@@ -5,14 +5,13 @@
 <head>
     <meta charset="utf-8" />
     <title></title>
-    <script src="js/jquery-3.1.1.js"></script>
-    <script src="js/spapp.js"></script>
+    <script src="js/dspclient.js"></script>
     <script src="TestPaginator.js"></script>
 
     <script type="text/javascript">
 
         function init() {
-            spApp.isApiLogEnabled = true;
+            dspClient.isApiLogEnabled = true;
             var test = new directSp.TestPaginator();
             test.start();
         }

@@ -7,7 +7,7 @@
 //namespace
 if (typeof directSp == "undefined") var directSp = {};
 
-//spApp
+//dspClient
 directSp.TestPaginator = function () {
     this.paginator = null;
 };
@@ -32,114 +32,207 @@ directSp.TestPaginator.prototype.checkExpected = function (param, expect, calleN
 };
 
 directSp.TestPaginator.prototype.checkByInvoke = function (param, expect) {
-    var _this = this;
-    this.paginator = spApp.invokeApi("RequesetRecords", null, { pageSize: param.pageSize, pageCacheCount: param.pageCacheCount, delay:1000 });
-    this.paginator.goPage(param.pageIndex).done(function (data) {
-        _this.checkExpected(param, expect, "checkByInvoke");
-    });
+    this.paginator = dspClient.invoke("RequesetRecords", null, { pageSize: param.pageSize, pageCacheCount: param.pageCacheCount, delay: 1000 });
+    return this.paginator.goPage(param.pageIndex)
+        .then(result => {
+            //wait next page to be completed for testing in sync mode
+            return Promise.all(this.paginator._pagePromises);
+        }).then(result => {
+            this.checkExpected(param, expect, "checkByInvoke");
+            return result;
+        });
 };
 
 directSp.TestPaginator.prototype.checkByPage = function (pageNo, expect) {
-    var _this = this;
-    this.paginator.goPage(pageNo).done(function (data) {
-        _this.checkExpected({}, expect, "checkByPage");
-    });
+    return this.paginator.goPage(pageNo)
+        .then(result => {
+            //wait next page to be completed for testing in sync mode
+            return Promise.all(this.paginator._pagePromises);
+        }).then(result => {
+            this.checkExpected({}, expect, "checkByPage");
+            return result;
+        });
+
 };
 
 directSp.TestPaginator.prototype.start = function () {
     var data = { recordset: [] };
-    spApp.resourceApiUri = "http://mock";
-    spApp.apiHook = function (method, params, options) { return data; }
+    dspClient.resourceApiUri = "http://mock";
+    dspClient.apiHook = function (method, params, options) {
+        return data;
+    }
 
     //check zero result
+    console.log("Test 1 (check zero result) ...");
     data.recordset = [];
-    this.checkByInvoke({ pageIndex: 0, pageSize: 5, pageCacheCount: 0 }, { hasNextPage: false, recordset: [], pageCount: 1, pageCountMin: 1, pageIndex: 0 });
-    this.checkByInvoke({ pageIndex: 0, pageSize: 5, pageCacheCount: 1 }, { hasNextPage: false, recordset: [], pageCount: 1, pageCountMin: 1, pageIndex: 0 });
-    this.checkByInvoke({ pageIndex: 0, pageSize: 5, pageCacheCount: 2 }, { hasNextPage: false, recordset: [], pageCount: 1, pageCountMin: 1, pageIndex: 0 });
-    this.checkByInvoke({ pageIndex: 0, pageSize: 1, pageCacheCount: 0 }, { hasNextPage: false, recordset: [], pageCount: 1, pageCountMin: 1, pageIndex: 0 });
-    this.checkByInvoke({ pageIndex: 0, pageSize: 1, pageCacheCount: 1 }, { hasNextPage: false, recordset: [], pageCount: 1, pageCountMin: 1, pageIndex: 0 });
-    this.checkByInvoke({ pageIndex: 0, pageSize: 1, pageCacheCount: 2 }, { hasNextPage: false, recordset: [], pageCount: 1, pageCountMin: 1, pageIndex: 0 });
-    this.checkByInvoke({ pageIndex: 1, pageSize: 5, pageCacheCount: 0 }, { hasNextPage: false, recordset: [], pageCount: 1, pageCountMin: 1, pageIndex: 1 });
-    this.checkByInvoke({ pageIndex: 1, pageSize: 5, pageCacheCount: 1 }, { hasNextPage: false, recordset: [], pageCount: 1, pageCountMin: 1, pageIndex: 1 });
-    this.checkByInvoke({ pageIndex: 1, pageSize: 5, pageCacheCount: 2 }, { hasNextPage: false, recordset: [], pageCount: 1, pageCountMin: 1, pageIndex: 1 });
-    this.checkByInvoke({ pageIndex: 9, pageSize: 5, pageCacheCount: 0 }, { hasNextPage: false, recordset: [], pageCount: null, pageCountMin: 1, pageIndex: 9 });
-    this.checkByInvoke({ pageIndex: 9, pageSize: 5, pageCacheCount: 1 }, { hasNextPage: false, recordset: [], pageCount: null, pageCountMin: 1, pageIndex: 9 });
-    this.checkByInvoke({ pageIndex: 9, pageSize: 5, pageCacheCount: 2 }, { hasNextPage: false, recordset: [], pageCount: null, pageCountMin: 1, pageIndex: 9 });
+    this.checkByInvoke({ pageIndex: 0, pageSize: 5, pageCacheCount: 0 }, { hasNextPage: false, recordset: [], pageCount: 1, pageCountMin: 1, pageIndex: 0 })
+        .then(result => {
+            return this.checkByInvoke({ pageIndex: 0, pageSize: 5, pageCacheCount: 1 }, { hasNextPage: false, recordset: [], pageCount: 1, pageCountMin: 1, pageIndex: 0 });
+        }).then(result => {
+            return this.checkByInvoke({ pageIndex: 0, pageSize: 5, pageCacheCount: 2 }, { hasNextPage: false, recordset: [], pageCount: 1, pageCountMin: 1, pageIndex: 0 });
+        }).then(result => {
+            return this.checkByInvoke({ pageIndex: 0, pageSize: 1, pageCacheCount: 0 }, { hasNextPage: false, recordset: [], pageCount: 1, pageCountMin: 1, pageIndex: 0 });
+        }).then(result => {
+            return this.checkByInvoke({ pageIndex: 0, pageSize: 1, pageCacheCount: 1 }, { hasNextPage: false, recordset: [], pageCount: 1, pageCountMin: 1, pageIndex: 0 });
+        }).then(result => {
+            return this.checkByInvoke({ pageIndex: 0, pageSize: 1, pageCacheCount: 2 }, { hasNextPage: false, recordset: [], pageCount: 1, pageCountMin: 1, pageIndex: 0 })
+        }).then(result => {
+            return this.checkByInvoke({ pageIndex: 1, pageSize: 5, pageCacheCount: 0 }, { hasNextPage: false, recordset: [], pageCount: 1, pageCountMin: 1, pageIndex: 1 });
+        }).then(result => {
+            return this.checkByInvoke({ pageIndex: 1, pageSize: 5, pageCacheCount: 1 }, { hasNextPage: false, recordset: [], pageCount: 1, pageCountMin: 1, pageIndex: 1 });
+        }).then(result => {
+            return this.checkByInvoke({ pageIndex: 1, pageSize: 5, pageCacheCount: 2 }, { hasNextPage: false, recordset: [], pageCount: 1, pageCountMin: 1, pageIndex: 1 });
+        }).then(result => {
+            return this.checkByInvoke({ pageIndex: 9, pageSize: 5, pageCacheCount: 0 }, { hasNextPage: false, recordset: [], pageCount: null, pageCountMin: 1, pageIndex: 9 });
+        }).then(result => {
+            return this.checkByInvoke({ pageIndex: 9, pageSize: 5, pageCacheCount: 1 }, { hasNextPage: false, recordset: [], pageCount: null, pageCountMin: 1, pageIndex: 9 });
+        }).then(result => {
+            return this.checkByInvoke({ pageIndex: 9, pageSize: 5, pageCacheCount: 2 }, { hasNextPage: false, recordset: [], pageCount: null, pageCountMin: 1, pageIndex: 9 });
+        }).then(result => {
 
-    data.recordset = [0];
-    this.checkByInvoke({ pageIndex: 0, pageSize: 5, pageCacheCount: 0 }, { hasNextPage: false, recordset: [0], pageCount: 1, pageCountMin: 1, pageIndex: 0 });
-    this.checkByInvoke({ pageIndex: 0, pageSize: 5, pageCacheCount: 1 }, { hasNextPage: false, recordset: [0], pageCount: 1, pageCountMin: 1, pageIndex: 0 });
-    this.checkByInvoke({ pageIndex: 0, pageSize: 5, pageCacheCount: 2 }, { hasNextPage: false, recordset: [0], pageCount: 1, pageCountMin: 1, pageIndex: 0 });
-    this.checkByInvoke({ pageIndex: 0, pageSize: 1, pageCacheCount: 0 }, { hasNextPage: false, recordset: [0], pageCount: 1, pageCountMin: 1, pageIndex: 0 });
-    this.checkByInvoke({ pageIndex: 0, pageSize: 1, pageCacheCount: 1 }, { hasNextPage: false, recordset: [0], pageCount: 1, pageCountMin: 1, pageIndex: 0 });
-    this.checkByInvoke({ pageIndex: 0, pageSize: 1, pageCacheCount: 2 }, { hasNextPage: false, recordset: [0], pageCount: 1, pageCountMin: 1, pageIndex: 0 });
-    this.checkByInvoke({ pageIndex: 1, pageSize: 5, pageCacheCount: 0 }, { hasNextPage: false, recordset: [], pageCount: 1, pageCountMin: 1, pageIndex: 1 });
-    this.checkByInvoke({ pageIndex: 1, pageSize: 5, pageCacheCount: 1 }, { hasNextPage: false, recordset: [], pageCount: 1, pageCountMin: 1, pageIndex: 1 });
-    this.checkByInvoke({ pageIndex: 1, pageSize: 5, pageCacheCount: 2 }, { hasNextPage: false, recordset: [], pageCount: 1, pageCountMin: 1, pageIndex: 1 });
-    this.checkByInvoke({ pageIndex: 9, pageSize: 5, pageCacheCount: 0 }, { hasNextPage: false, recordset: [], pageCount: null, pageCountMin: 1, pageIndex: 9 });
-    this.checkByInvoke({ pageIndex: 9, pageSize: 5, pageCacheCount: 1 }, { hasNextPage: false, recordset: [], pageCount: null, pageCountMin: 1, pageIndex: 9 });
-    this.checkByInvoke({ pageIndex: 9, pageSize: 5, pageCacheCount: 2 }, { hasNextPage: false, recordset: [], pageCount: null, pageCountMin: 1, pageIndex: 9 });
+            console.log("Test 2 ...");
+            data.recordset = [0];
+            return this.checkByInvoke({ pageIndex: 0, pageSize: 5, pageCacheCount: 0 }, { hasNextPage: false, recordset: [0], pageCount: 1, pageCountMin: 1, pageIndex: 0 });
+        }).then(result => {
+            return this.checkByInvoke({ pageIndex: 0, pageSize: 5, pageCacheCount: 1 }, { hasNextPage: false, recordset: [0], pageCount: 1, pageCountMin: 1, pageIndex: 0 });
+        }).then(result => {
+            return this.checkByInvoke({ pageIndex: 0, pageSize: 5, pageCacheCount: 2 }, { hasNextPage: false, recordset: [0], pageCount: 1, pageCountMin: 1, pageIndex: 0 });
+        }).then(result => {
+            return this.checkByInvoke({ pageIndex: 0, pageSize: 1, pageCacheCount: 0 }, { hasNextPage: false, recordset: [0], pageCount: 1, pageCountMin: 1, pageIndex: 0 });
+        }).then(result => {
+            return this.checkByInvoke({ pageIndex: 0, pageSize: 1, pageCacheCount: 1 }, { hasNextPage: false, recordset: [0], pageCount: 1, pageCountMin: 1, pageIndex: 0 });
+        }).then(result => {
+            return this.checkByInvoke({ pageIndex: 0, pageSize: 1, pageCacheCount: 2 }, { hasNextPage: false, recordset: [0], pageCount: 1, pageCountMin: 1, pageIndex: 0 });
+        }).then(result => {
+            return this.checkByInvoke({ pageIndex: 1, pageSize: 5, pageCacheCount: 0 }, { hasNextPage: false, recordset: [], pageCount: 1, pageCountMin: 1, pageIndex: 1 });
+        }).then(result => {
+            return this.checkByInvoke({ pageIndex: 1, pageSize: 5, pageCacheCount: 1 }, { hasNextPage: false, recordset: [], pageCount: 1, pageCountMin: 1, pageIndex: 1 });
+        }).then(result => {
+            return this.checkByInvoke({ pageIndex: 1, pageSize: 5, pageCacheCount: 2 }, { hasNextPage: false, recordset: [], pageCount: 1, pageCountMin: 1, pageIndex: 1 });
+        }).then(result => {
+            return this.checkByInvoke({ pageIndex: 9, pageSize: 5, pageCacheCount: 0 }, { hasNextPage: false, recordset: [], pageCount: null, pageCountMin: 1, pageIndex: 9 });
+        }).then(result => {
+            return this.checkByInvoke({ pageIndex: 9, pageSize: 5, pageCacheCount: 1 }, { hasNextPage: false, recordset: [], pageCount: null, pageCountMin: 1, pageIndex: 9 });
+        }).then(result => {
+            return this.checkByInvoke({ pageIndex: 9, pageSize: 5, pageCacheCount: 2 }, { hasNextPage: false, recordset: [], pageCount: null, pageCountMin: 1, pageIndex: 9 });
+        }).then(result => {
 
-    data.recordset = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-    this.checkByInvoke({ pageIndex: 0, pageSize: 5, pageCacheCount: 0 }, { hasNextPage: true, recordset: [0, 1, 2, 3, 4], pageCount: null, pageCountMin: 2 });
-    this.checkByInvoke({ pageIndex: 1, pageSize: 5, pageCacheCount: 0 }, { hasNextPage: false, recordset: [5, 6, 7, 8, 9], pageCount: 2, pageCountMin: 2 });
-    this.checkByInvoke({ pageIndex: 2, pageSize: 5, pageCacheCount: 0 }, { hasNextPage: false, recordset: [], pageCount: 2, pageCountMin: 2 });
-    this.checkByInvoke({ pageIndex: 0, pageSize: 5, pageCacheCount: 1 }, { hasNextPage: true, recordset: [0, 1, 2, 3, 4], pageCount: 2, pageCountMin: 2 });
-    this.checkByInvoke({ pageIndex: 1, pageSize: 5, pageCacheCount: 1 }, { hasNextPage: false, recordset: [5, 6, 7, 8, 9], pageCount: 2, pageCountMin: 2 });
-    this.checkByInvoke({ pageIndex: 9, pageSize: 5, pageCacheCount: 1 }, { hasNextPage: false, recordset: [], pageCount: null, pageCountMin: 1 });
+            console.log("Test 3 ...");
+            data.recordset = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+            return this.checkByInvoke({ pageIndex: 0, pageSize: 5, pageCacheCount: 0 }, { hasNextPage: true, recordset: [0, 1, 2, 3, 4], pageCount: null, pageCountMin: 2 });
+        }).then(result => {
+            return this.checkByInvoke({ pageIndex: 1, pageSize: 5, pageCacheCount: 0 }, { hasNextPage: false, recordset: [5, 6, 7, 8, 9], pageCount: 2, pageCountMin: 2 });
+        }).then(result => {
+            return this.checkByInvoke({ pageIndex: 2, pageSize: 5, pageCacheCount: 0 }, { hasNextPage: false, recordset: [], pageCount: 2, pageCountMin: 2 });
+        }).then(result => {
+            return this.checkByInvoke({ pageIndex: 0, pageSize: 5, pageCacheCount: 1 }, { hasNextPage: true, recordset: [0, 1, 2, 3, 4], pageCount: 2, pageCountMin: 2 });
+        }).then(result => {
+            return this.checkByInvoke({ pageIndex: 1, pageSize: 5, pageCacheCount: 1 }, { hasNextPage: false, recordset: [5, 6, 7, 8, 9], pageCount: 2, pageCountMin: 2 });
+        }).then(result => {
+            return this.checkByInvoke({ pageIndex: 9, pageSize: 5, pageCacheCount: 1 }, { hasNextPage: false, recordset: [], pageCount: null, pageCountMin: 1 });
+        }).then(result => {
 
-    data.recordset = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-    this.checkByInvoke({ pageIndex: 0, pageSize: 5, pageCacheCount: 0 }, { hasNextPage: true, recordset: [0, 1, 2, 3, 4], pageCount: null, pageCountMin: 2 });
-    this.checkByInvoke({ pageIndex: 1, pageSize: 5, pageCacheCount: 0 }, { hasNextPage: true, recordset: [5, 6, 7, 8, 9], pageCount: null, pageCountMin: 3 });
-    this.checkByInvoke({ pageIndex: 2, pageSize: 5, pageCacheCount: 0 }, { hasNextPage: false, recordset: [10], pageCount: 3, pageCountMin: 3 });
-    this.checkByInvoke({ pageIndex: 0, pageSize: 5, pageCacheCount: 1 }, { hasNextPage: true, recordset: [0, 1, 2, 3, 4], pageCount: null, pageCountMin: 3 });
-    this.checkByInvoke({ pageIndex: 1, pageSize: 5, pageCacheCount: 1 }, { hasNextPage: true, recordset: [5, 6, 7, 8, 9], pageCount: null, pageCountMin: 3 });
-    this.checkByInvoke({ pageIndex: 3, pageSize: 5, pageCacheCount: 0 }, { hasNextPage: false, recordset: [], pageCount: null, pageCountMin: 1, pageCountMax: 3 });
-    this.checkByInvoke({ pageIndex: 3, pageSize: 5, pageCacheCount: 1 }, { hasNextPage: false, recordset: [], pageCount: 3, pageCountMin: 3 });
+            console.log("Test 4 ...");
+            data.recordset = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+            return this.checkByInvoke({ pageIndex: 0, pageSize: 5, pageCacheCount: 0 }, { hasNextPage: true, recordset: [0, 1, 2, 3, 4], pageCount: null, pageCountMin: 2 });
+        }).then(result => {
+            return this.checkByInvoke({ pageIndex: 1, pageSize: 5, pageCacheCount: 0 }, { hasNextPage: true, recordset: [5, 6, 7, 8, 9], pageCount: null, pageCountMin: 3 });
+        }).then(result => {
+            return this.checkByInvoke({ pageIndex: 2, pageSize: 5, pageCacheCount: 0 }, { hasNextPage: false, recordset: [10], pageCount: 3, pageCountMin: 3 });
+        }).then(result => {
+            return this.checkByInvoke({ pageIndex: 0, pageSize: 5, pageCacheCount: 1 }, { hasNextPage: true, recordset: [0, 1, 2, 3, 4], pageCount: null, pageCountMin: 3 });
+        }).then(result => {
+            return this.checkByInvoke({ pageIndex: 1, pageSize: 5, pageCacheCount: 1 }, { hasNextPage: true, recordset: [5, 6, 7, 8, 9], pageCount: null, pageCountMin: 3 });
+        }).then(result => {
+            return this.checkByInvoke({ pageIndex: 3, pageSize: 5, pageCacheCount: 0 }, { hasNextPage: false, recordset: [], pageCount: null, pageCountMin: 1, pageCountMax: 3 });
+        }).then(result => {
+            return this.checkByInvoke({ pageIndex: 3, pageSize: 5, pageCacheCount: 1 }, { hasNextPage: false, recordset: [], pageCount: 3, pageCountMin: 3 });
+        }).then(result => {
 
-    //check paging
-    data.recordset = [0];
-    this.checkByInvoke({ pageIndex: 0, pageSize: 5, pageCacheCount: 0 }, { isInvoked: 1, isCacheInvalidated: 0, isCacheUsed: 0 });
-    this.checkByPage(0, { isInvoked: 0, isCacheInvalidated: 0, isCacheUsed: 1, pageIndex: 0, pageCountMax: 1 });
-    this.checkByPage(1, { isInvoked: 0, isCacheInvalidated: 0, isCacheUsed: 1, pageIndex: 0, pageCountMax: 1 });
-    this.checkByPage(10, { isInvoked: 0, isCacheInvalidated: 0, isCacheUsed: 1, pageIndex: 0, pageCountMax: 1 });
+            //Check pagination
+            console.log("Test 5 (pagination) ...");
+            data.recordset = [0];
+            return this.checkByInvoke({ pageIndex: 0, pageSize: 5, pageCacheCount: 0 }, { isInvoked: 1, isCacheInvalidated: 0, isCacheUsed: 0 });
+        }).then(result => {
+            return this.checkByPage(0, { isInvoked: 0, isCacheInvalidated: 0, isCacheUsed: 1, pageIndex: 0, pageCountMax: 1 });
+        }).then(result => {
+            return this.checkByPage(1, { isInvoked: 0, isCacheInvalidated: 0, isCacheUsed: 1, pageIndex: 0, pageCountMax: 1 });
+        }).then(result => {
+            return this.checkByPage(10, { isInvoked: 0, isCacheInvalidated: 0, isCacheUsed: 1, pageIndex: 0, pageCountMax: 1 });
+        }).then(result => {
+            return this.checkByInvoke({ pageIndex: 0, pageSize: 5, pageCacheCount: 1 }, { isInvoked: 1, isCacheInvalidated: 0, isCacheUsed: 0 });
+        }).then(result => {
+            return this.checkByPage(0, { isInvoked: 0, isCacheInvalidated: 0, isCacheUsed: 1, pageIndex: 0 });
+        }).then(result => {
+            return this.checkByPage(1, { isInvoked: 0, isCacheInvalidated: 0, isCacheUsed: 1, pageIndex: 0 });
+        }).then(result => {
+            return this.checkByPage(10, { isInvoked: 0, isCacheInvalidated: 0, isCacheUsed: 1, pageIndex: 0 });
+        }).then(result => {
 
-    this.checkByInvoke({ pageIndex: 0, pageSize: 5, pageCacheCount: 1 }, { isInvoked: 1, isCacheInvalidated: 0, isCacheUsed: 0 });
-    this.checkByPage(0, { isInvoked: 0, isCacheInvalidated: 0, isCacheUsed: 1, pageIndex: 0 });
-    this.checkByPage(1, { isInvoked: 0, isCacheInvalidated: 0, isCacheUsed: 1, pageIndex: 0 });
-    this.checkByPage(10, { isInvoked: 0, isCacheInvalidated: 0, isCacheUsed: 1, pageIndex: 0 });
+            console.log("Test 6 ...");
+            data.recordset = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+            return this.checkByInvoke({ pageIndex: 0, pageSize: 5, pageCacheCount: 1 }, { isInvoked: 1, isCacheInvalidated: 0, isCacheUsed: 0, pageCountMax: null });
+        }).then(result => {
+            return this.checkByPage(0, { isInvoked: 0, isCacheInvalidated: 0, isCacheUsed: 1, pageCountMax: null });
+        }).then(result => {
+            return this.checkByPage(1, { isInvoked: 1, isCacheInvalidated: 0, isCacheUsed: 1, pageCountMax: 3 });
+        }).then(result => {
 
-    data.recordset = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-    this.checkByInvoke({ pageIndex: 0, pageSize: 5, pageCacheCount: 1 }, { isInvoked: 1, isCacheInvalidated: 0, isCacheUsed: 0, pageCountMax: null });
-    this.checkByPage(0, { isInvoked: 0, isCacheInvalidated: 0, isCacheUsed: 1, pageCountMax: null });
-    this.checkByPage(1, { isInvoked: 1, isCacheInvalidated: 0, isCacheUsed: 1, pageCountMax: 3 });
+            console.log("Test 7 ...");
+            data.recordset = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+            return this.checkByInvoke({ pageIndex: 0, pageSize: 5, pageCacheCount: 1 }, { isInvoked: 1, isCacheInvalidated: 0, isCacheUsed: 0, pageCountMax: null });
+        }).then(result => {
+            return this.checkByPage(10, { isInvoked: 1, isCacheInvalidated: 0, isCacheUsed: 1, pageCountMax: 9 });
+        }).then(result => {
+            return this.checkByPage(10, { isInvoked: 1, isCacheInvalidated: 0, isCacheUsed: 1, pageCountMax: 7 });
+        }).then(result => {
+            return this.checkByPage(2, { isInvoked: 1, isCacheInvalidated: 0, isCacheUsed: 0, pageCountMax: 4 });
+        }).then(result => {
+            return this.checkByPage(1, { isInvoked: 0, isCacheInvalidated: 0, isCacheUsed: 1, pageCountMax: 4 });
+        }).then(result => {
+            return this.checkByPage(3, { isInvoked: 0, isCacheInvalidated: 0, isCacheUsed: 1, pageCountMax: 4 });
+        }).then(result => {
 
-    data.recordset = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
-    this.checkByInvoke({ pageIndex: 0, pageSize: 5, pageCacheCount: 1 }, { isInvoked: 1, isCacheInvalidated: 0, isCacheUsed: 0, pageCountMax: null });
-    this.checkByPage(10, { isInvoked: 1, isCacheInvalidated: 0, isCacheUsed: 1, pageCountMax: 9 });
-    this.checkByPage(10, { isInvoked: 1, isCacheInvalidated: 0, isCacheUsed: 1, pageCountMax: 7 });
-    this.checkByPage(2, { isInvoked: 1, isCacheInvalidated: 0, isCacheUsed: 0, pageCountMax: 4 });
-    this.checkByPage(1, { isInvoked: 0, isCacheInvalidated: 0, isCacheUsed: 1, pageCountMax: 4 });
-    this.checkByPage(3, { isInvoked: 0, isCacheInvalidated: 0, isCacheUsed: 1, pageCountMax: 4 });
+            console.log("Test 8 ...");
+            data.recordset = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
+            return this.checkByInvoke({ pageIndex: 0, pageSize: 5, pageCacheCount: 1 }, { isInvoked: 1, isCacheInvalidated: 0, isCacheUsed: 0, pageCountMax: null });
+        }).then(result => {
+            return this.checkByPage(2, { isInvoked: 1, isCacheInvalidated: 0, isCacheUsed: 0, pageCountMax: null, pageCount: null });
+        }).then(result => {
+            return this.checkByPage(3, { isInvoked: 1, isCacheInvalidated: 0, isCacheUsed: 1, pageCountMax: null, pageCount: null });
+        }).then(result => {
 
-    data.recordset = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
-    this.checkByInvoke({ pageIndex: 0, pageSize: 5, pageCacheCount: 1 }, { isInvoked: 1, isCacheInvalidated: 0, isCacheUsed: 0, pageCountMax: null });
-    this.checkByPage(2, { isInvoked: 1, isCacheInvalidated: 0, isCacheUsed: 0, pageCountMax: null, pageCount: null });
-    this.checkByPage(3, { isInvoked: 1, isCacheInvalidated: 0, isCacheUsed: 1, pageCountMax: null, pageCount: null });
+            console.log("Test 9 ...");
+            data.recordset = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
+        }).then(result => {
+            return this.checkByInvoke({ pageIndex: 0, pageSize: 5, pageCacheCount: 1 }, { isInvoked: 1, isCacheInvalidated: 0, isCacheUsed: 0, pageCountMax: null });
+        }).then(result => {
+            return this.checkByPage(1, { isInvoked: 1, isCacheInvalidated: 0, isCacheUsed: 1, pageCountMax: null, pageCount: null });
+        }).then(result => {
 
-    data.recordset = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
-    this.checkByInvoke({ pageIndex: 0, pageSize: 5, pageCacheCount: 1 }, { isInvoked: 1, isCacheInvalidated: 0, isCacheUsed: 0, pageCountMax: null });
-    this.checkByPage(1, { isInvoked: 1, isCacheInvalidated: 0, isCacheUsed: 1, pageCountMax: null, pageCount: null });
-    data.recordset[14] = 0;
-    this.checkByPage(3, { isInvoked: 1, isCacheInvalidated: 1, isCacheUsed: 0, pageCountMax: null, pageCount: null });
-    data.recordset[15] = 0;
-    this.checkByPage(1, { isInvoked: 1, isCacheInvalidated: 1, isCacheUsed: 0, pageCountMax: null, pageCount: null });
+            console.log("Test 10 ...");
+            data.recordset[14] = 0;
+            return this.checkByPage(3, { isInvoked: 1, isCacheInvalidated: 1, isCacheUsed: 0, pageCountMax: null, pageCount: null });
+        }).then(result => {
 
-    // check for last page
-    data.recordset = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
-    this.checkByInvoke({ pageIndex: 0, pageSize: 4 }, {});
-    this.checkByPage(0, { hasNextPage: true } );
-    this.checkByPage(1, { hasNextPage: true } );
-    this.checkByPage(2, { hasNextPage: false} );
-    this.checkByPage(3, { hasNextPage: false } );
+            console.log("Test 11 ...");
+            data.recordset[15] = 0;
+            return this.checkByPage(1, { isInvoked: 1, isCacheInvalidated: 1, isCacheUsed: 0, pageCountMax: null, pageCount: null });
+        }).then(result => {
+
+            // check for last page
+            console.log("Test 12 (last page) ...");
+            data.recordset = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+            return this.checkByInvoke({ pageIndex: 0, pageSize: 4 }, {});
+        }).then(result => {
+            return this.checkByPage(0, { hasNextPage: true });
+        }).then(result => {
+            return this.checkByPage(1, { hasNextPage: true });
+        }).then(result => {
+            return this.checkByPage(2, { hasNextPage: false });
+        }).then(result => {
+            return this.checkByPage(3, { hasNextPage: false });
+        });
 };
+
+
