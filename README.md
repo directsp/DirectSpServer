@@ -3,9 +3,7 @@ DirectSp framework let you call SQL store procedures directly from front-end and
 
 ## Features
 * Authentication via JWT Brearer
-* Load Balancing via High-Avalinility
-* Client JavaScript Helper for fast web development (DirectSpClientJs)
-* Client .NET Helper for fast server to server by password grant (DirectSpClientNet)
+* Load Balancing via SQL Server High-Avalibility group
 * Alternative Calander
 * Anti XSS
 * Batch execution
@@ -13,12 +11,22 @@ DirectSp framework let you call SQL store procedures directly from front-end and
 * Download as TSV (Tab Seperated Values) with compression
 
 ## Client JavaScript 
+* Login by password
+* Login by user consent (implicit login)
 * Pure javascript
-* Automatic sign-in by OpenIdConnect with refresh-token
+* Automatic sign-in
 * Smart Paginator with cache
 * Global Error Handler
 * Captcha Handler
+* Easy Api call
 
-## DirectSp OpenIdConnect Server
+## DirectSp .NET Client
+* Login by Password
+* Easy Api call
 
+## DirectSp Authentication Server
+* Using OpenID Connect standard
+* Refresh-Token
+* Profile Info
+* Captcha Support
 
