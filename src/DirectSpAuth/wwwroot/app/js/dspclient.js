@@ -75,7 +75,7 @@ directSp.DirectSpClient.prototype = {
     },
 
     get userId() {
-        return accessTokenInfo ? accessTokenInfo.sub : null;
+        return this.accessTokenInfo ? this.accessTokenInfo.sub : null;
     },
 
     get username() {
@@ -247,7 +247,6 @@ directSp.DirectSpClient.prototype = {
 //navigate to directSp auth server
 directSp.DirectSpClient.prototype.init = function () {
     console.log("DirectSp: initializing ...");
-    var _this = this;
 
     //process error
     if (directSp.Uri.getParameterByName("error") != null) {
@@ -265,43 +264,55 @@ directSp.DirectSpClient.prototype.init = function () {
 
     return this._processAuthCallback()
         .then(result => {
-            if (!_this.isAuthorized && _this._tokensLast)
-                return _this.setTokens(_this._tokensLast);
+            if (!this.isAuthorized && this._tokensLast)
+                return this.setTokens(this._tokensLast);
             return result;
         })
         .then(result => {
-            _this._fireAuthorizedEvent();
+            this._fireAuthorizedEvent();
             return result;
         })
         .catch(error => {
-            _this._fireAuthorizedEvent();
+            this._fireAuthorizedEvent();
             throw error;
         });
 };
 
-directSp.DirectSpClient.prototype.setTokens = function (value) {
+directSp.DirectSpClient.prototype.setTokens = function (value, refreshUserInfo) {
+    // defaults
+    refreshUserInfo = directSp.Convert.toBoolean(refreshUserInfo, true);
+
+    // check is token changed
     if (value == this._tokens)
-        return; //no change
+        return Promise.resolve(value); //no change
 
     //set token
     this._tokens = value;
 
     //update auth data
     if (value != null) {
-        this._accessTokenInfo = directSp.Utility.parseJwt(this.tokens.access_token);
-        var _this = this;
-        return this._updateUserInfo()
-            .then(result => {
-                _this._save();
-                return result;
-            });
+        //clear token if it was invalid
+        try {
+            this._accessTokenInfo = directSp.Utility.parseJwt(this.tokens.access_token);
+        } catch (error) {
+            return this.setTokens(null);
+        }
+
+        //refreshing UserInfo
+        if (refreshUserInfo) {
+            return this._refreshUserInfo()
+                .then(result => {
+                    this._save();
+                    return value;
+                });
+        }
     }
     else {
         this._userInfo = null;
     }
 
     this._save();
-    return Promise.resolve(true);
+    return Promise.resolve(value);
 };
 
 
@@ -317,27 +328,26 @@ directSp.DirectSpClient.prototype.throwAppError = function (error) {
 
 directSp.DirectSpClient.prototype._fireAuthorizedEvent = function () {
 
-    var _this = this;
-    setTimeout(function () {
+    setTimeout(() => {
         //fire the event
-        if (_this.isAuthorized)
-            console.log("DirectSp: User has been authorized", _this.userInfo);
+        if (this.isAuthorized)
+            console.log("DirectSp: User has been authorized", this.userInfo);
         else
             console.log("DirectSp: User has not been authorized!");
 
-        if (!_this.isAuthorized && _this.isAutoSignIn) {
-            _this.signIn();
+        if (!this.isAuthorized && this.isAutoSignIn) {
+            this.signIn();
             return;
         }
 
         //trigger the event
-        if (_this.onAuthorized) {
-            var data = { lastPageUri: _this._lastPageUri };
-            _this.onAuthorized(data);
+        if (this.onAuthorized) {
+            var data = { lastPageUri: this._lastPageUri };
+            this.onAuthorized(data);
         }
 
-        _this._lastPageUri = null; //reset last page notifying user
-        sessionStorage.removeItem(_this._storageNamePrefix + "lastPageUri");
+        this._lastPageUri = null; //reset last page notifying user
+        sessionStorage.removeItem(this._storageNamePrefix + "lastPageUri");
     }, 0);
 };
 
@@ -363,13 +373,12 @@ directSp.DirectSpClient.prototype._isTokenExpiredError = function (error) {
     return error.status == 401;
 };
 
-directSp.DirectSpClient.prototype._updateUserInfo = function () {
+directSp.DirectSpClient.prototype._refreshUserInfo = function () {
 
-    var _this = this;
     return this.getUserInfo()
         .then(result => {
-            _this._userInfo = result;
-            _this._userInfoLast = {
+            this._userInfo = result;
+            this._userInfoLast = {
                 username: result.username,
                 userDisplayName: result.name
             };
@@ -386,35 +395,33 @@ directSp.DirectSpClient.prototype.getUserInfo = function () {
         return Promise.reject(this._convertToError(data));
     }
 
-    var _this = this;
-    return this._ajax(
-        {
-            url: this.userinfoEndpointUri,
-            data: null,
-            type: "GET",
-            headers: { 'authorization': this.authHeader },
-            cache: false
-        })
-        .then(data => {
-            if (_this.isLogEnabled) console.log("DirectSp: userInfo", data);
-            return data;
+    var ajaxOptions = {
+        url: this.userinfoEndpointUri,
+        method: "GET",
+        headers: { "authorization": this.authHeader },
+    };
+
+    return this._ajax(ajaxOptions)
+        .then(result => {
+            result = JSON.parse(result);
+            if (this.isLogEnabled) console.log("DirectSp: userInfo", result);
+            return result;
         });
 };
 
 directSp.DirectSpClient.prototype._refreshToken = function () {
 
     //check expiration time
-    if (this.accessTokenInfo && this.accessTokenInfo["exp"]) {
+    if (false && this.accessTokenInfo && this.accessTokenInfo["exp"]) {
         var dateNow = new Date();
-        if (int.parse(this.accessTokenInfo["exp"]) - this.refreshClockSkew > dateNow.getTime())
-            return Promise.resolve(true); //current token is valid
+        if (parseInt(this.accessTokenInfo["exp"]) - this._settings.refreshClockSkew > dateNow.getTime() / 1000)
+            return Promise.resolve(false); //token is not refreshed
     }
 
     //return false if token not exists
     if (!this.tokens || !this.tokens.refresh_token || !this.accessTokenInfo) {
         return Promise.resolve(false); //current token is not valid and can not be refreshed
     }
-
 
     //Refreshing token
     console.log("DirectSp: Refreshing current token ...");
@@ -426,21 +433,25 @@ directSp.DirectSpClient.prototype._refreshToken = function () {
         client_id: this.clientId
     };
 
-    //call 
-    var _this = this;
-    return this._ajax(
-        {
-            url: _this.tokenEndpointUri,
-            data: requestParam,
-            type: "POST",
-            cache: false
-        })
-        .then(data => {
-            return _this.setTokens(data);
+    //call
+    var request = {
+        url: this.tokenEndpointUri,
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+            "authorization": this.authHeader
+        },
+        body: directSp.Convert.toQueryString(requestParam),
+    };
+
+    return this._ajax2(request)
+        .then(result => {
+            result = JSON.parse(result);
+            return this.setTokens(result, false);
         })
         .catch(error => {
             // do not clear token and let caller knows that session is authorized but token is expired
-            // _this.setTokens(null); do not unmark
+            // this.setTokens(null); do not unmark
             throw error;
         });
 };
@@ -521,24 +532,24 @@ directSp.DirectSpClient.prototype.signInByPasswordGrant = function (username, pa
         client_id: this.clientId
     };
 
-    var _this = this;
     return this._ajax(
         {
-            url: _this.tokenEndpointUri,
-            data: requestParam,
-            type: "POST",
-            cache: false
+            url: this.tokenEndpointUri,
+            headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+            body: directSp.Convert.toQueryString(requestParam),
+            method: "POST",
         })
         .then(result => {
-            return _this.setTokens(result);
+            result = JSON.parse(result);
+            return this.setTokens(result);
         })
         .then(result => {
-            _this._fireAuthorizedEvent();
+            this._fireAuthorizedEvent();
             return result;
         })
         .catch(result => {
             if (orgIsAuthorized)
-                _this._fireAuthorizedEvent();
+                this._fireAuthorizedEvent();
             throw result;
         });
 };
@@ -610,16 +621,15 @@ directSp.DirectSpClient.prototype.signIn = function () {
 //navigate to directSp authorization server
 // data will be true if 
 directSp.DirectSpClient.prototype._processAuthCallback = function () {
-    var _this = this;
 
     //check is oauth2callback
     if (!this.isAuthCallback)
         return Promise.resolve(false);
 
     // restore last pageUri
-    _this._lastPageUri = sessionStorage.getItem(_this._storageNamePrefix + "lastPageUri");
-    if (_this._lastPageUri == null)
-        _this._lastPageUri = _this.homePageUri;
+    this._lastPageUri = sessionStorage.getItem(this._storageNamePrefix + "lastPageUri");
+    if (this._lastPageUri == null)
+        this._lastPageUri = this.homePageUri;
 
     //check state and do nothing if it is not matched
     var state = directSp.Uri.getParameterByName("state");
@@ -632,25 +642,26 @@ directSp.DirectSpClient.prototype._processAuthCallback = function () {
     //process authorization_code flow
     var code = directSp.Uri.getParameterByName("code");
     if (code != null) {
-        var params = {
+        var requestParam = {
             client_id: this.clientId,
             redirect_uri: this.authRedirectUri,
             grant_type: "authorization_code",
             code: code
         };
 
-        return _this._ajax(
+        return this._ajax(
             {
-                url: _this.tokenEndpointUri,
-                data: params,
-                type: "POST",
-                cache: false
+                url: this.tokenEndpointUri,
+                headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+                body: directSp.Convert.toQueryString(requestParam),
+                method: "POST",
             })
             .then(result => {
-                return _this.setTokens(result);
+                result = JSON.parse(result);
+                return this.setTokens(result);
             })
             .catch(error => {
-                _this.setTokens(null);
+                this.setTokens(null);
                 throw error;
             });
     }
@@ -658,7 +669,7 @@ directSp.DirectSpClient.prototype._processAuthCallback = function () {
     //process implicit flow
     var access_token = directSp.Uri.getParameterByName("access_token");
     if (access_token != null) {
-        return _this.setTokens({
+        return this.setTokens({
             access_token: access_token,
             token_type: directSp.Uri.getParameterByName("token_type"),
             expires_in: directSp.Uri.getParameterByName("expires_in")
@@ -806,7 +817,6 @@ directSp.DirectSpClient.prototype.invoke2 = function (spCall, invokeOptions) {
 
 // AppErrorHandler
 directSp.DirectSpClient.prototype._invokeCore = function (method, invokeParams) {
-    var _this = this;
 
     //set defaults
     if (!invokeParams.invokeOptions) invokeParams.invokeOptions = {};
@@ -814,20 +824,20 @@ directSp.DirectSpClient.prototype._invokeCore = function (method, invokeParams) 
     invokeParams.invokeOptions.isUseAppErrorHandler == directSp.Convert.toBoolean(invokeParams.invokeOptions.isUseAppErrorHandler, this.isUseAppErrorHandler);
 
     //log request
-    if (_this.isLogEnabled)
+    if (this.isLogEnabled)
         console.log("DirectSp: invoke (Request)", invokeParams.spCall, invokeParams.invokeOptions);
 
     return this._invokeCore2(method, invokeParams)
         .then(result => {
             //log response
-            if (_this.isLogEnabled)
+            if (this.isLogEnabled)
                 console.log("DirectSp: invoke (Response)", invokeParams.spCall, result);
             return result;
         })
         .catch(error => {
             //call global error handler
-            if (invokeParams.invokeOptions.isUseAppErrorHandler && _this.onError) {
-                _this.onError(data);
+            if (invokeParams.invokeOptions.isUseAppErrorHandler && this.onError) {
+                this.onError(data);
             }
             throw error;
         });
@@ -838,32 +848,33 @@ directSp.DirectSpClient.prototype._invokeCore2 = function (method, invokeParams)
     return this._ajax(
         {
             url: directSp.Uri.combine(this.resourceApiUri, method),
-            data: JSON.stringify(invokeParams),
-            dataType: "json",
-            type: "POST",
-            contentType: "application/json; charset=utf-8",
-            headers: { 'authorization': this.authHeader },
+            body: JSON.stringify(invokeParams),
+            method: "POST",
+            headers: {
+                "authorization": this.authHeader,
+                "Content-Type": "application/json;charset=UTF-8",
+            },
             cache: invokeParams.invokeOptions.cache,
-            timeout: 10 * 60 * 1000 //10 min
+        }).then(result => {
+            return JSON.parse(result);
         });
 };
 
 //manageToken
 directSp.DirectSpClient.prototype._ajax = function (ajaxOptions) {
 
-    var _this = this;
-    if (!ajaxOptions.headers || !ajaxOptions.authorization)
-        return _this._ajax2(ajaxOptions); //there is no token
+    if (!ajaxOptions.headers || !ajaxOptions.headers.authorization)
+        return this._ajax2(ajaxOptions); //there is no token
 
-    return _this._refreshToken()
+    return this._refreshToken()
         .then(result => {
-            ajaxOptions.authorization = _this.authHeader;
-            return _this._ajax2(ajaxOptions);
+            ajaxOptions.headers.authorization = this.authHeader;
+            return this._ajax2(ajaxOptions);
         })
         .catch(error => {
             // signout if token is expired
-            if (_this._isTokenExpiredError(error) && _this.isAuthorized) {
-                return _this.signOut()
+            if (this._isTokenExpiredError(error) && this.isAuthorized) {
+                return this.signOut()
                     .then(result => {
                         throw error;
                     });
@@ -875,30 +886,25 @@ directSp.DirectSpClient.prototype._ajax = function (ajaxOptions) {
 // Handle Captcha
 directSp.DirectSpClient.prototype._ajax2 = function (ajaxOptions) {
 
-    var _this = this;
     return this._ajax3(ajaxOptions)
         .catch(error => {
-            //log error
-            if (_this.isLogEnabled)
-                console.error(ajaxOptions.url, ajaxOptions.data, error);
-
             //check captcha error
-            if (_this.onCaptcha) {
+            if (this.onCaptcha) {
                 //return if it not a captcha error
                 if (!error || !error.errorName || error.errorName.toLowerCase() != "invalidcaptcha")
                     throw error;
 
                 //raise onCaptcha event
                 var captchaControllerOptions = {
-                    dspClient: _this,
+                    dspClient: this,
                     ajaxOptions: ajaxOptions,
                     captchaId: data.errorData.captchaId,
                     captchaImage: data.errorData.captchaImage
                 }
 
                 var captchaController = new directSp.CaptchaController(captchaControllerOptions);
-                if (_this.isLogEnabled) console.log("Calling onCaptcha ...");
-                _this.onCaptcha(captchaController);
+                if (this.isLogEnabled) console.log("Calling onCaptcha ...");
+                this.onCaptcha(captchaController);
                 return captchaController.promise;
             }
 
@@ -922,7 +928,6 @@ directSp.DirectSpClient.prototype._ajax3 = function (ajaxOptions) {
 
     //proces delay
     console.warn('DirectSp: Warning! ' + ajaxOptions.url + ' is delayed by ' + delay + ' milliseconds');
-    var _this = this;
     return new Promise((resovle, reject) => {
         var interval = hookOptions.delay;
         var delay = directSp.Utility.getRandomInt(interval / 2, interval + interval / 2);
@@ -935,16 +940,24 @@ directSp.DirectSpClient.prototype._ajax3 = function (ajaxOptions) {
 
 directSp.DirectSpClient.prototype._ajaxProvider = function (ajaxOptions) {
 
-    //debugger;
-    //var fetchOptions = {
-    //    body: ajaxOptions.data,
-    //    method: 'POST',
-    //    //mode: "cors",
-    //    headers: {
-    //        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-    //        'authorization': this.authHeader,
-    //    }
-    //};
+    return new Promise((resolve, reject) => {
+        var req = new XMLHttpRequest();
+        req.withCredentials = ajaxOptions.withCredentials;
+        req.open(ajaxOptions.method, ajaxOptions.url);
+        req.onload = () => req.status === 200 ? resolve(req.response) : reject(req.response);
+        req.onerror = error => reject(req.statusText);
+
+        //headers
+        if (ajaxOptions.headers) {
+            for (var item in ajaxOptions.headers) {
+                if (ajaxOptions.headers.hasOwnProperty(item))
+                    req.setRequestHeader(item, ajaxOptions.headers[item]);
+            }
+        }
+
+        //send
+        req.send(ajaxOptions.body);
+    });
 
     return new Promise((resolve, reject) => {
         jQuery.ajax(ajaxOptions)
@@ -1002,11 +1015,10 @@ directSp.DirectSpClient.prototype._processApiHook = function (ajaxOptions, hookO
 directSp.DirectSpClient.prototype.help = function (criteria) {
     //Load apiMetadata
     if (this._systemApi == null) {
-        var _this = this;
-        _this.invoke("System_Api")
+        this.invoke("System_Api")
             .then(result => {
-                _this._systemApi = result.apiMetadata;
-                _this.help(criteria);
+                this._systemApi = result.apiMetadata;
+                this.help(criteria);
                 return result;
             });
         return 'wait...';
@@ -1274,7 +1286,6 @@ directSp.DirectSpClient.Paginator.prototype.reset = function () {
 };
 
 directSp.DirectSpClient.Paginator.prototype.goPage = function (pageNo) {
-    var _this = this;
     this._isCacheInvalidated = false;
     this._isCacheUsed = true;
     this._isInvoked = false;
@@ -1332,56 +1343,56 @@ directSp.DirectSpClient.Paginator.prototype.goPage = function (pageNo) {
                 var recordset = result.recordset != null ? result.recordset : [];
 
                 //Detect record shift on left; Clear caches if the first record is not matched to last record of the previous page
-                var prePageRecordset = pageStart > 0 ? _this._pages[pageStart - 1] : null;
-                if (prePageRecordset != null && (recordset.length == 0 || JSON.stringify(prePageRecordset[_this.pageSize - 1]) != JSON.stringify(recordset[0])))
-                    _this.reset();
+                var prePageRecordset = pageStart > 0 ? this._pages[pageStart - 1] : null;
+                if (prePageRecordset != null && (recordset.length == 0 || JSON.stringify(prePageRecordset[this.pageSize - 1]) != JSON.stringify(recordset[0])))
+                    this.reset();
 
                 //Detect record shift on right; Clear cache if the last record is not matched to first record of the previous page
-                var nextPageRecordset = (pageEnd + 1 < _this._pages.length) ? _this._pages[pageEnd + 1] : null;
+                var nextPageRecordset = (pageEnd + 1 < this._pages.length) ? this._pages[pageEnd + 1] : null;
                 if (nextPageRecordset != null && (recordset.length < recordCount || nextPageRecordset[0] != recordset[recordset.length - 1]))
-                    _this.reset();
+                    this.reset();
 
                 //estimate pageCount
-                var lastRecordsetPageIndex = Math.floor((recordIndex + recordset.length) / _this.pageSize);
-                if ((recordIndex + recordset.length) % _this.pageSize == 0) lastRecordsetPageIndex--;
+                var lastRecordsetPageIndex = Math.floor((recordIndex + recordset.length) / this.pageSize);
+                if ((recordIndex + recordset.length) % this.pageSize == 0) lastRecordsetPageIndex--;
 
                 if (recordset.length == 0) {
-                    if (pageStart <= _this.pageCountMin) {
-                        _this.reset();
+                    if (pageStart <= this.pageCountMin) {
+                        this.reset();
                     }
 
                     if (pageStart <= 1) {
-                        _this._pageCount = 1;
-                        _this._pageCountMax = 1;
+                        this._pageCount = 1;
+                        this._pageCountMax = 1;
                     }
 
-                    _this._pageCountMax = Math.min(_this._pageCountMax == null ? lastRecordsetPageIndex + 1 : _this._pageCountMax, lastRecordsetPageIndex + 1);
+                    this._pageCountMax = Math.min(this._pageCountMax == null ? lastRecordsetPageIndex + 1 : this._pageCountMax, lastRecordsetPageIndex + 1);
                 }
                 else {
-                    if (_this._pageCountMax != null && pageStart >= _this._pageCountMax) {
-                        _this.reset();
+                    if (this._pageCountMax != null && pageStart >= this._pageCountMax) {
+                        this.reset();
                     }
 
                     if (recordset.length != recordCount) {
-                        _this._pageCount = lastRecordsetPageIndex + 1;
-                        _this._pageCountMin = lastRecordsetPageIndex + 1;
-                        _this._pageCountMax = lastRecordsetPageIndex + 1;
+                        this._pageCount = lastRecordsetPageIndex + 1;
+                        this._pageCountMin = lastRecordsetPageIndex + 1;
+                        this._pageCountMax = lastRecordsetPageIndex + 1;
                     }
                     else {
-                        _this._pageCountMin = Math.max(_this._pageCountMin, lastRecordsetPageIndex + 1);
+                        this._pageCountMin = Math.max(this._pageCountMin, lastRecordsetPageIndex + 1);
                     }
                 }
 
                 //assign pages
-                var i = recordIndex + (recordIndex % _this.pageSize) != 0 ? _this.pageSize - (recordIndex % _this.pageSize) : 0;
-                for (; i < recordset.length; i = i + _this.pageSize) {
-                    var pageIndex = Math.floor((recordIndex + i) / _this.pageSize);
-                    var pageRecordset = recordset.slice(i, i + _this.pageSize);
+                var i = recordIndex + (recordIndex % this.pageSize) != 0 ? this.pageSize - (recordIndex % this.pageSize) : 0;
+                for (; i < recordset.length; i = i + this.pageSize) {
+                    var pageIndex = Math.floor((recordIndex + i) / this.pageSize);
+                    var pageRecordset = recordset.slice(i, i + this.pageSize);
 
-                    if (pageRecordset.length > 0 && (pageRecordset.length == _this.pageSize || recordset.length < recordCount)) {
-                        _this._pages[pageIndex] = pageRecordset;
-                        _this._pagePromises[pageIndex] = promise;
-                        if (pageNo == pageIndex) _this._isCacheUsed = false;
+                    if (pageRecordset.length > 0 && (pageRecordset.length == this.pageSize || recordset.length < recordCount)) {
+                        this._pages[pageIndex] = pageRecordset;
+                        this._pagePromises[pageIndex] = promise;
+                        if (pageNo == pageIndex) this._isCacheUsed = false;
                     }
                 }
 
@@ -1396,7 +1407,7 @@ directSp.DirectSpClient.Paginator.prototype.goPage = function (pageNo) {
     //change current page after getting result
     return this._pagePromises[pageNo]
         .then(result => {
-            _this._pageIndex = pageNo;
+            this._pageIndex = pageNo;
             return result;
         });
 };
@@ -1407,10 +1418,9 @@ directSp.DirectSpClient.Paginator.prototype.goPage = function (pageNo) {
 directSp.CaptchaController = function (data) {
     this._data = data;
     this.captchaImageUri = "data:image/png;base64," + data.captchaImage;
-    var _this = this;
     this.promise = new Promise((resolve, reject) => {
-        _this._resolve = resolve;
-        _this._reject = reject;
+        this._resolve = resolve;
+        this._reject = reject;
     });
 };
 
@@ -1444,13 +1454,12 @@ directSp.CaptchaController.prototype.continue = function (captchaCode) {
     }
 
     // retry original ajax
-    var _this = this;
     this._data.dspClient._ajax(ajaxOptions)
         .then(data => {
-            return _this._resolve(data);
+            return this._resolve(data);
         })
         .catch(error => {
-            return _this._reject(error);
+            return this._reject(error);
         });
 }
 
@@ -1517,6 +1526,11 @@ directSp.Utility.toCamelcase = function (str) {
 directSp.Convert = {};
 directSp.Convert.toBoolean = function (value, defaultValue) {
     defaultValue = directSp.Utility.checkUndefined(defaultValue, false);
+
+    // check is value boolean
+    if (typeof value == "boolean")
+        return value;
+
     try {
         var parsed = parseInt(value);
         if (!isNaN(parsed) && parsed != 0)
