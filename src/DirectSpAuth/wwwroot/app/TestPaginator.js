@@ -58,8 +58,8 @@ directSp.TestPaginator.prototype.checkByPage = function (pageNo, expect) {
 directSp.TestPaginator.prototype.start = function () {
     var data = { recordset: [] };
     dspClient.resourceApiUri = "http://mock";
-    dspClient.apiHook = function (method, params, options) {
-        return data;
+    dspClient.invokeHook = function (method, invokeParams, hookOptions) {
+        return Promise.resolve(data);
     }
 
     //check zero result
