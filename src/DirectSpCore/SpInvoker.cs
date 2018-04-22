@@ -274,6 +274,10 @@ namespace DirectSp.Core
 
                 using (var dataReader = await command.ExecuteReaderAsync())
                 {
+                    //Fill Recordset and close dataReader BEFORE reading sqlParameters
+                    ReadRecordset(spCallResults, dataReader, spInfo, invokeOptions);
+                    dataReader.Close();
+
                     // Build return params
                     spCallResults = new SpCallResult();
                     foreach (var sqlParam in sqlParameters)
@@ -302,9 +306,6 @@ namespace DirectSp.Core
                         if (AltDateTime_IsDateTime(sqlParam.DbType.ToString()))
                             spCallResults.Add(AltDateTime_GetFieldName(sqlParam.ParameterName.Substring(1)), AltDateTime_GetFieldValue(value, sqlParam.DbType.ToString()));
                     }
-
-                    //Fill Recordset
-                    ReadRecordset(spCallResults, dataReader, spInfo, invokeOptions);
                 }
 
                 //set return value after closing the reader
