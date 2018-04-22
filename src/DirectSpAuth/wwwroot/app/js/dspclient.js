@@ -12,6 +12,32 @@
 //namespace
 if (!directSp) var directSp = {};
 
+directSp.DirectSpError = function (error) {
+
+    let message = '';
+    if (error.errorName) message += error.errorName + ";"
+    if (error.errorMessage) message += error.errorMessage + ";";
+    if (error.errorDescription) message += error.errorDescription + ";";
+    message = message
+
+    let err = new Error(message);
+    Object.setPrototypeOf(err, directSp.DirectSpError.prototype);
+
+    err.errorType = error.errorType;
+    err.errorName = error.errorName;
+    err.errorNumber = error.errorNumber;
+    err.errorMessage = error.errorMessage;
+    err.errorDescription = error.errorDescription;
+    err.errorProcName = error.errorProcName;
+    err.status = error.status;
+    err.statusText = error.statusText;
+
+    return err;
+}
+
+directSp.DirectSpError.prototype = Object.create(Error.prototype, { name: { value: 'DirectSpError', enumerable: false } } );
+
+
 //DirectSpClient
 directSp.DirectSpClient = function () {
 
@@ -756,7 +782,8 @@ directSp.DirectSpClient.prototype._convertToError = function (data) {
     error.statusText = data != null && data.statusText != null ? data.statusText : "Bad Request";
     if (error !== data && data != null && error !== data.responseJSON)
         error.innerError = data; //prevent circular object when error is the data
-    return error;
+
+    return new directSp.DirectSpError(error);
 };
 
 directSp.DirectSpClient.prototype.invokeBatch = function (spCalls, invokeOptions) {
@@ -1504,8 +1531,9 @@ directSp.Utility.toCamelcase = function (str) {
     return str.substr(0, 1).toLowerCase() + str.substr(1);
 };
 
-//Utilities
+//Convert class
 directSp.Convert = {};
+
 directSp.Convert.toBoolean = function (value, defaultValue) {
     defaultValue = directSp.Utility.checkUndefined(defaultValue, false);
 
@@ -1555,7 +1583,7 @@ directSp.Convert.toQueryString = function (obj) {
     return parts.join("&");
 };
 
-//Utilities
+//Uri Class
 directSp.Uri = {};
 
 directSp.Uri.getParameterByName = function (name, url) {
@@ -1599,8 +1627,9 @@ directSp.Uri.getFileName = function (uri) {
     return uri.split("/").pop();
 };
 
-// html
+// html class
 directSp.Html = {};
+
 directSp.Html.submit = function (url, params) {
     let method = "post";
 
