@@ -851,14 +851,15 @@ directSp.DirectSpClient.prototype._invokeCore = function (method, invokeParams) 
     invokeParams.invokeOptions.isUseAppErrorHandler == directSp.Convert.toBoolean(invokeParams.invokeOptions.isUseAppErrorHandler, this.isUseAppErrorHandler);
 
     //log request
-    if (this.isLogEnabled)
-        console.log("DirectSp: invoke (Request)", invokeParams.spCall, invokeParams.invokeOptions);
+    if (this.isLogEnabled) 
+            console.log("DirectSp: invoke (Request)", method, invokeParams);
 
     return this._invokeCore2(method, invokeParams)
         .then(result => {
             //log response
             if (this.isLogEnabled)
-                console.log("DirectSp: invoke (Response)", invokeParams.spCall, result);
+                console.log("DirectSp: invoke (Response)", method, invokeParams, result);
+
             return result;
         })
         .catch(error => {
@@ -1002,6 +1003,10 @@ directSp.DirectSpClient.prototype._processInvokeHook = function (hookParams) {
         if (promise == null)
             return null;
 
+        //log hook
+        if (this.isLogEnabled)
+            console.warn("DirectSp: Hooking > ", hookParams.method, hookParams);
+
         return promise.then(result => {
             //clone data
             result = directSp.Utility.clone(result);
@@ -1021,13 +1026,15 @@ directSp.DirectSpClient.prototype._processInvokeHook = function (hookParams) {
     }
 }
 
-directSp.DirectSpClient.prototype.help = function (criteria) {
-    //Load apiMetadata
-    if (this._systemApi == null) {
+directSp.DirectSpClient.prototype.help = function (criteria, reload) {
+    reload = directSp.Utility.checkUndefined(reload, true);
+
+    //Load Api info
+    if (!this._systemApi && reload) { //===null to prevent recursive call on undefined
         this.invoke("System_Api")
             .then(result => {
-                this._systemApi = result.apiMetadata;
-                this.help(criteria);
+                this._systemApi = result.api;
+                this.help(criteria, false);
                 return result;
             });
         return 'wait...';
@@ -1050,7 +1057,7 @@ directSp.DirectSpClient.prototype.help = function (criteria) {
         console.log('Nothing found!');
     }
     else {
-        for (i = 0; i < foundProc.length; i++) {
+        for (let i = 0; i < foundProc.length; i++) {
             if (foundProc[i].procedureName.toLowerCase() == criteria || foundProc.length == 1)
                 this._help(foundProc[i]);
             else
@@ -1083,7 +1090,7 @@ directSp.DirectSpClient.prototype._help = function (procedureMetadata) {
     str += "\n\t" + procedureMetadata.procedureName + ' (' + inputParams.join(", ") + ')';
     str += "\n";
     str += "\n" + "Parameters:";
-    for (i = 0; i < procedureMetadata.params.length; i++) {
+    for (let i = 0; i < procedureMetadata.params.length; i++) {
         let param = procedureMetadata.params[i];
         if (!param.isOutput && param.paramName.toLowerCase() != '@context') {
             str += "\n\t" + this._getHelpParam(procedureMetadata, param, maxParamNameLength);
@@ -1093,7 +1100,7 @@ directSp.DirectSpClient.prototype._help = function (procedureMetadata) {
     //prepare ouput params
     str += "\n";
     str += "\n" + "Returns:";
-    for (i = 0; i < procedureMetadata.params.length; i++) {
+    for (let i = 0; i < procedureMetadata.params.length; i++) {
         let param = procedureMetadata.params[i];
         if (param.isOutput && param.paramName.toLowerCase() != '@context') {
             str += "\n\t" + this._getHelpParam(procedureMetadata, param, maxParamNameLength);
@@ -1105,7 +1112,7 @@ directSp.DirectSpClient.prototype._help = function (procedureMetadata) {
     //sample
     let sample = 'dspClient.invoke("$(procname)", { $(parameters) })';
     let sampleParam = [];
-    for (i = 0; i < inputParams.length; i++)
+    for (let i = 0; i < inputParams.length; i++)
         sampleParam.push(inputParams[i] + ': ' + '$' + inputParams[i]);
     sample = sample.replace('$(procname)', procedureMetadata.procedureName);
     sample = sample.replace('$(parameters)', sampleParam.join(", "));
