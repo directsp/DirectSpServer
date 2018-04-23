@@ -15,27 +15,29 @@ if (!directSp) var directSp = {};
 directSp.DirectSpError = function (error) {
 
     let message = '';
-    if (error.errorName) message += error.errorName + ";"
-    if (error.errorMessage) message += error.errorMessage + ";";
-    if (error.errorDescription) message += error.errorDescription + ";";
+    if (error.errorName) message += error.errorName + "; "
+    if (error.errorMessage) message += error.errorMessage + "; ";
+    if (error.errorDescription) message += error.errorDescription + "; ";
     message = message
 
     let err = new Error(message);
     Object.setPrototypeOf(err, directSp.DirectSpError.prototype);
 
-    err.errorType = error.errorType;
-    err.errorName = error.errorName;
-    err.errorNumber = error.errorNumber;
-    err.errorMessage = error.errorMessage;
-    err.errorDescription = error.errorDescription;
-    err.errorProcName = error.errorProcName;
-    err.status = error.status;
-    err.statusText = error.statusText;
+    err.errorType = directSp.Utility.checkUndefined(error.errorType);
+    err.errorName = directSp.Utility.checkUndefined(error.errorName);
+    err.errorNumber = directSp.Utility.checkUndefined(error.errorNumber);
+    err.errorMessage = directSp.Utility.checkUndefined(error.errorMessage);
+    err.errorDescription = directSp.Utility.checkUndefined(error.errorDescription);
+    err.errorProcName = directSp.Utility.checkUndefined(error.errorProcName);
+    err.errorData = directSp.Utility.checkUndefined(error.errorData);
+    err.status = directSp.Utility.checkUndefined(error.status);
+    err.statusText = directSp.Utility.checkUndefined(error.statusText);
+    err.innerError = directSp.Utility.checkUndefined(error.innerError);
 
     return err;
 }
 
-directSp.DirectSpError.prototype = Object.create(Error.prototype, { name: { value: 'DirectSpError', enumerable: false } } );
+directSp.DirectSpError.prototype = Object.create(Error.prototype, { name: { value: 'DirectSpError', enumerable: false } });
 
 
 //DirectSpClient
@@ -467,7 +469,7 @@ directSp.DirectSpClient.prototype._refreshToken = function () {
             "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
             "authorization": this.authHeader
         },
-        body: directSp.Convert.toQueryString(requestParam),
+        data: requestParam,
     };
 
     return this._ajax2(request)
@@ -562,7 +564,7 @@ directSp.DirectSpClient.prototype.signInByPasswordGrant = function (username, pa
         {
             url: this.tokenEndpointUri,
             headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-            body: directSp.Convert.toQueryString(requestParam),
+            data: requestParam,
             method: "POST"
         })
         .then(result => {
@@ -679,7 +681,7 @@ directSp.DirectSpClient.prototype._processAuthCallback = function () {
             {
                 url: this.tokenEndpointUri,
                 headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-                body: directSp.Convert.toQueryString(requestParam),
+                data: requestParam,
                 method: "POST",
             })
             .then(result => {
@@ -710,6 +712,7 @@ directSp.DirectSpClient.prototype._convertToError = function (data) {
 
     let error = {};
 
+    //casting data
     if (data == null) {
         error.errorName = "unknown";
     }
@@ -727,25 +730,11 @@ directSp.DirectSpClient.prototype._convertToError = function (data) {
     else if (data.errorName != null || data.errorNumber != null || data.error != null || data.error_description != null) {
         error = data;
     }
-    else if (data.responseJSON != null && (data.responseJSON.errorName != null || data.responseJSON.errorNumber != null || data.responseJSON.error != null)) {
-        error = data.responseJSON;
-    }
-    else if (data.responseText != null) {
-        try {
-            let responseJSON = JSON.parse(data.responseText);
-            if (responseJSON.errorName != null || responseJSON.errorNumber != null || data.responseJSON.error != null) {
-                error = responseJSON;
-
-            }
-        } catch (e) {
-        }
-    }
     else {
         error.errorName = "unknown";
-        error.errorDescription = "Maybe it was a network error";
-        //data will set finally
+        error.errorDescription = data.toString();
+        error.innerError = data;
     }
-
 
     //try to convert error
     if (error.error != null) {
@@ -769,19 +758,6 @@ directSp.DirectSpClient.prototype._convertToError = function (data) {
         } catch (e) {
         }
     }
-
-    //remove undefined
-    error.errorType = directSp.Utility.checkUndefined(error.errorType);
-    error.errorName = directSp.Utility.checkUndefined(error.errorName);
-    error.errorNumber = directSp.Utility.checkUndefined(error.errorNumber);
-    error.errorMessage = directSp.Utility.checkUndefined(error.errorMessage);
-    error.errorDescription = directSp.Utility.checkUndefined(error.errorDescription);
-    error.errorProcName = directSp.Utility.checkUndefined(error.errorProcName);
-
-    error.status = data != null && data.status != null ? data.status : 400;
-    error.statusText = data != null && data.statusText != null ? data.statusText : "Bad Request";
-    if (error !== data && data != null && error !== data.responseJSON)
-        error.innerError = data; //prevent circular object when error is the data
 
     return new directSp.DirectSpError(error);
 };
@@ -851,8 +827,8 @@ directSp.DirectSpClient.prototype._invokeCore = function (method, invokeParams) 
     invokeParams.invokeOptions.isUseAppErrorHandler == directSp.Convert.toBoolean(invokeParams.invokeOptions.isUseAppErrorHandler, this.isUseAppErrorHandler);
 
     //log request
-    if (this.isLogEnabled) 
-            console.log("DirectSp: invoke (Request)", method, invokeParams);
+    if (this.isLogEnabled)
+        console.log("DirectSp: invoke (Request)", method, invokeParams);
 
     return this._invokeCore2(method, invokeParams)
         .then(result => {
@@ -905,7 +881,7 @@ directSp.DirectSpClient.prototype._invokeCore3 = function (method, invokeParams)
     return this._ajax(
         {
             url: directSp.Uri.combine(this.resourceApiUri, method),
-            body: JSON.stringify(invokeParams),
+            data: invokeParams,
             method: "POST",
             headers: {
                 "authorization": this.authHeader,
@@ -955,8 +931,8 @@ directSp.DirectSpClient.prototype._ajax2 = function (ajaxOptions) {
                 let captchaControllerOptions = {
                     dspClient: this,
                     ajaxOptions: ajaxOptions,
-                    captchaId: data.errorData.captchaId,
-                    captchaImage: data.errorData.captchaImage
+                    captchaId: error.errorData.captchaId,
+                    captchaImage: error.errorData.captchaImage
                 }
 
                 let captchaController = new directSp.CaptchaController(captchaControllerOptions);
@@ -975,8 +951,29 @@ directSp.DirectSpClient.prototype._ajaxProvider = function (ajaxOptions) {
         let req = new XMLHttpRequest();
         req.withCredentials = ajaxOptions.withCredentials;
         req.open(ajaxOptions.method, ajaxOptions.url);
-        req.onload = () => req.status === 200 ? resolve(req.response) : reject(req.response);
-        req.onerror = error => reject(req.statusText);
+        req.onload = () => {
+            if (req.status == 200) {
+                //return responseText
+                resolve(req.responseText);
+            }
+            else {
+                let error = null;
+                try {
+                    let obj = JSON.parse(req.responseText);
+                    error = this._convertToError(obj);
+                    error.innerError = obj;
+                } catch (err) {
+                    error = this._convertToError(req.responseText);
+                }
+
+                error.status = req.status;
+                error.statusText = req.statusText;
+                reject(error);
+            }
+        };
+        req.onerror = () => {
+            reject(this.createError({ errorName: "Network Error", errorDescription: "Network error or server unreachable!" }));
+        };
 
         //headers
         if (ajaxOptions.headers) {
@@ -986,8 +983,22 @@ directSp.DirectSpClient.prototype._ajaxProvider = function (ajaxOptions) {
             }
         }
 
+        //creating body
+        let body = ajaxOptions.data;
+
+        //finding Content-Type
+        let contentType = ajaxOptions.headers ? ajaxOptions.headers["Content-Type"] : null;
+        if (!contentType) contentType = 'application/x-www-form-urlencoded;charset=UTF-8' //default
+        contentType = contentType.toLowerCase();
+
+        //convert data based on contentType
+        if (contentType.indexOf("application/json") != -1 && body)
+            body = JSON.stringify(ajaxOptions.data);
+        else if (contentType.indexOf("application/x-www-form-urlencoded") != -1)
+            body = directSp.Convert.toQueryString(ajaxOptions.data);
+
         //send
-        req.send(ajaxOptions.body);
+        req.send(body);
     });
 };
 
@@ -1445,15 +1456,11 @@ directSp.CaptchaController = function (data) {
 };
 
 directSp.CaptchaController.prototype.continue = function (captchaCode) {
+
     let ajaxOptions = this._data.ajaxOptions;
 
-    //finding ajax data 
+    //finding ajax data
     let ajaxData = ajaxOptions.data;
-
-    //try parse ajax data as json
-    try {
-        ajaxData = JSON.parse(ajaxOptions.data);
-    } catch (e) { }
 
     // try get invokeOptions
     let invokeOptions = null;
@@ -1464,7 +1471,6 @@ directSp.CaptchaController.prototype.continue = function (captchaCode) {
     if (invokeOptions) {
         invokeOptions.captchaId = this._data.captchaId;
         invokeOptions.captchaCode = captchaCode;
-        ajaxOptions.data = JSON.stringify(ajaxData)
     }
 
     //try update param for authentication grantby password
@@ -1475,8 +1481,8 @@ directSp.CaptchaController.prototype.continue = function (captchaCode) {
 
     // retry original ajax
     this._data.dspClient._ajax(ajaxOptions)
-        .then(data => {
-            return this._resolve(data);
+        .then(resolve => {
+            return this._resolve(resolve);
         })
         .catch(error => {
             return this._reject(error);
@@ -1541,6 +1547,17 @@ directSp.Utility.toCamelcase = function (str) {
 
     return str.substr(0, 1).toLowerCase() + str.substr(1);
 };
+
+//return null if error occur
+directSp.Utility.tryParseJason = function (json) {
+    try {
+        return JSON.parse(json);
+    }
+    catch (error) {
+        return null;
+    }
+};
+
 
 //Convert class
 directSp.Convert = {};
