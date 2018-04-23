@@ -278,8 +278,12 @@ namespace DirectSp.Core
                     ReadRecordset(spCallResults, dataReader, spInfo, invokeOptions);
                     dataReader.Close();
 
+                    //set return value after closing the reader
+                    var returnValueParam = sqlParameters.FirstOrDefault(x => string.Equals(x.ParameterName, "@ReturnValue", StringComparison.OrdinalIgnoreCase));
+                    if (returnValueParam != null)
+                        spCallResults.Add(returnValueParam.ParameterName.Substring(1), returnValueParam.Value != DBNull.Value ? returnValueParam.Value : null);
+
                     // Build return params
-                    spCallResults = new SpCallResult();
                     foreach (var sqlParam in sqlParameters)
                     {
                         //ignore input parameter
@@ -307,11 +311,6 @@ namespace DirectSp.Core
                             spCallResults.Add(AltDateTime_GetFieldName(sqlParam.ParameterName.Substring(1)), AltDateTime_GetFieldValue(value, sqlParam.DbType.ToString()));
                     }
                 }
-
-                //set return value after closing the reader
-                var returnValueParam = sqlParameters.FirstOrDefault(x => string.Equals(x.ParameterName, "@ReturnValue", StringComparison.OrdinalIgnoreCase));
-                if (returnValueParam != null)
-                    spCallResults.Add(returnValueParam.ParameterName.Substring(1), returnValueParam.Value != DBNull.Value ? returnValueParam.Value : null);
 
                 sqlConn.Close();
             }

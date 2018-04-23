@@ -10,6 +10,7 @@ namespace DirectSp.Core
         private JObject Body;
         public DateTime? ModifiedTime { get; private set; }
         public string AppName { get; private set; }
+        public string AppVersion { get; private set; }
         public string UserId { get; private set; }
 
         public SpContext(string body)
@@ -32,6 +33,7 @@ namespace DirectSp.Core
         {
             dynamic obj = JsonConvert.DeserializeObject(body);
             ModifiedTime = obj.ModifiedTime;
+            AppVersion = obj.AppVersion;
             AppName = obj.AppName;
             UserId = obj.User.AuthUserId;
             obj.InvokeOptions = null; //remove InvokeOptions
@@ -46,17 +48,13 @@ namespace DirectSp.Core
 
         public string ToString(SpCallOptions spCallOptions)
         {
+            var serializeSettings = new JsonSerializerSettings { DefaultValueHandling = DefaultValueHandling.Ignore };
+
             //create new invokeOptions
-            dynamic obj = Body;
-
-            obj.InvokeOptions = new JObject();
-            if (spCallOptions.IsBatch) obj.InvokeOptions.IsBatch = spCallOptions.IsBatch;
-            if (spCallOptions.IsCaptcha) obj.InvokeOptions.IsCaptcha = spCallOptions.IsCaptcha;
-            if (spCallOptions.MoneyConversionRate != 1) obj.InvokeOptions.MoneyConversionRate = spCallOptions.MoneyConversionRate;
-            if (spCallOptions.RecordIndex != null) obj.InvokeOptions.RecordIndex = spCallOptions.RecordIndex;
-            if (spCallOptions.RecordCount != null) obj.InvokeOptions.RecordCount = spCallOptions.RecordCount;
-
-            return JsonConvert.SerializeObject(obj); //ToString will add linefeed
+            dynamic obj = Body.DeepClone();
+            obj.InvokeOptions = JsonConvert.DeserializeObject(JsonConvert.SerializeObject(spCallOptions, serializeSettings)); //add options
+            var ret = JsonConvert.SerializeObject(obj);
+            return ret;
         }
     }
 }

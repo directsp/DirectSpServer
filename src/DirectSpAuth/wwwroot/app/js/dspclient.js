@@ -563,7 +563,7 @@ directSp.DirectSpClient.prototype.signInByPasswordGrant = function (username, pa
             url: this.tokenEndpointUri,
             headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
             body: directSp.Convert.toQueryString(requestParam),
-            method: "POST",
+            method: "POST"
         })
         .then(result => {
             result = JSON.parse(result);
@@ -1356,6 +1356,10 @@ directSp.DirectSpClient.Paginator.prototype.goPage = function (pageNo) {
         this._isInvoked = true;
         let promise = this._dspClient.invoke2(this._apiCall, invokeOptions)
             .then(result => {
+                // set pageCount if totalRecordCount exists
+                if (result.totalPageCount)
+                    this._pageCount = Math.ceil(result.totalPageCount / this.pageSize);
+
                 let recordset = result.recordset != null ? result.recordset : [];
 
                 //Detect record shift on left; Clear caches if the first record is not matched to last record of the previous page

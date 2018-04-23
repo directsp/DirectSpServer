@@ -25,7 +25,7 @@ namespace DirectSp.Core.InternalDb
             spCall.Params.Add("KeyNamePattern", keyNamePattern);
 
             var ret = await SpInvoker.Invoke(spCall, spInvokeParams, true);
-            return JsonConvert.DeserializeObject<List<DspKeyValueItem>>(JsonConvert.SerializeObject(ret["Recordset"]));
+            return JsonConvert.DeserializeObject<List<DspKeyValueItem>>(JsonConvert.SerializeObject(ret.Recordset));
         }
 
         public async Task<SpCallResult> ValueSet(string keyName, string textValue, int timeToLife = 0, bool isOverwrite = true)
