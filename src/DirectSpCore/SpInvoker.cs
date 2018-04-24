@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
-using System.Security.Claims;
 using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 using System.Text;
@@ -145,13 +144,13 @@ namespace DirectSp.Core
             return await Invoke(spCall, spInvokeParams, true);
         }
 
-        public async Task<JObject> Invoke(string method, object @params)
+        public async Task<SpCallResult> Invoke(string method, object param)
         {
             var spInvokeParams = new SpInvokeParams();
-            return await Invoke(method, @params, spInvokeParams, true);
+            return await Invoke(method, param, spInvokeParams, true);
         }
 
-        public async Task<JObject> Invoke(string method, object @params, SpInvokeParams spInvokeParams, bool isSystem = false)
+        public async Task<SpCallResult> Invoke(string method, object param, SpInvokeParams spInvokeParams, bool isSystem = false)
         {
             // create spCall
             var spCall = new SpCall
@@ -159,11 +158,10 @@ namespace DirectSp.Core
                 Method = method
             };
 
-            foreach (var propInfo in @params.GetType().GetProperties())
-                spCall.Params.Add(propInfo.Name, propInfo.GetValue(@params));
+            foreach (var propInfo in param.GetType().GetProperties())
+                spCall.Params.Add(propInfo.Name, propInfo.GetValue(param));
 
-            var ret = await Invoke(spCall, spInvokeParams, isSystem);
-            return JsonConvert.DeserializeObject<JObject>(JsonConvert.SerializeObject(ret));
+            return await Invoke(spCall, spInvokeParams, isSystem);
         }
 
         public async Task<SpCallResult> Invoke(SpCall spCall, SpInvokeParams spInvokeParams, bool isSystem = false)
