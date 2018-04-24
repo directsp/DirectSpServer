@@ -2,6 +2,11 @@
 
 namespace DirectSp.AuthServer.Entities
 {
+    public enum Gender {
+        Male = 1,
+        Female = 2,
+    }
+
     public class User
     {
         public string UserId { get; set; }
@@ -13,7 +18,7 @@ namespace DirectSp.AuthServer.Entities
         public string MobileNumber { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
-        public string Gender { get; set; }
+        public Gender? Gender { get; set; }
         public DateTime? Birthdate { get; set; }
         public string AddressProvinceName { get; set; }
         public string AddressCityName { get; set; }

@@ -145,6 +145,27 @@ namespace DirectSp.Core
             return await Invoke(spCall, spInvokeParams, true);
         }
 
+        public async Task<JObject> Invoke(string method, object @params)
+        {
+            var spInvokeParams = new SpInvokeParams();
+            return await Invoke(method, @params, spInvokeParams, true);
+        }
+
+        public async Task<JObject> Invoke(string method, object @params, SpInvokeParams spInvokeParams, bool isSystem = false)
+        {
+            // create spCall
+            var spCall = new SpCall
+            {
+                Method = method
+            };
+
+            foreach (var propInfo in @params.GetType().GetProperties())
+                spCall.Params.Add(propInfo.Name, propInfo.GetValue(@params));
+
+            var ret = await Invoke(spCall, spInvokeParams, isSystem);
+            return JsonConvert.DeserializeObject<JObject>(JsonConvert.SerializeObject(ret));
+        }
+
         public async Task<SpCallResult> Invoke(SpCall spCall, SpInvokeParams spInvokeParams, bool isSystem = false)
         {
             var spi = new SpInvokeParamsInternal { SpInvokeParams = spInvokeParams, IsSystem = isSystem };

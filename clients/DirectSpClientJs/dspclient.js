@@ -18,7 +18,7 @@ directSp.DirectSpError = function (error) {
     if (error.errorName) message += error.errorName + "; "
     if (error.errorMessage) message += error.errorMessage + "; ";
     if (error.errorDescription) message += error.errorDescription + "; ";
-    message = message
+    message = message.replace(/; $/, ''); //remove last simicolon
 
     let err = new Error(message);
     Object.setPrototypeOf(err, directSp.DirectSpError.prototype);

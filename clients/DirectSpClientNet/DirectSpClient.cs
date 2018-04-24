@@ -111,7 +111,7 @@ namespace DirectSp.Client
             return responseContent;
         }
 
-        public async Task<object> invoke(string method, object param, InvokeOptions invokeOptions = null)
+        public async Task<JObject> invoke(string method, object param, InvokeOptions invokeOptions = null)
         {
             var spCall = new SpCall()
             {
@@ -122,7 +122,7 @@ namespace DirectSp.Client
             return await invoke(spCall, invokeOptions);
         }
 
-        public async Task<object> invoke(SpCall spCall, InvokeOptions invokeOptions = null)
+        public async Task<JObject> invoke(SpCall spCall, InvokeOptions invokeOptions = null)
         {
             var invokeParams = new InvokeParams()
             {
@@ -133,7 +133,7 @@ namespace DirectSp.Client
             return await invoke(invokeParams);
         }
 
-        public async Task<object> invoke(SpCall[] spCalls, InvokeOptions invokeOptions = null)
+        public async Task<JObject> invoke(SpCall[] spCalls, InvokeOptions invokeOptions = null)
         {
             var invokeParamsBatch = new InvokeParamsBatch()
             {
@@ -145,7 +145,7 @@ namespace DirectSp.Client
             return await invokePost("invokeBatch", content);
         }
 
-        private async Task<object> invoke(InvokeParams invokeParams)
+        private async Task<JObject> invoke(InvokeParams invokeParams)
         {
             if (invokeParams == null) throw new ArgumentNullException("invokeParam");
             if (invokeParams.spCall == null) throw new ArgumentNullException("invokeParams.spCall");
@@ -159,7 +159,7 @@ namespace DirectSp.Client
             return await invokePost(invokeParams.spCall.method, content);
         }
 
-        private async Task<object> invokePost(string methodName, string content)
+        private async Task<JObject> invokePost(string methodName, string content)
         {
             //validate
             if (resourceApiUri == null) throw new ArgumentNullException("resourceApiUri");
@@ -182,7 +182,7 @@ namespace DirectSp.Client
             var response = await httpClient.PostAsync(methodUri.Uri, requestContent);
             var responseContent = await getResponseString(response);
 
-            var ret = JsonConvert.DeserializeObject(responseContent);
+            var ret = JsonConvert.DeserializeObject<JObject>(responseContent);
             if (isLogEnabled)
                 Console.WriteLine($"\nDirectSp: invokeApi (Response) - {methodName}\ninvokeParams: {requestContent}\nResult: {ret}");
             return ret;
