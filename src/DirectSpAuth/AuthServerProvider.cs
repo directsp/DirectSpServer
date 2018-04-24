@@ -197,8 +197,8 @@ namespace DirectSp.AuthServer
                     context.GivenName = user.FirstName;
                     context.FamilyName = user.LastName;
                     context.BirthDate = user.Birthdate?.ToString();
-                    if (user.Gender.HasValue)
-                        context.Claims[OpenIdConnectConstants.Claims.Gender] = user.Gender.ToString().ToLower();
+                    if (user.GenderId.HasValue)
+                        context.Claims[OpenIdConnectConstants.Claims.Gender] = user.GenderId.ToString().ToLower();
                     if (!string.IsNullOrWhiteSpace(user.UserName))
                         context.Claims[OpenIdConnectConstants.Claims.Username] = user.UserName;
 
