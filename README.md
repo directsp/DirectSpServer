@@ -14,11 +14,6 @@ Let see samples:
 Just create an API in SQL server like this:
 
 Call your API via your SPA (Single Page Application) like this:
-dspClient.invoke("UserCreate", {UserName:"UserName", FirstName: "Elizabete", LastName: "Tailor", GenderId: 2, Email: "eli@mail.com"}).then( result=>
-{
-       let userId = result.userId;
-}
-
 
 
 ## Features
