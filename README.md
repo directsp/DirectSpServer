@@ -1,6 +1,25 @@
 
-# DirectSp (Documents are under construction)
-DirectSp framework let you call SQL store procedures directly from front-end and bypassing any ORM!
+#DirectSp framework let you call SQL store procedures directly from front-end and eliminating the need of any ORM!
+
+You will interest in DirectSp if:
+* Your application does not need high calculating such as RealTime games
+* You are using SQL server
+* You don't think OOP can not achieved by 
+* You have good designer
+
+You will not interest in DirectSp if:
+* You stick to common programming such as C#, Java or PHP
+
+Let see samples:
+Just create an API in SQL server like this:
+
+Call your API via your SPA (Single Page Application) like this:
+dspClient.invoke("UserCreate", {UserName:"UserName", FirstName: "Elizabete", LastName: "Tailor", GenderId: 2, Email: "eli@mail.com"}).then( result=>
+{
+       let userId = result.userId;
+}
+
+
 
 ## Features
 * Authentication via JWT Brearer
