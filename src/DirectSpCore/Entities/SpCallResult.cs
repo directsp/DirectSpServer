@@ -5,17 +5,17 @@ namespace DirectSp.Core.Entities
 {
     public class SpCallResult : Dictionary<string, object>
     {
-        public T MapParams<T>()
+        public T ConvertParams<T>()
         {
             return JToken.FromObject(this).ToObject<T>();
         }
 
-        public T MapParam<T>(string paramName) where T : class
+        public T ConvertParam<T>(string paramName)
         {
-            return ContainsKey(paramName) ? JToken.FromObject(this[paramName]).ToObject<T>() : null;
+            return ContainsKey(paramName) ? JToken.FromObject(this[paramName]).ToObject<T>() : default(T);
         }
 
-        public T MapRecordset<T>() where T : class
+        public T ConvertRecordset<T>() where T : class
         {
             return Recordset != null ? JToken.FromObject(Recordset).ToObject<T>() : null;
         }

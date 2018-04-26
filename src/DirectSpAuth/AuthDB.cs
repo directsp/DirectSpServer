@@ -25,7 +25,7 @@ namespace DirectSp.AuthServer
         internal static async Task<Application> Application_Props(string clientId)
         {
             var res = await SpInvoker.Invoke(nameof(Application_Props), new { ClientId = clientId });
-            var application = res.MapParams<Application>();
+            var application = res.ConvertParams<Application>();
             application.ClientId = clientId;
             return application;
         }
@@ -33,20 +33,20 @@ namespace DirectSp.AuthServer
         internal static async Task<Application> Application_GetByLogoutUrl(string logoutUrl)
         {
             var ret = await SpInvoker.Invoke(nameof(Application_GetByLogoutUrl), new { LogoutUrl = logoutUrl });
-            return ret.MapParams<Application>();
+            return ret.ConvertParams<Application>();
         }
 
         //Return null if user not found or password not match
         internal static async Task<UserCredential> User_GetCredentialByLoginName(string loginName)
         {
             var ret = await SpInvoker.Invoke(nameof(User_GetCredentialByLoginName), new { LoginName = loginName });
-            return ret.MapParams<UserCredential>();
+            return ret.ConvertParams<UserCredential>();
         }
 
         internal static async Task<UserCredential> User_Credential(string userId)
         {
             var ret = await SpInvoker.Invoke(nameof(User_Credential), new { UserId = userId });
-            return ret.MapParams<UserCredential>();
+            return ret.ConvertParams<UserCredential>();
         }
 
         internal static async Task<SpCallResult> User_OnLogining(string userId, string clientId, IEnumerable<string> scopes, PasswordMatchType passwordMatchType, SpInvokeParams spInvokeParams)
@@ -93,14 +93,14 @@ namespace DirectSp.AuthServer
         internal static async Task<IEnumerable<Application>> Application_ApplicationsByClientIds(IEnumerable<string> clientIds)
         {
             var ret = await SpInvoker.Invoke(nameof(Application_ApplicationsByClientIds), new { ClientIds = clientIds.ToArray() });
-            return ret.MapParam<IEnumerable<Application>>("Applications");
+            return ret.ConvertParam<IEnumerable<Application>>("Applications");
         }
 
         //Throw Exception if UserId is not exists
         internal static async Task<User> User_Props(string userId)
         {
             var result = await SpInvoker.Invoke(nameof(User_Props), new { UserId = userId });
-            var ret = result.MapParams<User>();
+            var ret = result.ConvertParams<User>();
             ret.UserId = userId;
             return ret;
         }
