@@ -839,6 +839,9 @@ directSp.DirectSpClient.prototype._invokeCore = function (method, invokeParams) 
             return result;
         })
         .catch(error => {
+            if (this.isLogEnabled)
+                console.warn("DirectSp: invoke (Response)", method, invokeParams, error);
+
             //call global error handler
             if (invokeParams.invokeOptions.isUseAppErrorHandler && this.onError) {
                 this.onError(data);
@@ -963,7 +966,8 @@ directSp.DirectSpClient.prototype._ajaxProvider = function (ajaxOptions) {
                     error = this._convertToError(obj);
                     error.innerError = obj;
                 } catch (err) {
-                    error = this._convertToError(req.responseText);
+                    let text = req.responseText == "" ? req.statusText : req.responseText;
+                    error = this._convertToError(text);
                 }
 
                 error.status = req.status;
