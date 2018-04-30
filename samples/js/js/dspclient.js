@@ -18,7 +18,7 @@ directSp.DirectSpError = function (error) {
     if (error.errorName) message += error.errorName + "; "
     if (error.errorMessage) message += error.errorMessage + "; ";
     if (error.errorDescription) message += error.errorDescription + "; ";
-    message = message
+    message = message.replace(/; $/, ''); //remove last simicolon
 
     let err = new Error(message);
     Object.setPrototypeOf(err, directSp.DirectSpError.prototype);
@@ -824,7 +824,7 @@ directSp.DirectSpClient.prototype._invokeCore = function (method, invokeParams) 
     //set defaults
     if (!invokeParams.invokeOptions) invokeParams.invokeOptions = {};
     invokeParams.invokeOptions.cache == directSp.Convert.toBoolean(invokeParams.invokeOptions.cache, true);
-    invokeParams.invokeOptions.isUseAppErrorHandler == directSp.Convert.toBoolean(invokeParams.invokeOptions.isUseAppErrorHandler, this.isUseAppErrorHandler);
+    invokeParams.invokeOptions.isUseAppErrorHandler = directSp.Convert.toBoolean(invokeParams.invokeOptions.isUseAppErrorHandler, this.isUseAppErrorHandler);
 
     //log request
     if (this.isLogEnabled)
@@ -839,9 +839,12 @@ directSp.DirectSpClient.prototype._invokeCore = function (method, invokeParams) 
             return result;
         })
         .catch(error => {
+            if (this.isLogEnabled)
+                console.warn("DirectSp: invoke (Response)", method, invokeParams, error);
+
             //call global error handler
             if (invokeParams.invokeOptions.isUseAppErrorHandler && this.onError) {
-                this.onError(data);
+                this.onError(error);
             }
             throw error;
         });
@@ -963,7 +966,8 @@ directSp.DirectSpClient.prototype._ajaxProvider = function (ajaxOptions) {
                     error = this._convertToError(obj);
                     error.innerError = obj;
                 } catch (err) {
-                    error = this._convertToError(req.responseText);
+                    let text = req.responseText == "" ? req.statusText : req.responseText;
+                    error = this._convertToError(text);
                 }
 
                 error.status = req.status;
@@ -1564,6 +1568,8 @@ directSp.Convert = {};
 
 directSp.Convert.toBoolean = function (value, defaultValue) {
     defaultValue = directSp.Utility.checkUndefined(defaultValue, false);
+    if (directSp.Utility.isUndefined(value))
+        return defaultValue;
 
     // check is value boolean
     if (typeof value == "boolean")

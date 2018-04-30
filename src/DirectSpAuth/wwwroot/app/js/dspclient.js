@@ -824,7 +824,7 @@ directSp.DirectSpClient.prototype._invokeCore = function (method, invokeParams) 
     //set defaults
     if (!invokeParams.invokeOptions) invokeParams.invokeOptions = {};
     invokeParams.invokeOptions.cache == directSp.Convert.toBoolean(invokeParams.invokeOptions.cache, true);
-    invokeParams.invokeOptions.isUseAppErrorHandler == directSp.Convert.toBoolean(invokeParams.invokeOptions.isUseAppErrorHandler, this.isUseAppErrorHandler);
+    invokeParams.invokeOptions.isUseAppErrorHandler = directSp.Convert.toBoolean(invokeParams.invokeOptions.isUseAppErrorHandler, this.isUseAppErrorHandler);
 
     //log request
     if (this.isLogEnabled)
@@ -844,7 +844,7 @@ directSp.DirectSpClient.prototype._invokeCore = function (method, invokeParams) 
 
             //call global error handler
             if (invokeParams.invokeOptions.isUseAppErrorHandler && this.onError) {
-                this.onError(data);
+                this.onError(error);
             }
             throw error;
         });
@@ -1568,6 +1568,8 @@ directSp.Convert = {};
 
 directSp.Convert.toBoolean = function (value, defaultValue) {
     defaultValue = directSp.Utility.checkUndefined(defaultValue, false);
+    if (directSp.Utility.isUndefined(value))
+        return defaultValue;
 
     // check is value boolean
     if (typeof value == "boolean")
