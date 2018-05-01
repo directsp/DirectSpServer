@@ -59,7 +59,7 @@ namespace DirectSp.AuthServer
                 PasswordMatchTypeId = passwordMatchType,
             };
 
-            var ret = await SpInvoker.Invoke(nameof(User_OnLogining), param);
+            var ret = await SpInvoker.Invoke(nameof(User_OnLogining), param, spInvokeParams);
             return ret;
         }
 

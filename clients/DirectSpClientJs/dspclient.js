@@ -440,7 +440,7 @@ directSp.DirectSpClient.prototype.getUserInfo = function () {
 directSp.DirectSpClient.prototype._refreshToken = function () {
 
     //check expiration time
-    if (false && this.accessTokenInfo && this.accessTokenInfo["exp"]) {
+    if (this.accessTokenInfo && this.accessTokenInfo["exp"]) {
         let dateNow = new Date();
         if (parseInt(this.accessTokenInfo["exp"]) - this._settings.refreshClockSkew > dateNow.getTime() / 1000)
             return Promise.resolve(false); //token is not refreshed
