@@ -1372,8 +1372,8 @@ directSp.DirectSpClient.Paginator.prototype.goPage = function (pageNo) {
         let promise = this._dspClient.invoke2(this._apiCall, invokeOptions)
             .then(result => {
                 // set pageCount if totalRecordCount exists
-                if (result.totalPageCount)
-                    this._pageCount = Math.ceil(result.totalPageCount / this.pageSize);
+                if (result.totalRecordCount)
+                    this._pageCount = Math.ceil(result.totalRecordCount / this.pageSize);
 
                 let recordset = result.recordset != null ? result.recordset : [];
 

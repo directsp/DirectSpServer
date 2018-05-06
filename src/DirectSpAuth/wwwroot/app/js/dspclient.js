@@ -1213,7 +1213,7 @@ directSp.DirectSpClient.Paginator = function (dspClient, spCall, invokeOptions) 
 
 directSp.DirectSpClient.Paginator.prototype = {
     get hasNextPage() {
-        return (this._pageCountMax == null || (this.pageIndex + 1) < this._pageCountMax);
+        return (this.pageCountMax == null || (this.pageIndex + 1) < this.pageCountMax);
     },
 
     get hasPrevPage() {
@@ -1241,22 +1241,25 @@ directSp.DirectSpClient.Paginator.prototype = {
     },
 
     get pageCountMin() {
-        return this._pageCountMin;
+        return this.pageCount != null ? this.pageCount : this._pageCountMin;
     },
 
     get pageCountMax() {
-        return this._pageCountMax;
+        return this.pageCount != null ? this.pageCount : this._pageCountMax;
     },
 
     get pageCount() {
+        if (this._recordCount !== null)
+            return Math.ceil(this._recordCount / this.pageSize);
+
         return this._pageCount;
     },
 
     get recordCount() {
-        if (this.pageCount == null)
-            return null;
+        if (this._recordCount !== null)
+            return this._recordCount;
 
-        if (this.pageCount == 0 || this._pages.length == 0)
+        if (this.pageCount == null || this.pageCount == 0 || this._pages.length == 0 || !this._pages[this.pageCount - 1])
             return 0;
 
         return (this.pageCount - 1) * this.pageSize + this._pages[this.pageCount - 1].length;
@@ -1314,6 +1317,7 @@ directSp.DirectSpClient.Paginator.prototype.reset = function () {
     this._pageIndex = 0;
     this._isCacheInvalidated = true;
     this._isCacheUsed = false;
+    this._recordCount = null;
 };
 
 directSp.DirectSpClient.Paginator.prototype.goPage = function (pageNo) {
@@ -1371,9 +1375,6 @@ directSp.DirectSpClient.Paginator.prototype.goPage = function (pageNo) {
         this._isInvoked = true;
         let promise = this._dspClient.invoke2(this._apiCall, invokeOptions)
             .then(result => {
-                // set pageCount if totalRecordCount exists
-                if (result.totalPageCount)
-                    this._pageCount = Math.ceil(result.totalPageCount / this.pageSize);
 
                 let recordset = result.recordset != null ? result.recordset : [];
 
@@ -1392,11 +1393,12 @@ directSp.DirectSpClient.Paginator.prototype.goPage = function (pageNo) {
                 if ((recordIndex + recordset.length) % this.pageSize == 0) lastRecordsetPageIndex--;
 
                 if (recordset.length == 0) {
-                    if (pageStart <= this.pageCountMin) {
+                    if (pageStart <= this._pageCountMin) {
                         this.reset();
                     }
 
                     if (pageStart <= 1) {
+                        this._recordCount = 0;
                         this._pageCount = 1;
                         this._pageCountMax = 1;
                     }
@@ -1430,6 +1432,10 @@ directSp.DirectSpClient.Paginator.prototype.goPage = function (pageNo) {
                         if (pageNo == pageIndex) this._isCacheUsed = false;
                     }
                 }
+
+                // set pageCount if totalRecordCount exists
+                if (result.totalRecordCount)
+                    this._recordCount = result.totalRecordCount;
 
                 return result;
             });

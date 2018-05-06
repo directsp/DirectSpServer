@@ -360,15 +360,7 @@ namespace DirectSp.Core
                 if (Options.UseCamelCase)
                     Util.PascalizeJToken(value as JToken);
 
-                var converter = invokeOptions.IsAntiXss ? new AntiXssConverter(true) : null;
-                value = JsonConvert.SerializeObject(value, converter);
-            }
-
-            //check xss
-            else if (value is string)
-            {
-                if (invokeOptions.IsAntiXss)
-                    Util.AntiXss_VerifyValue(value as string, true);
+                value = JsonConvert.SerializeObject(value);
             }
 
             //convert currency
