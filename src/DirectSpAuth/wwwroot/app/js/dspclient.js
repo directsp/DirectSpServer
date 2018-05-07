@@ -1250,7 +1250,7 @@ directSp.DirectSpClient.Paginator.prototype = {
 
     get pageCount() {
         if (this._recordCount !== null)
-            return Math.ceil(this._recordCount / this.pageSize);
+            return Math.max(Math.ceil(this._recordCount / this.pageSize), 1); //paginator always has a 1 page
 
         return this._pageCount;
     },
@@ -1320,15 +1320,29 @@ directSp.DirectSpClient.Paginator.prototype.reset = function () {
     this._recordCount = null;
 };
 
+directSp.DirectSpClient.Paginator.prototype._validatePageNo = function (pageNo) {
+    if (!pageNo) pageNo = 0;
+    if (pageNo == -1) pageNo = 0;
+    if (this.pageCountMax != null) pageNo = Math.min(pageNo, this.pageCountMax - 1);
+    return pageNo;
+};
+
+
 directSp.DirectSpClient.Paginator.prototype.goPage = function (pageNo) {
+    //change current page after getting result
+    pageNo = this._validatePageNo(pageNo);
+    return this.getPage(pageNo)
+        .then(result => {
+            this._pageIndex = pageNo;
+            return result;
+        });
+};
+
+directSp.DirectSpClient.Paginator.prototype.getPage = function (pageNo) {
     this._isCacheInvalidated = false;
     this._isCacheUsed = true;
     this._isInvoked = false;
-    if (!pageNo) pageNo = 0;
-
-    //validate pageNo
-    if (pageNo == -1) pageNo = 0;
-    if (this.pageCountMax != null) pageNo = Math.min(pageNo, this.pageCountMax - 1);
+    pageNo = this._validatePageNo(pageNo);
 
     //find page range
     let pageStart = Math.max(0, pageNo - this._pageCacheCount);
@@ -1446,11 +1460,7 @@ directSp.DirectSpClient.Paginator.prototype.goPage = function (pageNo) {
     }
 
     //change current page after getting result
-    return this._pagePromises[pageNo]
-        .then(result => {
-            this._pageIndex = pageNo;
-            return result;
-        });
+    return this._pagePromises[pageNo];
 };
 
 // *********************

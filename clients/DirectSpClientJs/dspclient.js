@@ -1321,6 +1321,15 @@ directSp.DirectSpClient.Paginator.prototype.reset = function () {
 };
 
 directSp.DirectSpClient.Paginator.prototype.goPage = function (pageNo) {
+    //change current page after getting result
+    return this.getPage(pageNo)
+        .then(result => {
+            this._pageIndex = pageNo;
+            return result;
+        });
+}
+
+directSp.DirectSpClient.Paginator.prototype.getPage = function (pageNo) {
     this._isCacheInvalidated = false;
     this._isCacheUsed = true;
     this._isInvoked = false;
@@ -1446,11 +1455,7 @@ directSp.DirectSpClient.Paginator.prototype.goPage = function (pageNo) {
     }
 
     //change current page after getting result
-    return this._pagePromises[pageNo]
-        .then(result => {
-            this._pageIndex = pageNo;
-            return result;
-        });
+    return this._pagePromises[pageNo];
 };
 
 // *********************
