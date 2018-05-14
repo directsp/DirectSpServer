@@ -6,16 +6,9 @@ namespace DirectSp.Core
 {
     class UserSession
     {
-        public string UserId { get; private set; }
-        public string Audience { get; private set; }
-        public string AppName { get; private set; }
-
-        public UserSession(string appName, string userId, string audience)
+        public UserSession(SpContext spContext)
         {
-            Audience = audience;
-            AppName = appName;
-            UserId = userId;
-            SpContext = new SpContext(appName, userId, audience);
+            SpContext = spContext;
         }
 
         private object LockObject = new object();

@@ -27,7 +27,7 @@ namespace DirectSp.Core
             var sessionKey = userId + "#" + audience;
             if (!UserSessions.TryGetValue(sessionKey, out UserSession userSession))
             {
-                userSession = new UserSession(appName, userId, audience);
+                userSession = new UserSession(new  SpContext(appName, userId, audience));
                 UserSessions[sessionKey] = userSession;
             }
 

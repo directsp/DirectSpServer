@@ -40,32 +40,22 @@ namespace DirectSp.Core
             SessionManager = new UserSessionManager(options);
             KeyValue = new DspKeyValue(spInvokerInternal);
             SpException.UseCamelCase = options.UseCamelCase;
+
+            // Refresh Api
+            RefreshApi();
         }
 
         private SpContext _AppUserContext;
-        public SpContext AppUserContext
-        {
-            get
-            {
-                if (_AppUserContext == null)
-                {
-                    using (var sqlConnection = new SqlConnection(ConnectionStringReadOnly))
-                    {
-                        sqlConnection.Open();
-                        _AppUserContext = new SpContext(ResourceDb.System_AppUserContext(sqlConnection));
-                    }
-                }
-                return _AppUserContext;
-            }
-        }
+        public SpContext AppUserContext => _AppUserContext;
 
-        public string AppName { get { return AppUserContext.AppName; } }
+        public string AppName => AppUserContext.AppName;
+        public string AppVersion => AppUserContext.AppVersion;
 
         // User Request Count control
         private void VerifyUserRequestLimit(UserSession userSession)
         {
             //AppUserId does not have request limit
-            if (userSession.UserId == AppUserContext.UserId)
+            if (userSession.SpContext.AuthUserId == AppUserContext.AuthUserId)
                 return;
 
             //Reset ResetRequestCount
@@ -77,34 +67,20 @@ namespace DirectSp.Core
                 throw new SpException("Too many request! Please try a few minutes later!", StatusCodes.Status429TooManyRequests);
         }
 
-        //Updateing StoreProcedures
-        public DateTime StoreProceduresUpdateTime { get; private set; }
-        private Dictionary<string, SpInfo> _StoreProcedures;
-        public Dictionary<string, SpInfo> SqlStoreProcedures
+        public Dictionary<string, SpInfo> SpInfos { get; private set; }
+
+        private void RefreshApi()
         {
-            get
-            {
-                if (_StoreProcedures == null || StoreProceduresUpdateTime.AddSeconds(Options.SqlStoreProceduresUpdateInterval) < DateTime.Now)
-                {
-                    StoreProceduresUpdateTime = DateTime.Now;
-                    _StoreProcedures = ReadStoreProcedures();
-                }
-                return _StoreProcedures;
-            }
-        }
-        private Dictionary<string, SpInfo> ReadStoreProcedures()
-        {
-            var storeProcedures = new Dictionary<string, SpInfo>();
+            var spInfos = new Dictionary<string, SpInfo>();
             using (var sqlConnection = new SqlConnection(ConnectionStringReadOnly))
             {
                 sqlConnection.Open();
-                var spList = ResourceDb.System_Api(sqlConnection, AppUserContext.ToString());
+                var spList = ResourceDb.System_Api(sqlConnection, out string appUserContext);
                 foreach (var item in spList)
-                    storeProcedures.Add(item.SchemaName + "." + item.ProcedureName, item);
-                _StoreProcedures = storeProcedures;
+                    spInfos.Add(item.SchemaName + "." + item.ProcedureName, item);
+                SpInfos = spInfos;
+                _AppUserContext = new SpContext(appUserContext, "$$");
             }
-
-            return _StoreProcedures;
         }
 
         public async Task<IEnumerable<SpCallResult>> Invoke(SpCall[] spCalls, SpInvokeParams spInvokeParams)
@@ -168,7 +144,7 @@ namespace DirectSp.Core
         {
             var spi = new SpInvokeParamsInternal { SpInvokeParams = spInvokeParams, IsSystem = isSystem };
             if (isSystem)
-                spi.SpInvokeParams.UserId = AppUserContext.UserId;
+                spi.SpInvokeParams.AuthUserId = AppUserContext.AuthUserId;
             return await Invoke(spCall, spi);
         }
 
@@ -176,11 +152,24 @@ namespace DirectSp.Core
         {
             try
             {
+                return await InvokeImpl1(spCall, spi);
+            }
+            catch (SpInvokerAppVersionException)
+            {
+                RefreshApi();
+                return await Invoke(spCall, spi);
+            }
+        }
+
+        private async Task<SpCallResult> InvokeImpl1(SpCall spCall, SpInvokeParamsInternal spi)
+        {
+            try
+            {
                 //validate captcha
                 await ValidateCaptcha(spi);
 
                 // call core
-                var result = await InvokeImpl(spCall, spi);
+                var result = await InvokeImpl2(spCall, spi);
 
                 // Update result
                 await UpdateRecodsetDownloadUri(spCall, spi, result);
@@ -194,7 +183,7 @@ namespace DirectSp.Core
             }
         }
 
-        private async Task<SpCallResult> InvokeImpl(SpCall spCall, SpInvokeParamsInternal spi)
+        private async Task<SpCallResult> InvokeImpl2(SpCall spCall, SpInvokeParamsInternal spi)
         {
             if (!spi.IsSystem && string.IsNullOrWhiteSpace(spi.SpInvokeParams.UserRemoteIp))
                 throw new ArgumentException(spi.SpInvokeParams.UserRemoteIp, "UserRemoteIp");
@@ -202,7 +191,7 @@ namespace DirectSp.Core
             // retrieve user session
             var invokeParams = spi.SpInvokeParams;
             var invokeOptions = spi.SpInvokeParams.InvokeOptions;
-            var userSession = SessionManager.GetUserSession(AppName, invokeParams.UserId, invokeParams.Audience);
+            var userSession = SessionManager.GetUserSession(AppName, invokeParams.AuthUserId, invokeParams.Audience);
 
             //Verify user request limit
             VerifyUserRequestLimit(userSession);
@@ -228,7 +217,8 @@ namespace DirectSp.Core
                 IsCaptcha = spi.IsCaptcha,
                 MoneyConversionRate = invokeOptions.MoneyConversionRate,
                 RecordIndex = invokeOptions.RecordIndex,
-                RecordCount = invokeOptions.RecordCount
+                RecordCount = invokeOptions.RecordCount,
+                InvokerAppVersion = AppVersion,
             };
 
             //Select Connection
@@ -338,7 +328,7 @@ namespace DirectSp.Core
 
         public SpInfo FindSpInfo(string spName)
         {
-            if (SqlStoreProcedures.TryGetValue(spName, out SpInfo sqlSp))
+            if (SpInfos.TryGetValue(spName, out SpInfo sqlSp))
                 return sqlSp;
             return null;
         }

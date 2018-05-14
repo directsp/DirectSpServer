@@ -84,7 +84,7 @@ namespace DirectSp.AuthServer
                     // Implement context.Request.Username/context.Request.Password validation here.
                     // Note: you can call context Reject() to indicate that authentication failed.
                     // Using password derivation and time-constant comparer is STRONGLY recommended.
-                    var spInvokeParams = new SpInvokeParams { UserId = App.SpInvoker.AppUserContext.UserId, UserRemoteIp = context.HttpContext.Connection.RemoteIpAddress.ToString() };
+                    var spInvokeParams = new SpInvokeParams { AuthUserId = App.SpInvoker.AppUserContext.AuthUserId, UserRemoteIp = context.HttpContext.Connection.RemoteIpAddress.ToString() };
                     spInvokeParams.InvokeOptions.CaptchaCode = context.Request.GetParameter("captchaCode")?.ToString();
                     spInvokeParams.InvokeOptions.CaptchaId = context.Request.GetParameter("captchaId")?.ToString();
                     var user = await AuthDB.User_Login(context.Request.Username, context.Request.Password, context.Request.ClientId, scopes, spInvokeParams);

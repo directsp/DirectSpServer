@@ -25,6 +25,10 @@ namespace DirectSp.Core.Entities
         public int? RecordCount { get; set; }
 
         [DefaultValue(null)]
-        public string ClientVersion { get; set; } 
+        public string ClientVersion { get; set; }
+
+        [DefaultValue(null)]
+        public string InvokerAppVersion { get; set; }
+
     }
 }

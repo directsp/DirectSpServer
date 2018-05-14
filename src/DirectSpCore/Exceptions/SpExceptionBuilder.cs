@@ -22,6 +22,9 @@ namespace DirectSp.Core.Exceptions
         NoOperation = 55021,
         InvalidCaptcha = 55022,
         BatchIsNotAllowed = 55023,
+        TooManyRequest = 55024,
+        AuthUserNotFound = 55025,
+        InvokerAppVersion = 55026,
     }
 
     internal static class SpExceptionBuilder
@@ -42,6 +45,9 @@ namespace DirectSp.Core.Exceptions
 
                 case (int)SpCommonExceptionId.InvalidCaptcha:
                     return new SpInvalidCaptchaException(spInvokerInternal, ret);
+
+                case (int)SpCommonExceptionId.InvokerAppVersion:
+                    return new SpInvokerAppVersionException(ret);
 
                 default:
                     return ret;

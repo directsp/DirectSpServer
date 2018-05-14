@@ -26,7 +26,7 @@ namespace DirectSp.Core.Controllers
                 //invoke
                 SpInvokeParams spInvokeParams = new SpInvokeParams
                 {
-                    UserId = isSystem || !User.Identity.IsAuthenticated ? null : Util.GetClaimUserId(User),
+                    AuthUserId = isSystem || !User.Identity.IsAuthenticated ? null : Util.GetClaimUserId(User),
                     UserRemoteIp = HttpContext.Connection.RemoteIpAddress.ToString(),
                     InvokeOptions = invokeParams.InvokeOptions,
                     RecordsetDownloadUrlTemplate = UriHelper.BuildAbsolute(scheme: Request.Scheme, host: Request.Host, path: "/api/download/recordset") + "?id={id}&filename={filename}",
@@ -47,7 +47,7 @@ namespace DirectSp.Core.Controllers
             {
                 SpInvokeParams spInvokeParams = new SpInvokeParams
                 {
-                    UserId = Util.GetClaimUserId(User),
+                    AuthUserId = Util.GetClaimUserId(User),
                     UserRemoteIp = HttpContext.Connection.RemoteIpAddress.ToString(),
                     InvokeOptions = invokeParamsBatch.InvokeOptions,
                     RecordsetDownloadUrlTemplate = UriHelper.BuildAbsolute(scheme: Request.Scheme, host: Request.Host, path: "/api/download/recordset?id={id}&filename={filename}"),

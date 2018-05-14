@@ -11,6 +11,11 @@ namespace DirectSp.Core.Exceptions
         public SpAccessDeniedOrObjectNotExistsException(SpException baseException) : base(baseException) { }
     }
 
+    public class SpInvokerAppVersionException : SpException
+    {
+        public SpInvokerAppVersionException(SpException baseException) : base(baseException) { }
+    }
+
     public class SpInvalidOperationException : SpException
     {
         public SpInvalidOperationException(SpException baseException) : base(baseException) { }
