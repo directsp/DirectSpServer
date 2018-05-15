@@ -21,12 +21,12 @@ namespace DirectSp.Core
                     return _LastRequestTime;
             }
         }
-        public void SetCurrentRequestMode(bool writeMode)
+        public void SetWriteMode(bool isWriteMode)
         {
             lock (LockObject)
             {
                 _RequestCount++;
-                if (writeMode)
+                if (isWriteMode)
                     _LastRequestTime = DateTime.Now;
             }
         }

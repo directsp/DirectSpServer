@@ -25,6 +25,8 @@ namespace DirectSp.Core.Exceptions
         TooManyRequest = 55024,
         AuthUserNotFound = 55025,
         InvokerAppVersion = 55026,
+        Maintenance = 55027,
+        MaintenanceReadOnly = 55028,
     }
 
     internal static class SpExceptionBuilder
@@ -48,6 +50,12 @@ namespace DirectSp.Core.Exceptions
 
                 case (int)SpCommonExceptionId.InvokerAppVersion:
                     return new SpInvokerAppVersionException(ret);
+
+                case (int)SpCommonExceptionId.Maintenance:
+                    return new SpMaintenanceException(ret);
+
+                case (int)SpCommonExceptionId.MaintenanceReadOnly:
+                    return new SpMaintenanceReadOnlyException(ret);
 
                 default:
                     return ret;

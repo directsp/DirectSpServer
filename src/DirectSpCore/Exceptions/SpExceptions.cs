@@ -16,6 +16,20 @@ namespace DirectSp.Core.Exceptions
         public SpInvokerAppVersionException(SpException baseException) : base(baseException) { }
     }
 
+    public class SpMaintenanceException : SpException
+    {
+        public SpMaintenanceException(SpException baseException) : base(baseException) { }
+    }
+
+    public class SpMaintenanceReadOnlyException : SpException
+    {
+        public SpMaintenanceReadOnlyException(SpException baseException) : base(baseException) { }
+        public SpMaintenanceReadOnlyException(string spName) 
+            : base(new SpCallError() { ErrorName = SpCommonExceptionId.MaintenanceReadOnly.ToString(), ErrorNumber = (int)SpCommonExceptionId.MaintenanceReadOnly, ErrorMessage = $"{spName} cannot be called in readonly mode!" })
+        {
+        }
+    }
+
     public class SpInvalidOperationException : SpException
     {
         public SpInvalidOperationException(SpException baseException) : base(baseException) { }

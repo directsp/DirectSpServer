@@ -5,6 +5,7 @@ namespace DirectSp.Core.Entities
 {
     public enum SpExecuteMode
     {
+        NotSet,
         Write,
         ReadSync,
         ReadSnapshot,
@@ -31,7 +32,7 @@ namespace DirectSp.Core.Entities
 
     public class SpInfoEx
     {
-        public SpExecuteMode ExecuteMode { get; set; } = SpExecuteMode.Write;
+        public SpExecuteMode ExecuteMode { get; set; } = SpExecuteMode.NotSet;
         public bool IsBatchAllowed { get; set; }
         public SpCaptchaMode CaptchaMode { get; set; } = SpCaptchaMode.Manual;
         public IDictionary<string, SpParamEx> Params { get; set; } = new Dictionary<string, SpParamEx>();

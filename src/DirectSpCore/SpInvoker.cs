@@ -159,6 +159,18 @@ namespace DirectSp.Core
                 RefreshApi();
                 return await Invoke(spCall, spi);
             }
+            catch (SpMaintenanceReadOnlyException ex)
+            {
+                try
+                {
+                    spi.IsForceReadOnly = true;
+                    return await InvokeImpl1(spCall, spi);
+                }
+                catch (SpException spException)
+                {
+                    throw spException.SpCallError.ErrorNumber == 3906 ? ex : spException;
+                }
+            }
         }
 
         private async Task<SpCallResult> InvokeImpl1(SpCall spCall, SpInvokeParamsInternal spi)
@@ -221,13 +233,8 @@ namespace DirectSp.Core
                 InvokerAppVersion = AppVersion,
             };
 
-            //Select Connection
-            var connectionString = ConnectionStringReadWrite;
-            var executeMode = spInfo.ExtendedProps != null ? spInfo.ExtendedProps.ExecuteMode : SpExecuteMode.Write;
-            if (executeMode == SpExecuteMode.ReadSnapshot) connectionString = ConnectionStringReadOnly;
-            else if (executeMode == SpExecuteMode.ReadWise && userSession.LastWriteTime.AddSeconds(Options.ReadonlyConnectionSyncInterval) < DateTime.Now)
-                connectionString = ConnectionStringReadOnly;
-            userSession.SetCurrentRequestMode(executeMode == SpExecuteMode.Write);
+            //Get Connection String caring about ReadScale
+            var connectionString = GetConnectionString(spInfo, userSession, spi);
 
             //create SqlParameters
             var spCallResults = new SpCallResult();
@@ -324,6 +331,24 @@ namespace DirectSp.Core
                 sqlConn.Close();
             }
             return spCallResults;
+        }
+
+        private string GetConnectionString(SpInfo spInfo, UserSession userSession, SpInvokeParamsInternal spi)
+        {
+            //Select ReadOnly Or Write Connection
+            var executeMode = spInfo.ExtendedProps != null ? spInfo.ExtendedProps.ExecuteMode : SpExecuteMode.NotSet;
+
+            //Write procedures cannot be called in ForceReadOnly anyway
+            if (spi.IsForceReadOnly && executeMode == SpExecuteMode.Write)
+                throw new SpMaintenanceReadOnlyException(spInfo.ProcedureName);
+
+            //Set write request
+            userSession.SetWriteMode(!spi.IsForceReadOnly && (executeMode == SpExecuteMode.NotSet || executeMode == SpExecuteMode.Write));
+
+            // Find connection string
+            var isSecondary = spi.IsForceReadOnly || executeMode == SpExecuteMode.ReadSnapshot ||
+                (executeMode == SpExecuteMode.ReadWise && userSession.LastWriteTime.AddSeconds(Options.ReadonlyConnectionSyncInterval) < DateTime.Now);
+            return isSecondary ? ConnectionStringReadOnly : ConnectionStringReadWrite;
         }
 
         public SpInfo FindSpInfo(string spName)
