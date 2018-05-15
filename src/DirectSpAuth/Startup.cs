@@ -53,6 +53,7 @@ namespace DirectSp.AuthServer
                 builder.AllowAnyOrigin()
                     .AllowAnyMethod()
                     .AllowAnyHeader()
+                    .WithExposedHeaders("WWW-Authenticate", "DSP-AppVersion")
                     .SetPreflightMaxAge(TimeSpan.FromHours(24 * 30));
             }));
 

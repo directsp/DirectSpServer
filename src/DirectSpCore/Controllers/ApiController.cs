@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using System.Text;
 using Microsoft.AspNetCore.Http.Extensions;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace DirectSp.Core.Controllers
 {
@@ -32,10 +31,13 @@ namespace DirectSp.Core.Controllers
                     RecordsetDownloadUrlTemplate = UriHelper.BuildAbsolute(scheme: Request.Scheme, host: Request.Host, path: "/api/download/recordset") + "?id={id}&filename={filename}",
                 };
                 var res = await SpInvoker.Invoke(invokeParams.SpCall, spInvokeParams, isSystem);
+
+                AddResponseHeaders();
                 return Json(res, invokeParams.InvokeOptions.IsAntiXss);
             }
             catch (SpException ex)
             {
+                AddResponseHeaders();
                 return StatusCode(ex.StatusCode, ex.SpCallError);
             }
 
@@ -54,10 +56,13 @@ namespace DirectSp.Core.Controllers
                 };
 
                 var res = await SpInvoker.Invoke(invokeParamsBatch.SpCalls, spInvokeParams);
+
+                AddResponseHeaders();
                 return Json(res, invokeParamsBatch.InvokeOptions.IsAntiXss);
             }
             catch (SpException ex)
             {
+                AddResponseHeaders();
                 return StatusCode(ex.StatusCode, ex.SpCallError);
             }
         }
@@ -71,14 +76,18 @@ namespace DirectSp.Core.Controllers
 
                 //get file
                 var stream = await SpInvoker.KeyValue.GetTextStream($"recordset/{id}", Encoding.Unicode);
+
+                AddResponseHeaders();
                 return File(stream, "text/csv", fileName);
             }
             catch (SpAccessDeniedOrObjectNotExistsException)
             {
+                AddResponseHeaders();
                 return new NotFoundResult();
             }
             catch (SpException ex)
             {
+                AddResponseHeaders();
                 return StatusCode(ex.StatusCode, ex.SpCallError);
             }
         }
@@ -92,6 +101,12 @@ namespace DirectSp.Core.Controllers
                 serializerSettings.Converters.Add( new AntiXssConverter());
 
             return base.Json(data, serializerSettings);
+        }
+
+        private void AddResponseHeaders()
+        {
+            //set app version
+            Request.HttpContext.Response.Headers.Add("DSP-AppVersion", SpInvoker.AppVersion);
         }
 
     }

@@ -6,7 +6,7 @@ using DirectSp.Core;
 
 namespace DirectSp.AuthServer.Controllers
 {
-    public class ApiController : DirectSp.Core.Controllers.ApiController
+    public class ApiController : Core.Controllers.ApiController
     {
         protected override SpInvoker SpInvoker { get { return App.SpInvoker; } }
 

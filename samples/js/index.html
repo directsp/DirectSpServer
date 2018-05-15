@@ -2,6 +2,7 @@
 <html>
 <head>
     <title></title>
+    <link rel="stylesheet" href="css/custom.css" >
     <meta charset="utf-8" />
     <style>
         .ic-hide {
@@ -17,7 +18,10 @@
 <body>
     <h1>UserService</h1>
     <a id="signin" href="#">Signin</a>
-    <button onclick="javascript:foo()">foo</button>
+
+    <button onclick="javascript:foo()" class="foo">foo</button>
+    <button onclick="javascript:window.location.reload(true)">Reload(true)</button>
+    <button onclick="javascript:window.location.reload(false)">Reload(false)</button>
 
 </body>
 </html>

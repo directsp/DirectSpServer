@@ -40,7 +40,7 @@ namespace DirectSp.Host
                     .AllowAnyMethod()
                     .AllowAnyHeader()
                     .AllowCredentials()
-                    .WithExposedHeaders("WWW-Authenticate")
+                    .WithExposedHeaders("WWW-Authenticate", "DSP-AppVersion")
                     .SetPreflightMaxAge(TimeSpan.FromHours(24 * 30));
             }));
 
