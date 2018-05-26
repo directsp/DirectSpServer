@@ -5,7 +5,7 @@
 /*
  * Events:
  *  onAuthorized    * check the authorization state
- *  onCaptcha       * request captcha
+ *  onError         * handling herror
  */
 "use strict";
 
@@ -39,7 +39,6 @@ directSp.DirectSpError = function (error) {
 
 directSp.DirectSpError.prototype = Object.create(Error.prototype, { name: { value: 'DirectSpError', enumerable: false } });
 
-
 //DirectSpClient
 directSp.DirectSpClient = function () {
 
@@ -58,7 +57,6 @@ directSp.DirectSpClient = function () {
         isAutoSignIn: false,
         isLogEnabled: true,
         isUseAppErrorHandler: false,
-        sessionState: Math.floor(Math.random() * 10000000000000),
         refreshClockSkew: 60
     };
 
@@ -75,7 +73,10 @@ directSp.DirectSpClient = function () {
         name: null
     };
 
+    this._storageNamePrefix = "DirectSp:";
     this._tokens = null; //{ access_token: "", expires_in: 0, refresh_token: "", token_type: "" },
+    this._sessionState = Math.floor(Math.random() * 10000000000000);
+    this._resourceAppVersion = localStorage.getItem(this._storageNamePrefix + "resouceAppVersion");
     this._lastPageUri = null;
     this._invokeHook = function (hookParams) { return null; }
     this._authError = null;
@@ -83,9 +84,7 @@ directSp.DirectSpClient = function () {
     this._userInfoLast = null;
     this._accessTokenInfo = null;
     this._onAuthorized = null;
-    this._onCaptcha = null;
     this._onError = null;
-    this._storageNamePrefix = "DirectSp:";
     this._originalUri = location.href;
     this._originalQueryString = location.search;
     this._systemApi = null;
@@ -230,12 +229,6 @@ directSp.DirectSpClient.prototype = {
         this._onError = value;
         this.isUseAppErrorHandler = true;
     },
-    get onCaptcha() {
-        return this._onCaptcha;
-    },
-    set onCaptcha(value) {
-        this._onCaptcha = value;
-    },
     get authHeader() {
         return this.tokens != null ? this.tokens.token_type + ' ' + this.tokens.access_token : null;
     },
@@ -304,6 +297,10 @@ directSp.DirectSpClient.prototype.init = function () {
             this._fireAuthorizedEvent();
             throw error;
         });
+};
+
+directSp.DirectSpClient.prototype._getInvokeOptionsFromAjaxOptions = function (ajaxOptions) {
+    return ajaxOptions && ajaxOptions.data && ajaxOptions.data.invokeOptions ? ajaxOptions.data.invokeOptions : null;
 };
 
 directSp.DirectSpClient.prototype.setTokens = function (value, refreshUserInfo) {
@@ -472,7 +469,7 @@ directSp.DirectSpClient.prototype._refreshToken = function () {
         data: requestParam,
     };
 
-    return this._ajax2(request)
+    return this._ajaxProvider(request)
         .then(result => {
             result = JSON.parse(result);
             return this.setTokens(result, false);
@@ -505,9 +502,9 @@ directSp.DirectSpClient.prototype._load = function () {
         //load sessionState; use current session if there is not session
         let sessionState = sessionStorage.getItem(this._storageNamePrefix + "sessionState");
         if (sessionState != null)
-            this._settings.sessionState = sessionState;
+            this._sessionState = sessionState;
         else
-            sessionStorage.setItem(this._storageNamePrefix + "sessionState", this._settings.sessionState);
+            sessionStorage.setItem(this._storageNamePrefix + "sessionState", this._sessionState);
 
     } catch (err) {
     }
@@ -535,7 +532,7 @@ directSp.DirectSpClient.prototype._save = function () {
     localStorage.setItem(this._storageNamePrefix + "isPersistentSignIn", this._settings.isPersistentSignIn);
 
     //save sessionState
-    sessionStorage.setItem(this._storageNamePrefix + "sessionState", this._settings.sessionState);
+    sessionStorage.setItem(this._storageNamePrefix + "sessionState", this._sessionState);
 };
 
 directSp.DirectSpClient.prototype.signInByPasswordGrant = function (username, password) {
@@ -602,7 +599,7 @@ directSp.DirectSpClient.prototype.signOut = function (clearUser, redirect) {
             redirect_uri: this.authRedirectUri,
             scope: this.authScope,
             response_type: this.authType,
-            state: this._settings.sessionState
+            state: this._sessionState
         };
 
         this.isAutoSignIn = false; //let leave the page
@@ -641,7 +638,7 @@ directSp.DirectSpClient.prototype.signIn = function () {
         redirect_uri: this.authRedirectUri,
         scope: this.authScope,
         response_type: this.authType,
-        state: this._settings.sessionState
+        state: this._sessionState
     };
     window.location.href = this.authEndpointUri + "?" + directSp.Convert.toQueryString(params);
 };
@@ -661,7 +658,7 @@ directSp.DirectSpClient.prototype._processAuthCallback = function () {
 
     //check state and do nothing if it is not matched
     let state = directSp.Uri.getParameterByName("state");
-    if (this._settings.sessionState != state) {
+    if (this._sessionState != state) {
         console.error("DirectSp: Invalid sessionState!");
         this.setTokens(null);
         return Promise.reject(this.createError("Invalid sessionState!"));
@@ -841,11 +838,6 @@ directSp.DirectSpClient.prototype._invokeCore = function (method, invokeParams) 
         .catch(error => {
             if (this.isLogEnabled)
                 console.warn("DirectSp: invoke (Response)", method, invokeParams, error);
-
-            //call global error handler
-            if (invokeParams.invokeOptions.isUseAppErrorHandler && this.onError) {
-                this.onError(error);
-            }
             throw error;
         });
 }
@@ -896,16 +888,41 @@ directSp.DirectSpClient.prototype._invokeCore3 = function (method, invokeParams)
         });
 };
 
-//manageToken
+// Automatic Error Handling
 directSp.DirectSpClient.prototype._ajax = function (ajaxOptions) {
 
+    return this._ajax2(ajaxOptions)
+        .catch(error => {
+            // create error controller
+            let errorControllerOptions = {
+                error: error,
+                dspClient: this,
+                ajaxOptions: ajaxOptions
+            }
+            let errorController = new directSp.ErrorController(errorControllerOptions);
+            let invokeOptions = this._getInvokeOptionsFromAjaxOptions(ajaxOptions);
+            let isUseAppHandler = invokeOptions && invokeOptions.isUseAppErrorHandler;
+
+            //we should call onError if the exception can be retried
+            if (this.onError && (errorController.canRetry || isUseAppHandler)) {
+                if (this.isLogEnabled) console.log("DirectSp: Calling onError ...");
+                this.onError(errorController);
+            }
+
+            return errorController.promise;
+        });
+};
+
+//manageToken
+directSp.DirectSpClient.prototype._ajax2 = function (ajaxOptions) {
+
     if (!ajaxOptions.headers || !ajaxOptions.headers.authorization)
-        return this._ajax2(ajaxOptions); //there is no token
+        return this._ajaxProvider(ajaxOptions); //there is no token
 
     return this._refreshToken()
         .then(result => {
             ajaxOptions.headers.authorization = this.authHeader;
-            return this._ajax2(ajaxOptions);
+            return this._ajaxProvider(ajaxOptions);
         })
         .catch(error => {
             // signout if token is expired
@@ -919,35 +936,6 @@ directSp.DirectSpClient.prototype._ajax = function (ajaxOptions) {
         });
 };
 
-// Handle Captcha
-directSp.DirectSpClient.prototype._ajax2 = function (ajaxOptions) {
-
-    return this._ajaxProvider(ajaxOptions)
-        .catch(error => {
-            //check captcha error
-            if (this.onCaptcha) {
-                //return if it not a captcha error
-                if (!error || !error.errorName || error.errorName.toLowerCase() != "invalidcaptcha")
-                    throw error;
-
-                //raise onCaptcha event
-                let captchaControllerOptions = {
-                    dspClient: this,
-                    ajaxOptions: ajaxOptions,
-                    captchaId: error.errorData.captchaId,
-                    captchaImage: error.errorData.captchaImage
-                }
-
-                let captchaController = new directSp.CaptchaController(captchaControllerOptions);
-                if (this.isLogEnabled) console.log("Calling onCaptcha ...");
-                this.onCaptcha(captchaController);
-                return captchaController.promise;
-            }
-
-            throw error;
-        });
-};
-
 directSp.DirectSpClient.prototype._ajaxProvider = function (ajaxOptions) {
 
     return new Promise((resolve, reject) => {
@@ -955,8 +943,9 @@ directSp.DirectSpClient.prototype._ajaxProvider = function (ajaxOptions) {
         req.withCredentials = ajaxOptions.withCredentials;
         req.open(ajaxOptions.method, ajaxOptions.url);
         req.onload = () => {
+            this._checkNewVersion(req.getResponseHeader("DSP-AppVersion"));
+
             if (req.status == 200) {
-                //return responseText
                 resolve(req.responseText);
             }
             else {
@@ -976,6 +965,7 @@ directSp.DirectSpClient.prototype._ajaxProvider = function (ajaxOptions) {
             }
         };
         req.onerror = () => {
+            this._checkNewVersion(req.getResponseHeader("DSP-AppVersion"));
             reject(this.createError({ errorName: "Network Error", errorDescription: "Network error or server unreachable!" }));
         };
 
@@ -1005,6 +995,27 @@ directSp.DirectSpClient.prototype._ajaxProvider = function (ajaxOptions) {
         req.send(body);
     });
 };
+
+directSp.DirectSpClient.prototype._checkNewVersion = function (resourceAppVersion) {
+    // app versin does not available if resourceAppVersion is null
+    if (!resourceAppVersion || resourceAppVersion == this._resourceAppVersion)
+        return;
+
+    //detect new versio
+    let isReloadNeeded = this._resourceAppVersion != null && this._resourceAppVersion != resourceAppVersion;
+
+    // save new version
+    this._resourceAppVersion = resourceAppVersion;
+    localStorage.setItem(this._storageNamePrefix + "resouceAppVersion", resourceAppVersion);
+
+    // reloading
+    if (isReloadNeeded) {
+        console.log("DirectSp: New version detected! Reloading ...");
+        window.location.reload(true);
+    }
+
+    return isReloadNeeded;
+}
 
 directSp.DirectSpClient.prototype._processInvokeHook = function (hookParams) {
 
@@ -1042,19 +1053,27 @@ directSp.DirectSpClient.prototype._processInvokeHook = function (hookParams) {
 }
 
 directSp.DirectSpClient.prototype.help = function (criteria, reload) {
-    reload = directSp.Utility.checkUndefined(reload, true);
+    reload = directSp.Utility.checkUndefined(reload, false);
 
-    //Load Api info
-    if (!this._systemApi && reload) { //===null to prevent recursive call on undefined
+    //Load Api info if it is not loaded
+    if (!this._systemApi || reload) {
         this.invoke("System_Api")
             .then(result => {
                 this._systemApi = result.api;
-                this.help(criteria, false);
-                return result;
+                if (result.api)
+                    this._help(criteria);
+                else
+                    console.log("DirectSp: Could not retreive api information!");
             });
         return 'wait...';
     }
 
+
+    return this._help(criteria);
+}
+
+
+directSp.DirectSpClient.prototype._help = function (criteria) {
     // show help
     if (criteria != null) criteria = criteria.trim().toLowerCase();
     if (criteria == "") criteria = null;
@@ -1069,12 +1088,12 @@ directSp.DirectSpClient.prototype.help = function (criteria, reload) {
 
     //show procedure if there is only one procedure
     if (foundProc.length == 0) {
-        console.log('Nothing found!');
+        console.log('DirectSp: Nothing found!');
     }
     else {
         for (let i = 0; i < foundProc.length; i++) {
             if (foundProc[i].procedureName.toLowerCase() == criteria || foundProc.length == 1)
-                this._help(foundProc[i]);
+                this._helpImpl(foundProc[i]);
             else
                 console.log(foundProc[i].procedureName);
         }
@@ -1083,7 +1102,7 @@ directSp.DirectSpClient.prototype.help = function (criteria, reload) {
     return '---------------';
 };
 
-directSp.DirectSpClient.prototype._help = function (procedureMetadata) {
+directSp.DirectSpClient.prototype._helpImpl = function (procedureMetadata) {
     // find max param length
     let maxParamNameLength = 0;
     let inputParams = [];
@@ -1464,39 +1483,57 @@ directSp.DirectSpClient.Paginator.prototype.getPage = function (pageNo) {
 };
 
 // *********************
-// **** Captcha Controller
+// **** Error Controller
 // *********************
-directSp.CaptchaController = function (data) {
+directSp.ErrorController = function (data) {
     this._data = data;
-    this.captchaImageUri = "data:image/png;base64," + data.captchaImage;
+    this._error = data.error;
+    this._errorName = data.error && data.error.errorName ? data.error.errorName.toLowerCase() : null;
+    this._canRetry = this._errorName == "invalidcaptcha";
+
+    if (this._errorName == "invalidcaptcha") {
+        this.captchaImageUri = "data:image/png;base64," + data.error.errorData.captchaImage;
+        this.captchaCode = null;
+    };
+
     this.promise = new Promise((resolve, reject) => {
         this._resolve = resolve;
         this._reject = reject;
     });
+
+    if (!this._canRetry)
+        this._reject(data.error);
 };
 
-directSp.CaptchaController.prototype.continue = function (captchaCode) {
+directSp.ErrorController.prototype = {
+    get error() {
+        return this._error;
+    },
+
+    get canRetry() {
+        return this._canRetry;
+    }
+}
+
+directSp.ErrorController.prototype.retry = function () {
 
     let ajaxOptions = this._data.ajaxOptions;
-
-    //finding ajax data
     let ajaxData = ajaxOptions.data;
+    let invokeOptions = this._data.dspClient._getInvokeOptionsFromAjaxOptions(ajaxOptions);
 
-    // try get invokeOptions
-    let invokeOptions = null;
-    if (ajaxData)
-        invokeOptions = ajaxData.invokeOptions;
+    if (this._errorName == "invalidcaptcha") {
 
-    //try update invokeParams for invoke
-    if (invokeOptions) {
-        invokeOptions.captchaId = this._data.captchaId;
-        invokeOptions.captchaCode = captchaCode;
-    }
+        //try update invokeParams for invoke
+        if (invokeOptions) {
+            invokeOptions.captchaId = this._data.captchaId;
+            invokeOptions.captchaCode = this.captchaCode;
+        }
 
-    //try update param for authentication grantby password
-    if (ajaxData.grant_type == "password") {
-        ajaxData.captchaId = this._data.captchaId;
-        ajaxData.captchaCode = captchaCode;
+        //try update param for authentication grantby password
+        if (ajaxData.grant_type == "password") {
+            ajaxData.captchaId = this.error.errorData.captchaId;
+            ajaxData.captchaCode = this.captchaCode;
+        }
     }
 
     // retry original ajax
@@ -1509,11 +1546,10 @@ directSp.CaptchaController.prototype.continue = function (captchaCode) {
         });
 }
 
-directSp.CaptchaController.prototype.cancel = function () {
-    let error = this._data.dspClient._convertToError("Captcha has been canceled by the user!");
+directSp.ErrorController.prototype.release = function () {
+    let error = this._data.dspClient._convertToError("Operation has been canceled by the user!");
     this._reject(error);
 }
-
 
 //Utilities
 directSp.Utility = {};
