@@ -171,6 +171,10 @@ namespace DirectSp.Core
                     throw spException.SpCallError.ErrorNumber == 3906 ? ex : spException;
                 }
             }
+            catch (SpException spException) //catch any read-only errors
+            {
+                throw spException.SpCallError.ErrorNumber == 3906 ? new SpMaintenanceReadOnlyException(spCall.Method) : spException;
+            }
         }
 
         private async Task<SpCallResult> InvokeImpl1(SpCall spCall, SpInvokeParamsInternal spi)

@@ -966,7 +966,7 @@ directSp.DirectSpClient.prototype._ajaxProvider = function (ajaxOptions) {
         };
         req.onerror = () => {
             this._checkNewVersion(req.getResponseHeader("DSP-AppVersion"));
-            reject(this.createError({ errorName: "Network Error", errorDescription: "Network error or server unreachable!" }));
+            reject(this.createError({ errorName: "Network Error", errorDescription: "Network error or server unreachable!", errorNumber: 503 }));
         };
 
         //headers
@@ -1488,10 +1488,12 @@ directSp.DirectSpClient.Paginator.prototype.getPage = function (pageNo) {
 directSp.ErrorController = function (data) {
     this._data = data;
     this._error = data.error;
-    this._errorName = data.error && data.error.errorName ? data.error.errorName.toLowerCase() : null;
-    this._canRetry = this._errorName == "invalidcaptcha";
+    this._errorNumber = data.error ? data.error.errorNumber : null;
 
-    if (this._errorName == "invalidcaptcha") {
+    //55022: InvalidCaptcha, 55027: Maintenance, 55028: MaintenanceReadOnly
+    this._canRetry = this._errorNumber == 55022 || this._errorNumber == 55027 || this._errorNumber == 55028 || this._errorNumber == 503;
+
+    if (this._errorNumber == 55022) {
         this.captchaImageUri = "data:image/png;base64," + data.error.errorData.captchaImage;
         this.captchaCode = null;
     };
@@ -1521,7 +1523,7 @@ directSp.ErrorController.prototype.retry = function () {
     let ajaxData = ajaxOptions.data;
     let invokeOptions = this._data.dspClient._getInvokeOptionsFromAjaxOptions(ajaxOptions);
 
-    if (this._errorName == "invalidcaptcha") {
+    if (this._errorNumber == 55022) {
 
         //try update invokeParams for invoke
         if (invokeOptions) {
