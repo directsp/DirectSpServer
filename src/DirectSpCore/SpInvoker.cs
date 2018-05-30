@@ -40,13 +40,35 @@ namespace DirectSp.Core
             SessionManager = new UserSessionManager(options);
             KeyValue = new DspKeyValue(spInvokerInternal);
             SpException.UseCamelCase = options.UseCamelCase;
-
-            // Refresh Api
-            RefreshApi();
         }
 
-        private SpContext _AppUserContext;
-        public SpContext AppUserContext => _AppUserContext;
+        public SpContext _AppUserContext;
+        public SpContext AppUserContext
+        {
+            get
+            {
+                lock (LockObject)
+                {
+                    if (_AppUserContext == null)
+                        RefreshApi();
+                    return _AppUserContext;
+                }
+            }
+        }
+
+        private Dictionary<string, SpInfo> _SpInfos;
+        public Dictionary<string, SpInfo> SpInfos
+        {
+            get
+            {
+                lock (LockObject)
+                {
+                    if (_SpInfos == null)
+                        RefreshApi();
+                    return _SpInfos;
+                }
+            }
+        }
 
         public string AppName => AppUserContext.AppName;
         public string AppVersion => AppUserContext.AppVersion;
@@ -67,19 +89,22 @@ namespace DirectSp.Core
                 throw new SpException("Too many request! Please try a few minutes later!", StatusCodes.Status429TooManyRequests);
         }
 
-        public Dictionary<string, SpInfo> SpInfos { get; private set; }
-
+        private object LockObject = new object();
         private void RefreshApi()
         {
-            var spInfos = new Dictionary<string, SpInfo>();
-            using (var sqlConnection = new SqlConnection(ConnectionStringReadOnly))
+            lock (LockObject)
             {
-                sqlConnection.Open();
-                var spList = ResourceDb.System_Api(sqlConnection, out string appUserContext);
-                foreach (var item in spList)
-                    spInfos.Add(item.SchemaName + "." + item.ProcedureName, item);
-                SpInfos = spInfos;
-                _AppUserContext = new SpContext(appUserContext, "$$");
+                var spInfos = new Dictionary<string, SpInfo>();
+                using (var sqlConnection = new SqlConnection(ConnectionStringReadOnly))
+                {
+                    sqlConnection.Open();
+                    var spList = ResourceDb.System_Api(sqlConnection, out string appUserContext);
+                    foreach (var item in spList)
+                        spInfos.Add(item.SchemaName + "." + item.ProcedureName, item);
+
+                    _SpInfos = spInfos;
+                    _AppUserContext = new SpContext(appUserContext, "$$");
+                }
             }
         }
 
