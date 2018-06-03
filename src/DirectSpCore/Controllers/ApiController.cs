@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Text;
 using Microsoft.AspNetCore.Http.Extensions;
 using Newtonsoft.Json;
+using System.IO;
 
 namespace DirectSp.Core.Controllers
 {
@@ -75,7 +76,18 @@ namespace DirectSp.Core.Controllers
                     fileName = "result.csv";
 
                 //get file
-                var stream = await SpInvoker.KeyValue.GetTextStream($"recordset/{id}", Encoding.Unicode);
+                Stream stream = null;
+                if (string.IsNullOrWhiteSpace(SpInvoker.Options.TempFolderPath))
+                {
+                    //use keyvalue database
+                    stream = await SpInvoker.KeyValue.GetTextStream($"recordset/{id}", Encoding.Unicode);
+                }
+                else
+                {
+                    var filePath = Path.Combine(SpInvoker.RecordsetsFolerPath, id);
+                    FileStream fs = System.IO.File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                    return File(fs, "text/csv", fileName);
+                }
 
                 AddResponseHeaders();
                 return File(stream, "text/csv", fileName);
@@ -98,7 +110,7 @@ namespace DirectSp.Core.Controllers
                 serializerSettings.ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver();
 
             if (IsAntiXss)
-                serializerSettings.Converters.Add( new AntiXssConverter());
+                serializerSettings.Converters.Add(new AntiXssConverter());
 
             return base.Json(data, serializerSettings);
         }

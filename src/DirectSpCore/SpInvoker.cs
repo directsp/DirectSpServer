@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using System.Text;
 using Microsoft.AspNetCore.Http;
 using DirectSp.Core.InternalDb;
+using System.IO;
 
 namespace DirectSp.Core
 {
@@ -40,6 +41,38 @@ namespace DirectSp.Core
             SessionManager = new UserSessionManager(options);
             KeyValue = new DspKeyValue(spInvokerInternal);
             SpException.UseCamelCase = options.UseCamelCase;
+        }
+
+        public string RecordsetsFolerPath
+        {
+            get { return string.IsNullOrWhiteSpace(Options.TempFolderPath) ? null : Path.Combine(Options.TempFolderPath, "recordsets"); }
+        }
+
+        private DateTime? LastCleanTempFolderTime;
+        private void CleanTempFolder()
+        {
+            if (RecordsetsFolerPath == null)
+                return;
+
+            // check interval time
+            var lifeTime = DateTime.Now.AddSeconds(-Options.DownloadedRecordsetFileLifetime);
+            if (LastCleanTempFolderTime != null && LastCleanTempFolderTime > lifeTime)
+                return; // Last cleaning was not far
+
+            // InitFolder
+            Directory.CreateDirectory(Options.TempFolderPath);
+            Directory.CreateDirectory(RecordsetsFolerPath);
+
+            //clean temp folder
+            var files = Directory.GetFiles(RecordsetsFolerPath);
+            foreach (string file in files)
+            {
+                FileInfo fi = new FileInfo(file);
+                if (fi.LastAccessTime < lifeTime)
+                    fi.Delete();
+            }
+
+            LastCleanTempFolderTime = DateTime.Now;
         }
 
         public SpContext _AppUserContext;
@@ -578,8 +611,34 @@ namespace DirectSp.Core
                 var fileTitle = string.IsNullOrWhiteSpace(invokeOptions.RecordsetFileTitle) ? spCall.Method + "-" + DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss") : invokeOptions.RecordsetFileTitle;
                 var fileName = fileTitle + ".csv";
                 var recordsetId = Util.GetRandomString(40);
-                var value = invokeOptions.RecordsetFormat == RecordsetFormat.Json ? Util.ToJsonString(spCallResult.Recordset, Options.UseCamelCase) : spCallResult.RecordsetText;
-                await KeyValue.ValueSet("recordset/" + recordsetId, value, Options.DownloadedRecordsetFileLifetime);
+                string value = null;
+                if (invokeOptions.RecordsetFormat == RecordsetFormat.Json)
+                {
+                    value = Util.ToJsonString(spCallResult.Recordset, Options.UseCamelCase);
+                    recordsetId += ".json";
+                }
+                if (invokeOptions.RecordsetFormat == RecordsetFormat.TabSeparatedValues)
+                {
+                    value = spCallResult.RecordsetText;
+                    recordsetId += ".csv";
+                }
+
+                //create file
+                if (RecordsetsFolerPath != null)
+                {
+                    //Cleanup
+                    CleanTempFolder();
+
+                    //create file in UNC
+                    var filePath = Path.Combine(RecordsetsFolerPath, recordsetId);
+                    File.WriteAllText(filePath, value, Encoding.Unicode);
+                }
+                else
+                {
+                    //create file in DB
+                    await KeyValue.ValueSet("recordset/" + recordsetId, value, Options.DownloadedRecordsetFileLifetime);
+                }
+
                 spCallResult.Recordset = null;
                 spCallResult.RecordsetText = null;
                 spCallResult.RecordsetUri = spi.SpInvokeParams.RecordsetDownloadUrlTemplate.Replace("{id}", recordsetId).Replace("{filename}", fileName);

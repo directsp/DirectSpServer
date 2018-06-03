@@ -11,7 +11,8 @@ namespace DirectSp.Core.Entities
         public int SessionMaxRequestCycleInterval { get; set; } = 5 * 60; //5 minutes
         public int ReadonlyConnectionSyncInterval { get; set; } = 10; //10 seconds
         public bool UseCamelCase { get; set; } = true;
-        public int DownloadedRecordsetFileLifetime { get; set; } = 2 * 3600;
+        public int DownloadedRecordsetFileLifetime { get; set; } = 5 * 3600; //5 hours
         public System.Globalization.CultureInfo AlternativeCalendar { get; set; }
+        public string TempFolderPath { get; set; }
     }
 }
