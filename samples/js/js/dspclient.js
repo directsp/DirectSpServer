@@ -1527,7 +1527,7 @@ directSp.ErrorController.prototype.retry = function () {
 
         //try update invokeParams for invoke
         if (invokeOptions) {
-            invokeOptions.captchaId = this._data.captchaId;
+            invokeOptions.captchaId = this.error.errorData.captchaId;
             invokeOptions.captchaCode = this.captchaCode;
         }
 

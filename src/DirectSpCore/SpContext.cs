@@ -18,7 +18,6 @@ namespace DirectSp.Core
             Construct(body, authUserId);
         }
 
-
         public SpContext(string appName, string authUserId, string audience)
         {
             dynamic obj = new JObject();
