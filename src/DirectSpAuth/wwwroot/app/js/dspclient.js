@@ -1214,10 +1214,10 @@ directSp.DirectSpClient.prototype._processPagination = function (spCall, invokeO
 // **** Paginator
 // *********************
 directSp.DirectSpClient.Paginator = function (dspClient, spCall, invokeOptions) {
-
     this._dspClient = dspClient;
     this._apiCall = spCall;
     this._invokeOptions = invokeOptions;
+    this._pages = [];
     this._pagePromises = [];
     this._isInvoked = false;
     this._isCacheUsed = false;
@@ -1330,6 +1330,7 @@ directSp.DirectSpClient.Paginator.prototype.refresh = function () {
 
 directSp.DirectSpClient.Paginator.prototype.reset = function () {
     this._pages = [];
+    this._pagePromises = [];
     this._pageCount = null;
     this._pageCountMin = 1;
     this._pageCountMax = null;
@@ -1373,13 +1374,13 @@ directSp.DirectSpClient.Paginator.prototype.getPage = function (pageNo) {
 
     //exclude cached pages from start
     for (; pageStart <= pageNo; pageStart++) {
-        if (this._pages[pageStart] == null)
+        if (this._pagePromises[pageStart] == null)
             break;
     }
 
     //exclude cached pages from end
     for (; pageEnd > pageNo; pageEnd--) {
-        if (this._pages[pageEnd] == null)
+        if (this._pagePromises[pageEnd] == null)
             break;
     }
     let pageCount = pageEnd - pageStart + 1;
