@@ -78,7 +78,7 @@ directSp.DirectSpClient = function () {
     this._sessionState = Math.floor(Math.random() * 10000000000000);
     this._resourceAppVersion = localStorage.getItem(this._storageNamePrefix + "resouceAppVersion");
     this._lastPageUri = null;
-    this._invokeHook = function (hookParams) { return null; }
+    this._onBeforeInvoke = function (hookParams) { return null; }
     this._authError = null;
     this._userInfo = null;
     this._userInfoLast = null;
@@ -88,8 +88,8 @@ directSp.DirectSpClient = function () {
     this._originalUri = location.href;
     this._originalQueryString = location.search;
     this._systemApi = null;
+    this._seqGroups = [];
     this._load();
-
 };
 
 directSp.DirectSpClient.prototype = {
@@ -251,11 +251,11 @@ directSp.DirectSpClient.prototype = {
         let callbackPattern = this.authRedirectUri;
         return callbackPattern != null && location.href.indexOf(callbackPattern) != -1;
     },
-    get invokeHook() {
-        return this._invokeHook;
+    get onBeforeInvoke() {
+        return this._onBeforeInvoke;
     },
-    set invokeHook(value) {
-        this._invokeHook = value;
+    set onBeforeInvoke(value) {
+        this._onBeforeInvoke = value;
     },
     get originalQueryString() {
         return this._originalQueryString;
@@ -345,9 +345,21 @@ directSp.DirectSpClient.prototype.createError = function (error) {
     return this._convertToError(error); //fix error
 };
 
-directSp.DirectSpClient.prototype.throwAppError = function (error) {
-    if (this._onError)
-        this._onError(this._convertToError(error)); //fix error
+directSp.DirectSpClient.prototype.throwAppError = function (error, isUseAppErrorHandler) {
+    error = this._convertToError(error);
+    isUseAppErrorHandler = directSp.Convert.toBoolean(isUseAppErrorHandler, this.isUseAppErrorHandler);
+
+    if (!this.onError || !isUseAppErrorHandler)
+        throw error;
+
+    // create error controller
+    let errorControllerOptions = {
+        error: error,
+        dspClient: this,
+    }
+
+    let errorController = new directSp.ErrorController(errorControllerOptions);
+    this.onError(errorController);
 };
 
 
@@ -706,7 +718,11 @@ directSp.DirectSpClient.prototype._processAuthCallback = function () {
 };
 
 directSp.DirectSpClient.prototype._convertToError = function (data) {
+    // already converted
+    if (data instanceof Error)
+        return data; 
 
+    // create error
     let error = {};
 
     //casting data
@@ -827,8 +843,19 @@ directSp.DirectSpClient.prototype._invokeCore = function (method, invokeParams) 
     if (this.isLogEnabled)
         console.log("DirectSp: invoke (Request)", method, invokeParams);
 
+    // check seqGroup
+    var seqGroupValue = null;
+    if (invokeParams.invokeOptions.seqGroup) {
+        seqGroupValue = this._seqGroups[invokeParams.invokeOptions.seqGroup] ? this._seqGroups[invokeParams.invokeOptions.seqGroup] + 1 : 1;
+        this._seqGroups[invokeParams.invokeOptions.seqGroup] = seqGroupValue;
+    }
+
+    //invoke 
     return this._invokeCore2(method, invokeParams)
         .then(result => {
+            if (seqGroupValue!=null && seqGroupValue != this._seqGroups[invokeParams.invokeOptions.seqGroup])
+                throw this.createError( { errorName: "seqCanceled" } );
+
             //log response
             if (this.isLogEnabled)
                 console.log("DirectSp: invoke (Response)", method, invokeParams, result);
@@ -836,6 +863,9 @@ directSp.DirectSpClient.prototype._invokeCore = function (method, invokeParams) 
             return result;
         })
         .catch(error => {
+            if (seqGroupValue != null && seqGroupValue != this._seqGroups[invokeParams.invokeOptions.seqGroup])
+                throw this.createError({ errorName: "seqCanceled" });
+
             if (this.isLogEnabled)
                 console.warn("DirectSp: invoke (Response)", method, invokeParams, error);
             throw error;
@@ -854,7 +884,7 @@ directSp.DirectSpClient.prototype._invokeCore2 = function (method, invokeParams)
 
     let promise = this._processInvokeHook(hookParams);
     if (promise == null)
-        promise = this._invokeCore3(method, invokeParams);
+        promise = this._invokeCore3(hookParams.method, hookParams.invokeParams);
 
     //return the promise if there is no api delay
     if (hookParams.delay == null || hookParams.delay <= 0)
@@ -1020,12 +1050,12 @@ directSp.DirectSpClient.prototype._checkNewVersion = function (resourceAppVersio
 directSp.DirectSpClient.prototype._processInvokeHook = function (hookParams) {
 
     //return quickly if there is no hook
-    if (!this.invokeHook)
+    if (!this.onBeforeInvoke)
         return null;
 
     //run hook
     try {
-        let promise = this.invokeHook(hookParams);
+        let promise = this.onBeforeInvoke(hookParams);
         if (promise == null)
             return null;
 
@@ -1519,9 +1549,11 @@ directSp.ErrorController.prototype = {
 }
 
 directSp.ErrorController.prototype.retry = function () {
-
+    if (!this.canRetry)
+        throw this.createError("Can not retry this error!");
+        
     let ajaxOptions = this._data.ajaxOptions;
-    let ajaxData = ajaxOptions.data;
+    let ajaxData = ajaxOptions ? ajaxOptions.data : null;
     let invokeOptions = this._data.dspClient._getInvokeOptionsFromAjaxOptions(ajaxOptions);
 
     if (this._errorNumber == 55022) {
@@ -1550,8 +1582,7 @@ directSp.ErrorController.prototype.retry = function () {
 }
 
 directSp.ErrorController.prototype.release = function () {
-    let error = this._data.dspClient._convertToError("Operation has been canceled by the user!");
-    this._reject(error);
+    this._reject(this._error);
 }
 
 //Utilities
