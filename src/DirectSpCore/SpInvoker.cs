@@ -104,7 +104,7 @@ namespace DirectSp.Core
         }
 
         public string AppName => AppUserContext.AppName;
-        public string AppVersion => AppUserContext.AppVersion;
+        public string AppVersion { get; private set; }
 
         // User Request Count control
         private void VerifyUserRequestLimit(UserSession userSession)
@@ -137,6 +137,7 @@ namespace DirectSp.Core
 
                     _SpInfos = spInfos;
                     _AppUserContext = new SpContext(appUserContext, "$$");
+                    AppVersion = _AppUserContext.AppVersion; //don't make AppVersion property because _AppUserContext may not be initialized when there is error
                 }
             }
         }
