@@ -5,7 +5,7 @@ using DirectSp.Core.Infrastructure;
 
 namespace DirectSp.Core.Test.Mock
 {
-    class CommandExecuter : ICommandExecuter
+    class DbLayer : IDbLayer
     {
         public int ExcuteNonQuery(SqlCommand command)
         {
@@ -45,6 +45,9 @@ namespace DirectSp.Core.Test.Mock
             }
         }
 
+        public void OpenConnection(SqlConnection connection)
+        {
+        }
     }
 
 }

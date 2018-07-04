@@ -9,7 +9,7 @@ namespace DirectSp.Core.Test.DI
         public override void Load()
         {
             Bind<ICertificateProvider>().To<Mock.CertificateProvider>();
-            Bind<ICommandExecuter>().To<Mock.CommandExecuter>().InSingletonScope();
+            Bind<IDbLayer>().To<Mock.DbLayer>().InSingletonScope();
             Bind<JwtTokenSigner>().ToSelf();
         }
     }

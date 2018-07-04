@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DirectSp.Core.Database
 {
-    class CommandExecuter : ICommandExecuter
+    class DbLayer : IDbLayer
     {
         public async Task<IDataReader> ExecuteReaderAsync(SqlCommand command)
         {
@@ -32,6 +32,11 @@ namespace DirectSp.Core.Database
             {
                 command.Connection.Close();
             }
+        }
+
+        public void OpenConnection(SqlConnection connection)
+        {
+            connection.Open();
         }
     }
 }
