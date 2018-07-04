@@ -12,6 +12,10 @@ using System.Text;
 using Microsoft.AspNetCore.Http;
 using DirectSp.Core.InternalDb;
 using System.IO;
+using DirectSp.Core.SpSchema;
+using DirectSp.Core.DI;
+using DirectSp.Core.Infrastructure;
+using System.Collections.Concurrent;
 
 namespace DirectSp.Core
 {
@@ -49,31 +53,6 @@ namespace DirectSp.Core
         }
 
         private DateTime? LastCleanTempFolderTime;
-        private void CleanTempFolder()
-        {
-            if (RecordsetsFolerPath == null)
-                return;
-
-            // check interval time
-            var lifeTime = DateTime.Now.AddSeconds(-Options.DownloadedRecordsetFileLifetime);
-            if (LastCleanTempFolderTime != null && LastCleanTempFolderTime > lifeTime)
-                return; // Last cleaning was not far
-
-            // InitFolder
-            Directory.CreateDirectory(Options.TempFolderPath);
-            Directory.CreateDirectory(RecordsetsFolerPath);
-
-            //clean temp folder
-            var files = Directory.GetFiles(RecordsetsFolerPath);
-            foreach (string file in files)
-            {
-                FileInfo fi = new FileInfo(file);
-                if (fi.LastAccessTime < lifeTime)
-                    fi.Delete();
-            }
-
-            LastCleanTempFolderTime = DateTime.Now;
-        }
 
         public SpContext _AppUserContext;
         public SpContext AppUserContext
@@ -123,6 +102,7 @@ namespace DirectSp.Core
         }
 
         private object LockObject = new object();
+
         private void RefreshApi()
         {
             lock (LockObject)
@@ -130,7 +110,6 @@ namespace DirectSp.Core
                 var spInfos = new Dictionary<string, SpInfo>();
                 using (var sqlConnection = new SqlConnection(ConnectionStringReadOnly))
                 {
-                    sqlConnection.Open();
                     var spList = ResourceDb.System_Api(sqlConnection, out string appUserContext);
                     foreach (var item in spList)
                         spInfos.Add(item.SchemaName + "." + item.ProcedureName, item);
@@ -141,7 +120,7 @@ namespace DirectSp.Core
             }
         }
 
-        public async Task<IEnumerable<SpCallResult>> Invoke(SpCall[] spCalls, SpInvokeParams spInvokeParams)
+        public Task<SpCallResult[]> Invoke(SpCall[] spCalls, SpInvokeParams spInvokeParams)
         {
             var spi = new SpInvokeParamsInternal
             {
@@ -149,13 +128,13 @@ namespace DirectSp.Core
                 IsBatch = true
             };
 
-            var spCallResults = new List<SpCallResult>();
-            foreach (var spCall in spCalls)
+            var spCallResults = new ConcurrentBag<SpCallResult>();
+            Parallel.ForEach(spCalls, async (spCall) =>
             {
                 try
                 {
-                    //batch
-                    var spCallResult = await Invoke(spCall, spi);
+                   //batch
+                   var spCallResult = await Invoke(spCall, spi);
                     spCallResults.Add(spCallResult);
                 }
                 catch (SpException ex)
@@ -163,13 +142,13 @@ namespace DirectSp.Core
                     if (ex.StatusCode == StatusCodes.Status500InternalServerError)
                         throw ex;
 
-                    //add error object
-                    var spCallResult = new SpCallResult { { "error", ex.SpCallError } };
+                   //add error object
+                   var spCallResult = new SpCallResult { { "error", ex.SpCallError } };
                     spCallResults.Add(spCallResult);
                 }
-            }
+            });
 
-            return spCallResults;
+            return Task.FromResult(spCallResults.ToArray());
         }
 
         public async Task<SpCallResult> Invoke(SpCall spCall)
@@ -210,7 +189,7 @@ namespace DirectSp.Core
         {
             try
             {
-                return await InvokeImpl1(spCall, spi);
+                return await InvokeCore(spCall, spi);
             }
             catch (SpInvokerAppVersionException)
             {
@@ -222,7 +201,7 @@ namespace DirectSp.Core
                 try
                 {
                     spi.IsForceReadOnly = true;
-                    return await InvokeImpl1(spCall, spi);
+                    return await InvokeCore(spCall, spi);
                 }
                 catch (SpException spException)
                 {
@@ -235,15 +214,15 @@ namespace DirectSp.Core
             }
         }
 
-        private async Task<SpCallResult> InvokeImpl1(SpCall spCall, SpInvokeParamsInternal spi)
+        private async Task<SpCallResult> InvokeCore(SpCall spCall, SpInvokeParamsInternal spi)
         {
             try
             {
-                //validate captcha
-                await ValidateCaptcha(spi);
+                // Check captcha
+                await CheckCaptcha(spi);
 
-                // call core
-                var result = await InvokeImpl2(spCall, spi);
+                // Call core
+                var result = await InvokeSp(spCall, spi);
 
                 // Update result
                 await UpdateRecodsetDownloadUri(spCall, spi, result);
@@ -257,7 +236,7 @@ namespace DirectSp.Core
             }
         }
 
-        private async Task<SpCallResult> InvokeImpl2(SpCall spCall, SpInvokeParamsInternal spi)
+        private async Task<SpCallResult> InvokeSp(SpCall spCall, SpInvokeParamsInternal spi)
         {
             if (!spi.IsSystem && string.IsNullOrWhiteSpace(spi.SpInvokeParams.UserRemoteIp))
                 throw new ArgumentException(spi.SpInvokeParams.UserRemoteIp, "UserRemoteIp");
@@ -318,7 +297,7 @@ namespace DirectSp.Core
                 foreach (var callerParam in spCallParams)
                 {
                     //find sqlParam for callerParam
-                    var spParam = spInfo.Params.FirstOrDefault(x => x.ParamName.Equals("@" + callerParam.Key, StringComparison.OrdinalIgnoreCase));
+                    var spParam = spInfo.Params.FirstOrDefault(x => x.ParamName.Equals($"@{callerParam.Key}", StringComparison.OrdinalIgnoreCase));
                     if (spParam == null)
                         throw new ArgumentException($"parameter '{callerParam.Key}' does not exists!");
 
@@ -326,8 +305,17 @@ namespace DirectSp.Core
                     if (callerParam.Key.Equals("Context", StringComparison.OrdinalIgnoreCase))
                         throw new ArgumentException($"You can not set '{callerParam.Key}' parameter!");
 
+                    // Sign text if need to sign
+                    spInfo.ExtendedProps.Params.TryGetValue(spParam.ParamName, out SpParamEx spParamEx);
+                    if (spParamEx.SignType == SpSignMode.JwtByCertThumb && !spParam.IsOutput)
+                    {
+                        var tokenSigner = Resolver.Instance.Resolve<JwtTokenSigner>();
+                        if (!tokenSigner.CheckSign(callerParam.Value.ToString()))
+                            throw new SpInvalidParamSignature(callerParam.Key);
+                    }
+
                     //convert data for db
-                    var isMoney = spInfo.ExtendedProps.Params.TryGetValue(spParam.ParamName, out SpParamEx spParamEx) ? spParamEx.IsUseMoneyConversionRate : false;
+                    var isMoney = spParamEx.IsUseMoneyConversionRate;
                     object callParamValue = ConvertDataForDb(invokeOptions, spParam.SystemTypeName.ToString(), callerParam.Value, isMoney);
 
                     //add parameter
@@ -346,11 +334,11 @@ namespace DirectSp.Core
                 }
 
                 //create command and run it
-                sqlConn.Open();
                 command.CommandType = CommandType.StoredProcedure;
                 command.Parameters.AddRange(sqlParameters.ToArray());
 
-                using (var dataReader = await command.ExecuteReaderAsync())
+                var executer = Resolver.Instance.Resolve<ICommandExecuter>();
+                using (var dataReader = await executer.ExecuteReaderAsync(command))
                 {
                     //Fill Recordset and close dataReader BEFORE reading sqlParameters
                     ReadRecordset(spCallResults, dataReader, spInfo, invokeOptions);
@@ -379,18 +367,25 @@ namespace DirectSp.Core
                         if (sqlParam.ParameterName.Equals("@ReturnValue", StringComparison.OrdinalIgnoreCase))
                             continue; //process after close
 
+                        // Sign text if need
+                        spInfo.ExtendedProps.Params.TryGetValue(sqlParam.ParameterName, out SpParamEx spParamEx);
+                        if (spParamEx != null && spParamEx.SignType == SpSignMode.JwtByCertThumb)
+                        {
+                            var tokenSigner = Resolver.Instance.Resolve<JwtTokenSigner>();
+                            sqlParam.Value = tokenSigner.Sign(sqlParam.Value.ToString());
+                        }
+
                         //convert data form db
-                        var isMoney = spInfo.ExtendedProps.Params.TryGetValue(sqlParam.ParameterName, out SpParamEx spParamEx) ? spParamEx.IsUseMoneyConversionRate : false;
+                        var isMoney = spParamEx != null ? spParamEx.IsUseMoneyConversionRate : false;
                         var value = ConvertDataFromDb(invokeOptions, sqlParam.DbType.ToString(), sqlParam.Value, isMoney);
                         spCallResults.Add(sqlParam.ParameterName.Substring(1), value);
 
                         // Add Alternative Calendar
-                        if (AltDateTime_IsDateTime(sqlParam.DbType.ToString()))
-                            spCallResults.Add(AltDateTime_GetFieldName(sqlParam.ParameterName.Substring(1)), AltDateTime_GetFieldValue(value, sqlParam.DbType.ToString()));
+                        if (AlternativeIsDateTime(sqlParam.DbType.ToString()))
+                            spCallResults.Add(AlternativeGetFieldName(sqlParam.ParameterName.Substring(1)), AlternativeFormatDateTime(value, sqlParam.DbType.ToString()));
                     }
                 }
 
-                sqlConn.Close();
             }
             return spCallResults;
         }
@@ -472,7 +467,7 @@ namespace DirectSp.Core
             return value;
         }
 
-        private void ReadRecordset(SpCallResult spCallResult, SqlDataReader dataReader, SpInfo spInfo, InvokeOptions invokeOptions)
+        private void ReadRecordset(SpCallResult spCallResult, IDataReader dataReader, SpInfo spInfo, InvokeOptions invokeOptions)
         {
             if (dataReader.FieldCount == 0)
                 return;
@@ -483,7 +478,7 @@ namespace DirectSp.Core
             {
                 fieldInfos.Add(new FieldInfo()
                 {
-                    TypeName = Util.GetFriendlySqlTypeName(dataReader.GetProviderSpecificFieldType(i).Name),
+                    TypeName = Util.GetFriendlySqlTypeName(((SqlDataReader)dataReader).GetProviderSpecificFieldType(i).Name),
                     IsUseMoneyConversionRate = spInfo.ExtendedProps.Fields.TryGetValue(dataReader.GetName(i), out SpFieldEx spRecodsetFiled) ? spRecodsetFiled.IsUseMoneyConversionRate : false
                 });
             }
@@ -503,10 +498,10 @@ namespace DirectSp.Core
 
             // Read to tabSeparatedValues
             if (invokeOptions.RecordsetFormat == RecordsetFormat.TabSeparatedValues)
-                spCallResult.RecordsetText = ReadRecordsetAsTabSeparatedValues(dataReader, spInfo, fieldInfos.ToArray(), invokeOptions);
+                spCallResult.RecordsetText = ReadRecordsetByTab(dataReader, spInfo, fieldInfos.ToArray(), invokeOptions);
         }
 
-        private IEnumerable<IDictionary<string, object>> ReadRecordsetAsObject(SqlDataReader dataReader, SpInfo spInfo, FieldInfo[] fieldInfos, InvokeOptions invokeOptions)
+        private IEnumerable<IDictionary<string, object>> ReadRecordsetAsObject(IDataReader dataReader, SpInfo spInfo, FieldInfo[] fieldInfos, InvokeOptions invokeOptions)
         {
             var recordset = new List<IDictionary<string, object>>();
             while (dataReader.Read())
@@ -518,31 +513,31 @@ namespace DirectSp.Core
                     row.Add(dataReader.GetName(i), itemValue);
 
                     // Add Alternative Calendar
-                    if (AltDateTime_IsDateTime(fieldInfos[i].TypeName))
-                        row.Add(AltDateTime_GetFieldName(dataReader.GetName(i)), AltDateTime_GetFieldValue(itemValue, fieldInfos[i].TypeName));
+                    if (AlternativeIsDateTime(fieldInfos[i].TypeName))
+                        row.Add(AlternativeGetFieldName(dataReader.GetName(i)), AlternativeFormatDateTime(itemValue, fieldInfos[i].TypeName));
                 }
                 recordset.Add(row);
             }
             return recordset;
         }
 
-        private string ReadRecordsetAsTabSeparatedValues(SqlDataReader dataReader, SpInfo spInfo, FieldInfo[] fieldInfos, InvokeOptions invokeOptions)
+        private string ReadRecordsetByTab(IDataReader dataReader, SpInfo spInfo, FieldInfo[] fieldInfos, InvokeOptions invokeOptions)
         {
-            var strBuilder = new StringBuilder(1 * 1000000); //1MB
+            var stringBuilder = new StringBuilder(1 * 1000000); //1MB
 
             //add fields
             for (int i = 0; i < dataReader.FieldCount; i++)
             {
                 if (i > 0)
-                    strBuilder.Append("\t");
+                    stringBuilder.Append("\t");
                 var fieldName = Options.UseCamelCase ? Util.ToCamelCase(dataReader.GetName(i)) : dataReader.GetName(i);
-                strBuilder.Append(fieldName);
+                stringBuilder.Append(fieldName);
 
                 //AltDateTime
-                if (AltDateTime_IsDateTime(fieldInfos[i].TypeName))
-                    strBuilder.Append("\t" + AltDateTime_GetFieldName(fieldName));
+                if (AlternativeIsDateTime(fieldInfos[i].TypeName))
+                    stringBuilder.Append($"\t{AlternativeGetFieldName(fieldName)}");
             }
-            strBuilder.AppendLine();
+            stringBuilder.AppendLine();
 
             //add records
             while (dataReader.Read())
@@ -550,17 +545,17 @@ namespace DirectSp.Core
                 for (int i = 0; i < dataReader.FieldCount; i++)
                 {
                     if (i > 0)
-                        strBuilder.Append("\t");
+                        stringBuilder.Append("\t");
                     var itemValue = ConvertDataFromDb(invokeOptions, dataReader.GetDataTypeName(i), dataReader.GetValue(i), fieldInfos[i].IsUseMoneyConversionRate);
                     string itemValueString = itemValue?.ToString().Trim();
 
-                    //remove tabs
+                    // Remove tabs
                     if (itemValue is string)
                     {
-                        itemValueString = itemValueString.Replace("\"", "\"\"");
+                        itemValueString = itemValueString.Replace("'", "''");
                         itemValueString = itemValueString.Replace("\t", " ");
-                        itemValueString = $"\"{itemValueString}\"";
-                        //add ="" if it was a number
+                        itemValueString = $"'{itemValueString}'";
+                        // Add ="" if it was a number
                         if (double.TryParse(itemValue.ToString(), out double t))
                             itemValueString = $"={itemValueString}";
                     }
@@ -568,24 +563,25 @@ namespace DirectSp.Core
                     if (itemValue is DateTime)
                         itemValueString = ((DateTime)itemValue).ToString("yyyy-MM-dd HH:mm:ss");
 
-                    // convert json to string
+                    // Convert json to string
                     if (itemValue is JToken)
                         itemValueString = Util.ToJsonString(itemValue, Options.UseCamelCase);
 
-                    //write the value
-                    strBuilder.Append(itemValueString);
+                    // Write the value
+                    stringBuilder.Append(itemValueString);
 
-                    //write the AltDateTime
-                    if (AltDateTime_IsDateTime(fieldInfos[i].TypeName))
-                        strBuilder.Append("\t" + AltDateTime_GetFieldValue(itemValue, fieldInfos[i].TypeName));
+                    // Write the AltDateTime
+                    if (AlternativeIsDateTime(fieldInfos[i].TypeName))
+                        stringBuilder.Append("\t" + AlternativeFormatDateTime(itemValue, fieldInfos[i].TypeName));
                 }
-                strBuilder.AppendLine();
+                stringBuilder.AppendLine();
             }
 
-            return strBuilder.ToString();
+            return stringBuilder.ToString();
         }
 
-        private async Task<bool> ValidateCaptcha(SpInvokeParamsInternal spi)
+        #region helpers
+        private async Task<bool> CheckCaptcha(SpInvokeParamsInternal spi)
         {
             bool ret = false;
 
@@ -600,27 +596,28 @@ namespace DirectSp.Core
 
             return ret;
         }
-
         private async Task<bool> UpdateRecodsetDownloadUri(SpCall spCall, SpInvokeParamsInternal spi, SpCallResult spCallResult)
         {
-            bool ret = false;
+            bool result = false;
 
             var invokeOptions = spi.SpInvokeParams.InvokeOptions;
             if (invokeOptions.IsWithRecodsetDownloadUri)
             {
-                var fileTitle = string.IsNullOrWhiteSpace(invokeOptions.RecordsetFileTitle) ? spCall.Method + "-" + DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss") : invokeOptions.RecordsetFileTitle;
-                var fileName = fileTitle + ".csv";
-                var recordsetId = Util.GetRandomString(40);
+                var fileTitle = string.IsNullOrWhiteSpace(invokeOptions.RecordsetFileTitle) ?
+                    $"{spCall.Method}-{DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss")}" : invokeOptions.RecordsetFileTitle;
+
+                var fileName = $"{fileTitle}.csv";
+                var recordSetId = Util.GetRandomString(40);
                 string value = null;
                 if (invokeOptions.RecordsetFormat == RecordsetFormat.Json)
                 {
                     value = Util.ToJsonString(spCallResult.Recordset, Options.UseCamelCase);
-                    recordsetId += ".json";
+                    recordSetId += ".json";
                 }
                 if (invokeOptions.RecordsetFormat == RecordsetFormat.TabSeparatedValues)
                 {
                     value = spCallResult.RecordsetText;
-                    recordsetId += ".csv";
+                    recordSetId += ".csv";
                 }
 
                 //create file
@@ -630,37 +627,61 @@ namespace DirectSp.Core
                     CleanTempFolder();
 
                     //create file in UNC
-                    var filePath = Path.Combine(RecordsetsFolerPath, recordsetId);
+                    var filePath = Path.Combine(RecordsetsFolerPath, recordSetId);
                     File.WriteAllText(filePath, value, Encoding.Unicode);
                 }
                 else
                 {
                     //create file in DB
-                    await KeyValue.ValueSet("recordset/" + recordsetId, value, Options.DownloadedRecordsetFileLifetime);
+                    await KeyValue.ValueSet($"recordset/{recordSetId}", value, Options.DownloadedRecordsetFileLifetime);
                 }
 
                 spCallResult.Recordset = null;
                 spCallResult.RecordsetText = null;
-                spCallResult.RecordsetUri = spi.SpInvokeParams.RecordsetDownloadUrlTemplate.Replace("{id}", recordsetId).Replace("{filename}", fileName);
+                spCallResult.RecordsetUri = spi.SpInvokeParams.RecordsetDownloadUrlTemplate.Replace("{id}", recordSetId).Replace("{filename}", fileName);
                 spi.SpInvokeParams.InvokeOptions.IsAntiXss = false; //prevent encoding url
-                ret = true;
+                result = true;
             }
 
-            return ret;
+            return result;
         }
+        private void CleanTempFolder()
+        {
+            if (RecordsetsFolerPath == null)
+                return;
 
-        private string AltDateTime_GetFieldValue(object fieldValue, string typeName)
+            // Check interval time
+            var lifeTime = DateTime.Now.AddSeconds(-Options.DownloadedRecordsetFileLifetime);
+            if (LastCleanTempFolderTime != null && LastCleanTempFolderTime > lifeTime)
+                return; // Last cleaning was not far
+
+            // InitFolder
+            Directory.CreateDirectory(Options.TempFolderPath);
+            Directory.CreateDirectory(RecordsetsFolerPath);
+
+            //clean temp folder
+            var files = Directory.GetFiles(RecordsetsFolerPath);
+            foreach (string file in files)
+            {
+                FileInfo fi = new FileInfo(file);
+                if (fi.LastAccessTime < lifeTime)
+                    fi.Delete();
+            }
+
+            LastCleanTempFolderTime = DateTime.Now;
+        }
+        private string AlternativeFormatDateTime(object fieldValue, string typeName)
         {
             return fieldValue == null ? null : ((DateTime)fieldValue).ToString(typeName.ToLower() == "date" ? "yyyy-MM-dd" : "yyyy-MM-dd HH:mm:ss", Options.AlternativeCalendar);
         }
-        private string AltDateTime_GetFieldName(string fieldName)
+        private string AlternativeGetFieldName(string fieldName)
         {
-            return fieldName + "_" + Options.AlternativeCalendar.TwoLetterISOLanguageName;
+            return $"{fieldName}_{Options.AlternativeCalendar.TwoLetterISOLanguageName}";
         }
-
-        private bool AltDateTime_IsDateTime(string typeName)
+        private bool AlternativeIsDateTime(string typeName)
         {
             return typeName.ToLower().Substring(0, 4) == "date" && Options.AlternativeCalendar != null;
         }
+        #endregion helper
     }
 }

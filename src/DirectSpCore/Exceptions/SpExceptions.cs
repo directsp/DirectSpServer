@@ -50,4 +50,15 @@ namespace DirectSp.Core.Exceptions
         }
     }
 
+    public class SpInvalidParamSignature : SpException
+    {
+        public SpInvalidParamSignature(SpException baseException) : base(baseException) { }
+
+        public SpInvalidParamSignature(string paramName)
+            : base(new SpCallError() { ErrorName = SpCommonExceptionId.BatchIsNotAllowed.ToString(), ErrorNumber = (int)SpCommonExceptionId.InvalidParamSignature, ErrorMessage = $"Invalid parameter singnature for {paramName}" })
+        {
+        }
+    }
+
+
 }

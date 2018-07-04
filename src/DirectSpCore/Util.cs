@@ -166,7 +166,7 @@ namespace DirectSp.Core
             char[] invalidCharacters = { '"', '\'', '<', '>', '&' };
             var res = text.IndexOfAny(invalidCharacters) == -1;
             if (!res && isThrow)
-                throw new ArgumentException("the argument contains invalid characters! \" ' < > &");
+                throw new ArgumentException("the argument contains invalid characters! ' ' < > &");
             return res;
         }
 
@@ -177,7 +177,7 @@ namespace DirectSp.Core
 
             //text = text.Replace("<", "&lt;");
             //text = text.Replace(">", "&gt;");
-            //text = text.Replace("\"", "&quot;"); 
+            //text = text.Replace("'", "&quot;"); 
             //text = text.Replace("javascript", "java-script", StringComparison.InvariantCultureIgnoreCase);
             text = System.Web.HttpUtility.HtmlDecode(text);
             text = System.Web.HttpUtility.HtmlEncode(text);

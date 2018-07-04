@@ -4,7 +4,7 @@ using System.Text;
 
 namespace DirectSp.Core.Entities
 {
-    internal class SpInvokeParamsInternal
+    class SpInvokeParamsInternal
     {
         public SpInvokeParams SpInvokeParams = new SpInvokeParams();
         public bool IsCaptcha { get; set; }

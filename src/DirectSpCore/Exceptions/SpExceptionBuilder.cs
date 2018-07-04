@@ -27,6 +27,7 @@ namespace DirectSp.Core.Exceptions
         InvokerAppVersion = 55026,
         Maintenance = 55027,
         MaintenanceReadOnly = 55028,
+        InvalidParamSignature = 55029,
     }
 
     internal static class SpExceptionBuilder
@@ -57,10 +58,12 @@ namespace DirectSp.Core.Exceptions
                 case (int)SpCommonExceptionId.MaintenanceReadOnly:
                     return new SpMaintenanceReadOnlyException(ret);
 
+                case (int)SpCommonExceptionId.InvalidParamSignature:
+                    return new SpInvalidParamSignature(ret);
+
                 default:
                     return ret;
             }
         }
-
     }
 }

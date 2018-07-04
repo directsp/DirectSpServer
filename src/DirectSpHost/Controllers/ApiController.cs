@@ -11,6 +11,7 @@ namespace DirectSp.Host.Controllers
     {
         protected override SpInvoker SpInvoker { get { return App.SpInvoker; } }
 
+
         [HttpPost, Authorize]
         [Route("[controller]/{method}")]
         public new async Task<IActionResult> Invoke(string method, [FromBody] InvokeParams invokeParams)

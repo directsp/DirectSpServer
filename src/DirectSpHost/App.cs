@@ -1,7 +1,5 @@
-﻿using System;
-using DirectSp.Core;
+﻿using DirectSp.Core;
 using Microsoft.Extensions.Configuration;
-using DirectSp.Core.InternalDb;
 using System.Security.Cryptography.X509Certificates;
 using DirectSp.Core.Entities;
 

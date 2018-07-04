@@ -3,6 +3,9 @@ using System.Data;
 using System.Data.SqlClient;
 using Newtonsoft.Json;
 using DirectSp.Core.Entities;
+using DirectSp.Core.SpSchema;
+using DirectSp.Core.DI;
+using DirectSp.Core.Infrastructure;
 
 namespace DirectSp.Core
 {
@@ -21,11 +24,11 @@ namespace DirectSp.Core
                 //create command and run it
                 command.CommandType = CommandType.StoredProcedure;
                 command.Parameters.AddRange(sqlParameters.ToArray());
-                var res = command.ExecuteNonQuery();
+                var res = Resolver.Instance.Resolve<ICommandExecuter>().ExcuteNonQuery(command);
 
                 context = sqlParameters.Find(x => x.ParameterName == "@Context").Value as string; //context
                 var api = sqlParameters.Find(x => x.ParameterName == "@Api").Value as string;
-                api = api.Replace("\"sql_variant\"", "\"variant\"");
+                api = api.Replace("'sql_variant'", "'variant'");
                 var ret = JsonConvert.DeserializeObject<SpInfo[]>(api);
                 return ret;
             }
