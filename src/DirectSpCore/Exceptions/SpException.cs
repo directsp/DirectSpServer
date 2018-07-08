@@ -20,7 +20,7 @@ namespace DirectSp.Core.Exceptions
         public SpException(Exception ex)
             : base(null, ex)
         {
-            StatusCode = StatusCodes.Status500InternalServerError;
+            StatusCode = StatusCodes.Status400BadRequest;
             var spCallError = new SpCallError() { ErrorType = ex.GetType().Name, ErrorName = ex.GetType().ToString(), ErrorMessage = ex.Message, ErrorDescription = ex.ToString() };
 
             if (ex is SqlException sqlException)

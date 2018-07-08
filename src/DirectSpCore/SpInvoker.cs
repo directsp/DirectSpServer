@@ -283,11 +283,11 @@ namespace DirectSp.Core
             var sqlParameters = new List<SqlParameter>();
 
             //set caller params
-            using (var sqlConn = new SqlConnection(connectionString))
-            using (var command = new SqlCommand(spName, sqlConn))
+            using (var sqlConnection = new SqlConnection(connectionString))
+            using (var sqlCommand = new SqlCommand(spName, sqlConnection))
             {
                 if (spInfo.ExtendedProps.CommandTimeout != -1)
-                    command.CommandTimeout = spInfo.ExtendedProps.CommandTimeout;
+                    sqlCommand.CommandTimeout = spInfo.ExtendedProps.CommandTimeout;
 
                 //set context
                 sqlParameters.Add(new SqlParameter("@Context", SqlDbType.NVarChar, -1) { Direction = ParameterDirection.InputOutput, Value = userSession.SpContext.ToString(spCallOptions) });
@@ -301,14 +301,14 @@ namespace DirectSp.Core
                     var spParam = spInfo.Params.FirstOrDefault(x => x.ParamName.Equals($"@{callerParam.Key}", StringComparison.OrdinalIgnoreCase));
                     if (spParam == null)
                         throw new ArgumentException($"parameter '{callerParam.Key}' does not exists!");
+                    spInfo.ExtendedProps.Params.TryGetValue(spParam.ParamName, out SpParamEx spParamEx);
 
                     //make sure Context has not been set be the caller
                     if (callerParam.Key.Equals("Context", StringComparison.OrdinalIgnoreCase))
                         throw new ArgumentException($"You can not set '{callerParam.Key}' parameter!");
 
                     // Sign text if need to sign
-                    spInfo.ExtendedProps.Params.TryGetValue(spParam.ParamName, out SpParamEx spParamEx);
-                    if (spParamEx.SignType == SpSignMode.JwtByCertThumb && !spParam.IsOutput)
+                    if (spParamEx?.SignType == SpSignMode.JwtByCertThumb && !spParam.IsOutput)
                     {
                         var tokenSigner = Resolver.Instance.Resolve<JwtTokenSigner>();
                         if (!tokenSigner.CheckSign(callerParam.Value.ToString()))
@@ -316,7 +316,7 @@ namespace DirectSp.Core
                     }
 
                     //convert data for db
-                    var isMoney = spParamEx.IsUseMoneyConversionRate;
+                    var isMoney = spParamEx != null ? spParamEx.IsUseMoneyConversionRate : false;
                     object callParamValue = ConvertDataForDb(invokeOptions, spParam.SystemTypeName.ToString(), callerParam.Value, isMoney);
 
                     //add parameter
@@ -335,11 +335,13 @@ namespace DirectSp.Core
                 }
 
                 //create command and run it
-                command.CommandType = CommandType.StoredProcedure;
-                command.Parameters.AddRange(sqlParameters.ToArray());
+                sqlCommand.CommandType = CommandType.StoredProcedure;
+                sqlCommand.Parameters.AddRange(sqlParameters.ToArray());
 
                 var executer = Resolver.Instance.Resolve<ICommandExecuter>();
-                using (var dataReader = await executer.ExecuteReaderAsync(command))
+                executer.OpenConnection(sqlConnection);
+
+                using (var dataReader = await executer.ExecuteReaderAsync(sqlCommand))
                 {
                     //Fill Recordset and close dataReader BEFORE reading sqlParameters
                     ReadRecordset(spCallResults, dataReader, spInfo, invokeOptions);
@@ -356,6 +358,7 @@ namespace DirectSp.Core
                         //ignore input parameter
                         if (sqlParam.Direction == ParameterDirection.Input)
                             continue;
+                        spInfo.ExtendedProps.Params.TryGetValue(sqlParam.ParameterName, out SpParamEx spParamEx);
 
                         //process @Context
                         if (sqlParam.ParameterName.Equals("@Context", StringComparison.OrdinalIgnoreCase))
@@ -368,9 +371,9 @@ namespace DirectSp.Core
                         if (sqlParam.ParameterName.Equals("@ReturnValue", StringComparison.OrdinalIgnoreCase))
                             continue; //process after close
 
+                        
                         // Sign text if need
-                        spInfo.ExtendedProps.Params.TryGetValue(sqlParam.ParameterName, out SpParamEx spParamEx);
-                        if (spParamEx != null && spParamEx.SignType == SpSignMode.JwtByCertThumb)
+                        if (spParamEx?.SignType == SpSignMode.JwtByCertThumb)
                         {
                             var tokenSigner = Resolver.Instance.Resolve<JwtTokenSigner>();
                             sqlParam.Value = tokenSigner.Sign(sqlParam.Value.ToString());

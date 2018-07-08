@@ -6,9 +6,11 @@ namespace DirectSp.Core.Infrastructure
 {
     public interface ICommandExecuter
     {
-
         Task<IDataReader> ExecuteReaderAsync(SqlCommand command);
 
         int ExcuteNonQuery(SqlCommand command);
+
+        void OpenConnection(SqlConnection connection);
+
     }
 }

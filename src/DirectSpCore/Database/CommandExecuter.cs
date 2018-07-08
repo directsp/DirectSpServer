@@ -10,28 +10,17 @@ namespace DirectSp.Core.Database
     {
         public async Task<IDataReader> ExecuteReaderAsync(SqlCommand command)
         {
-            try
-            {
-                command.Connection.Open();
-                return await command.ExecuteReaderAsync();
-            }
-            finally
-            {
-                command.Connection.Close();
-            }
+            return await command.ExecuteReaderAsync();
         }
 
         public int ExcuteNonQuery(SqlCommand command)
         {
-            try
-            {
-                command.Connection.Open();
-                return command.ExecuteNonQuery();
-            }
-            finally
-            {
-                command.Connection.Close();
-            }
+            return command.ExecuteNonQuery();
+        }
+
+        public void OpenConnection(SqlConnection connection)
+        {
+            connection.Open();
         }
     }
 }

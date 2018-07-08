@@ -13,6 +13,7 @@ namespace DirectSp.Core
     {
         public static SpInfo[] System_Api(SqlConnection connection, out string context)
         {
+            connection.Open();
             using (var command = new SqlCommand("api.System_Api", connection))
             {
                 var sqlParameters = new List<SqlParameter>()
