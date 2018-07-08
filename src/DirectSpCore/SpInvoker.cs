@@ -134,8 +134,8 @@ namespace DirectSp.Core
             {
                 try
                 {
-                   //batch
-                   var spCallResult = await Invoke(spCall, spi);
+                    //batch
+                    var spCallResult = await Invoke(spCall, spi);
                     spCallResults.Add(spCallResult);
                 }
                 catch (SpException ex)
@@ -143,8 +143,8 @@ namespace DirectSp.Core
                     if (ex.StatusCode == StatusCodes.Status500InternalServerError)
                         throw ex;
 
-                   //add error object
-                   var spCallResult = new SpCallResult { { "error", ex.SpCallError } };
+                    //add error object
+                    var spCallResult = new SpCallResult { { "error", ex.SpCallError } };
                     spCallResults.Add(spCallResult);
                 }
             });
@@ -301,13 +301,13 @@ namespace DirectSp.Core
                     var spParam = spInfo.Params.FirstOrDefault(x => x.ParamName.Equals($"@{callerParam.Key}", StringComparison.OrdinalIgnoreCase));
                     if (spParam == null)
                         throw new ArgumentException($"parameter '{callerParam.Key}' does not exists!");
-                    spInfo.ExtendedProps.Params.TryGetValue(spParam.ParamName, out SpParamEx spParamEx);
 
                     //make sure Context has not been set be the caller
                     if (callerParam.Key.Equals("Context", StringComparison.OrdinalIgnoreCase))
                         throw new ArgumentException($"You can not set '{callerParam.Key}' parameter!");
 
                     // Sign text if need to sign
+                    spInfo.ExtendedProps.Params.TryGetValue(spParam.ParamName, out SpParamEx spParamEx);
                     if (spParamEx?.SignType == SpSignMode.JwtByCertThumb && !spParam.IsOutput)
                     {
                         var tokenSigner = Resolver.Instance.Resolve<JwtTokenSigner>();
@@ -337,11 +337,10 @@ namespace DirectSp.Core
                 //create command and run it
                 sqlCommand.CommandType = CommandType.StoredProcedure;
                 sqlCommand.Parameters.AddRange(sqlParameters.ToArray());
+                var dbLayer = Resolver.Instance.Resolve<IDbLayer>();
+                dbLayer.OpenConnection(sqlConnection);
 
-                var executer = Resolver.Instance.Resolve<ICommandExecuter>();
-                executer.OpenConnection(sqlConnection);
-
-                using (var dataReader = await executer.ExecuteReaderAsync(sqlCommand))
+                using (var dataReader = await dbLayer.ExecuteReaderAsync(sqlCommand))
                 {
                     //Fill Recordset and close dataReader BEFORE reading sqlParameters
                     ReadRecordset(spCallResults, dataReader, spInfo, invokeOptions);
@@ -358,7 +357,6 @@ namespace DirectSp.Core
                         //ignore input parameter
                         if (sqlParam.Direction == ParameterDirection.Input)
                             continue;
-                        spInfo.ExtendedProps.Params.TryGetValue(sqlParam.ParameterName, out SpParamEx spParamEx);
 
                         //process @Context
                         if (sqlParam.ParameterName.Equals("@Context", StringComparison.OrdinalIgnoreCase))
@@ -371,8 +369,8 @@ namespace DirectSp.Core
                         if (sqlParam.ParameterName.Equals("@ReturnValue", StringComparison.OrdinalIgnoreCase))
                             continue; //process after close
 
-                        
                         // Sign text if need
+                        spInfo.ExtendedProps.Params.TryGetValue(sqlParam.ParameterName, out SpParamEx spParamEx);
                         if (spParamEx?.SignType == SpSignMode.JwtByCertThumb)
                         {
                             var tokenSigner = Resolver.Instance.Resolve<JwtTokenSigner>();

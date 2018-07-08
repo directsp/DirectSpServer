@@ -25,7 +25,9 @@ namespace DirectSp.Core
                 //create command and run it
                 command.CommandType = CommandType.StoredProcedure;
                 command.Parameters.AddRange(sqlParameters.ToArray());
-                var res = Resolver.Instance.Resolve<ICommandExecuter>().ExcuteNonQuery(command);
+                var dbLayer = Resolver.Instance.Resolve<IDbLayer>();
+                dbLayer.OpenConnection(connection);
+                var res = dbLayer.ExcuteNonQuery(command);
 
                 context = sqlParameters.Find(x => x.ParameterName == "@Context").Value as string; //context
                 var api = sqlParameters.Find(x => x.ParameterName == "@Api").Value as string;

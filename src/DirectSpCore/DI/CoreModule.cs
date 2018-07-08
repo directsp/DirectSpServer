@@ -11,7 +11,7 @@ namespace DirectSp.Core.DI
         public override void Load()
         {
             Bind<ICertificateProvider>().To<CertificateProvider>();
-            Bind<ICommandExecuter>().To<CommandExecuter>().InSingletonScope();
+            Bind<IDbLayer>().To<DbLayer>().InSingletonScope();
             Bind<JwtTokenSigner>().ToSelf();
         }
     }
