@@ -301,13 +301,13 @@ namespace DirectSp.Core
                     var spParam = spInfo.Params.FirstOrDefault(x => x.ParamName.Equals($"@{callerParam.Key}", StringComparison.OrdinalIgnoreCase));
                     if (spParam == null)
                         throw new ArgumentException($"parameter '{callerParam.Key}' does not exists!");
+                    spInfo.ExtendedProps.Params.TryGetValue(spParam.ParamName, out SpParamEx spParamEx);
 
                     //make sure Context has not been set be the caller
                     if (callerParam.Key.Equals("Context", StringComparison.OrdinalIgnoreCase))
                         throw new ArgumentException($"You can not set '{callerParam.Key}' parameter!");
 
                     // Sign text if need to sign
-                    spInfo.ExtendedProps.Params.TryGetValue(spParam.ParamName, out SpParamEx spParamEx);
                     if (spParamEx?.SignType == SpSignMode.JwtByCertThumb && !spParam.IsOutput)
                     {
                         var tokenSigner = Resolver.Instance.Resolve<JwtTokenSigner>();
@@ -357,6 +357,7 @@ namespace DirectSp.Core
                         //ignore input parameter
                         if (sqlParam.Direction == ParameterDirection.Input)
                             continue;
+                        spInfo.ExtendedProps.Params.TryGetValue(sqlParam.ParameterName, out SpParamEx spParamEx);
 
                         //process @Context
                         if (sqlParam.ParameterName.Equals("@Context", StringComparison.OrdinalIgnoreCase))
@@ -370,7 +371,6 @@ namespace DirectSp.Core
                             continue; //process after close
 
                         // Sign text if need
-                        spInfo.ExtendedProps.Params.TryGetValue(sqlParam.ParameterName, out SpParamEx spParamEx);
                         if (spParamEx?.SignType == SpSignMode.JwtByCertThumb)
                         {
                             var tokenSigner = Resolver.Instance.Resolve<JwtTokenSigner>();
