@@ -16,6 +16,7 @@ using DirectSp.Core.SpSchema;
 using DirectSp.Core.DI;
 using DirectSp.Core.Infrastructure;
 using System.Collections.Concurrent;
+using System.Threading;
 
 namespace DirectSp.Core
 {
@@ -129,6 +130,7 @@ namespace DirectSp.Core
                 IsBatch = true
             };
 
+            var countdownEvent = new CountdownEvent(spCalls.Length);
             var spCallResults = new ConcurrentBag<SpCallResult>();
             Parallel.ForEach(spCalls, async (spCall) =>
             {
@@ -147,8 +149,13 @@ namespace DirectSp.Core
                     var spCallResult = new SpCallResult { { "error", ex.SpCallError } };
                     spCallResults.Add(spCallResult);
                 }
+                finally
+                {
+                    countdownEvent.Signal();
+                }
             });
 
+            countdownEvent.Wait();
             return Task.FromResult(spCallResults.ToArray());
         }
 
