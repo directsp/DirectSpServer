@@ -7,6 +7,7 @@ namespace DirectSp.Core.Test.Mock
 {
     class DbLayer : IDbLayer
     {
+
         public int ExcuteNonQuery(SqlCommand command)
         {
             switch (command.CommandText)
@@ -30,11 +31,11 @@ namespace DirectSp.Core.Test.Mock
                     return Task.Factory.StartNew(() => Data.DataReaderForTestSp());
 
                 case "api.SignJwtToken":
-                        command.Parameters["@JwtToken"].Value = Data.JwtToken();
-                        return Task.Factory.StartNew(() => Data.EmptyDataReader());
+                    command.Parameters["@JwtToken"].Value = Data.JwtToken();
+                    return Task.Factory.StartNew(() => Data.EmptyDataReader());
 
                 case "api.SignJwtTokenChecking":
-                        return Task.Factory.StartNew(() => Data.EmptyDataReader());
+                    return Task.Factory.StartNew(() => Data.EmptyDataReader());
 
                 case "api.ParallelSp":
                     command.Parameters["@Param1"].Value = "ResultValue";
@@ -45,9 +46,8 @@ namespace DirectSp.Core.Test.Mock
             }
         }
 
-        public void OpenConnection(SqlConnection connection)
-        {
-        }
+        public void OpenConnection(SqlConnection connection) { }
+        public void CloseConnection(SqlConnection connection) { }
     }
 
 }

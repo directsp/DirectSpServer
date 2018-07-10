@@ -388,6 +388,7 @@ namespace DirectSp.Core
                     }
                 }
 
+                dbLayer.CloseConnection(sqlConnection);
             }
             return spCallResults;
         }

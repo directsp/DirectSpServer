@@ -11,10 +11,9 @@ namespace DirectSp.Core
 {
     static class ResourceDb
     {
-        public static SpInfo[] System_Api(SqlConnection connection, out string context)
+        public static SpInfo[] System_Api(SqlConnection sqlConnection, out string context)
         {
-            connection.Open();
-            using (var command = new SqlCommand("api.System_Api", connection))
+            using (var command = new SqlCommand("api.System_Api", sqlConnection))
             {
                 var sqlParameters = new List<SqlParameter>()
                 {
@@ -26,7 +25,7 @@ namespace DirectSp.Core
                 command.CommandType = CommandType.StoredProcedure;
                 command.Parameters.AddRange(sqlParameters.ToArray());
                 var dbLayer = Resolver.Instance.Resolve<IDbLayer>();
-                dbLayer.OpenConnection(connection);
+                dbLayer.OpenConnection(sqlConnection);
                 var res = dbLayer.ExcuteNonQuery(command);
 
                 context = sqlParameters.Find(x => x.ParameterName == "@Context").Value as string; //context
@@ -35,6 +34,7 @@ namespace DirectSp.Core
                 var ret = JsonConvert.DeserializeObject<SpInfo[]>(api);
                 return ret;
             }
+
         }
     }
 }

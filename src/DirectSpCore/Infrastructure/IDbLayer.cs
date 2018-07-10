@@ -12,5 +12,7 @@ namespace DirectSp.Core.Infrastructure
         int ExcuteNonQuery(SqlCommand command);
 
         void OpenConnection(SqlConnection connection);
+
+        void CloseConnection(SqlConnection connection);
     }
 }

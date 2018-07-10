@@ -23,9 +23,9 @@ namespace DirectSp.Core.Database
             connection.Open();
         }
 
-        public void OpenConnection(SqlConnection connection)
+        public void CloseConnection(SqlConnection connection)
         {
-            connection.Open();
+            connection.Close();
         }
     }
 }
