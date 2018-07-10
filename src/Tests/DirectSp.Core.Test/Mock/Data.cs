@@ -91,7 +91,11 @@ namespace DirectSp.Core.Test.Mock
                           UserTypeName="TSTRING"
                      }
                  },
-                 ProcedureName="ParallelSp"
+                 ProcedureName="ParallelSp",
+                 ExtendedProps=new SpInfoEx
+                 {
+                     IsBatchAllowed=true
+                 }
                 }
 
             });

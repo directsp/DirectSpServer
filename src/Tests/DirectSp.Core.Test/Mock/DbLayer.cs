@@ -1,5 +1,7 @@
-﻿using System.Data;
+﻿using System;
+using System.Data;
 using System.Data.SqlClient;
+using System.Threading;
 using System.Threading.Tasks;
 using DirectSp.Core.Infrastructure;
 
@@ -38,6 +40,8 @@ namespace DirectSp.Core.Test.Mock
                     return Task.Factory.StartNew(() => Data.EmptyDataReader());
 
                 case "api.ParallelSp":
+                    int sleepTime = new Random().Next(1, 5);
+                    Thread.Sleep(TimeSpan.FromSeconds(sleepTime));
                     command.Parameters["@Param1"].Value = "ResultValue";
                     return Task.Factory.StartNew(() => Data.EmptyDataReader());
 

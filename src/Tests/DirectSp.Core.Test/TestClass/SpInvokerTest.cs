@@ -32,44 +32,29 @@ namespace DirectSp.Core.Test
         [TestMethod]
         public async Task TestParallelInvokeSp()
         {
+            var spCalls = new SpCall[10];
 
-            var spCalls = new SpCall[]
+            for (int i = 0; i < 10; i++)
             {
-                new SpCall
+                spCalls[i] = new SpCall
                 {
                     Method = "ParallelSp",
                     Params = new Dictionary<string, object>
                     {
                         {"Param1","" }
                     }
-                },
-                new SpCall
-                {
-                    Method = "ParallelSp",
-                    Params = new Dictionary<string, object>
-                    {
-                        {"Param1","" }
-                    }
-                },
-                new SpCall
-                {
-                    Method = "ParallelSp",
-                    Params = new Dictionary<string, object>
-                    {
-                        {"Param1","" }
-                    }
-                },
-            };
+                };
+            }
 
             var invokeOptions = new SpInvokeParams()
             {
                 AuthUserId = "1",
-                UserRemoteIp = "127.0.0.1",
+                UserRemoteIp = "127.0.0.1"
             };
 
             var result = await _spInvoker.Invoke(spCalls, invokeOptions);
 
-            Assert.AreEqual(3, result.Length);
+            Assert.AreEqual(10, result.Length);
 
         }
 

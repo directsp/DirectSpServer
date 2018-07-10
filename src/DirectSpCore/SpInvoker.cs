@@ -130,32 +130,31 @@ namespace DirectSp.Core
                 IsBatch = true
             };
 
-            var countdownEvent = new CountdownEvent(spCalls.Length);
-            var spCallResults = new ConcurrentBag<SpCallResult>();
-            Parallel.ForEach(spCalls, async (spCall) =>
+            var spCallResults = new List<SpCallResult>();
+            var tasks = new List<Task<SpCallResult>>();
+            foreach (var spCall in spCalls)
+                tasks.Add(Invoke(spCall, spi));
+
+            try
             {
-                try
-                {
-                    //batch
-                    var spCallResult = await Invoke(spCall, spi);
-                    spCallResults.Add(spCallResult);
-                }
-                catch (SpException ex)
-                {
-                    if (ex.StatusCode == StatusCodes.Status500InternalServerError)
-                        throw ex;
+                tasks.ForEach(task => task.Start());
+                Task.WaitAll(tasks.ToArray());
+            }
+            catch
+            {
 
-                    //add error object
-                    var spCallResult = new SpCallResult { { "error", ex.SpCallError } };
-                    spCallResults.Add(spCallResult);
-                }
-                finally
+            }
+            finally
+            {
+                foreach (var item in tasks)
                 {
-                    countdownEvent.Signal();
+                    if (item.IsCompletedSuccessfully)
+                        spCallResults.Add(item.Result);
+                    else if (item.IsFaulted)
+                        spCallResults.Add(new SpCallResult { { "error", item.Exception.Message } });
                 }
-            });
-
-            countdownEvent.Wait();
+                Console.WriteLine("OK");
+            }
             return Task.FromResult(spCallResults.ToArray());
         }
 
