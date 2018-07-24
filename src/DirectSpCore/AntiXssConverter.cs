@@ -20,7 +20,6 @@ namespace DirectSp.Core
                 value = Util.AntiXss_Encode((string)value);
 
             writer.WriteValue(Util.AntiXss_Encode((string)value));
-
         }
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)

@@ -34,7 +34,7 @@ namespace DirectSp.Core.Controllers
                 var res = await SpInvoker.Invoke(invokeParams.SpCall, spInvokeParams, isSystem);
 
                 AddResponseHeaders();
-                return Json(res, invokeParams.InvokeOptions.IsAntiXss);
+                return JsonHelper(res);
             }
             catch (SpException ex)
             {
@@ -59,7 +59,7 @@ namespace DirectSp.Core.Controllers
                 var res = await SpInvoker.Invoke(invokeParamsBatch.SpCalls, spInvokeParams);
 
                 AddResponseHeaders();
-                return Json(res, invokeParamsBatch.InvokeOptions.IsAntiXss);
+                return JsonHelper(res);
             }
             catch (SpException ex)
             {
@@ -103,14 +103,11 @@ namespace DirectSp.Core.Controllers
                 return StatusCode(ex.StatusCode, ex.SpCallError);
             }
         }
-        private JsonResult Json(object data, bool IsAntiXss)
+        private JsonResult JsonHelper(object data)
         {
             var serializerSettings = new JsonSerializerSettings();
             if (SpInvoker.Options.UseCamelCase)
                 serializerSettings.ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver();
-
-            if (IsAntiXss)
-                serializerSettings.Converters.Add(new AntiXssConverter());
 
             return base.Json(data, serializerSettings);
         }

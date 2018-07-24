@@ -19,7 +19,6 @@ namespace DirectSp.Core.InternalDb
         public async Task<IEnumerable<DspKeyValueItem>> All(string keyNamePattern = null)
         {
             var spInvokeParams = new SpInvokeParams();
-            spInvokeParams.InvokeOptions.IsAntiXss = false;
 
             var spCall = new SpCall() { Method = "KeyValue_" + nameof(All) };
             spCall.Params.Add("KeyNamePattern", keyNamePattern);
@@ -31,7 +30,6 @@ namespace DirectSp.Core.InternalDb
         public async Task<SpCallResult> ValueSet(string keyName, string textValue, int timeToLife = 0, bool isOverwrite = true)
         {
             var spInvokeParams = new SpInvokeParams();
-            spInvokeParams.InvokeOptions.IsAntiXss = false;
 
             var spCall = new SpCall() { Method = "KeyValue_" + nameof(ValueSet) };
             spCall.Params.Add("KeyName", keyName);
@@ -45,7 +43,6 @@ namespace DirectSp.Core.InternalDb
         public async Task<object> Value(string keyName)
         {
             var spInvokeParams = new SpInvokeParams();
-            spInvokeParams.InvokeOptions.IsAntiXss = false;
 
             var spCall = new SpCall() { Method = "KeyValue_" + nameof(Value) };
             spCall.Params.Add("KeyName", keyName);

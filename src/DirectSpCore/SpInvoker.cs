@@ -667,7 +667,6 @@ namespace DirectSp.Core
                 spCallResult.Recordset = null;
                 spCallResult.RecordsetText = null;
                 spCallResult.RecordsetUri = spi.SpInvokeParams.RecordsetDownloadUrlTemplate.Replace("{id}", recordSetId).Replace("{filename}", fileName);
-                spi.SpInvokeParams.InvokeOptions.IsAntiXss = false; //prevent encoding url
                 result = true;
             }
 
