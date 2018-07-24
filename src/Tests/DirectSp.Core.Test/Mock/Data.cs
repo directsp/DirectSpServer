@@ -103,7 +103,7 @@ namespace DirectSp.Core.Test.Mock
 
         internal static string SignedJwtToken()
         {
-            return @"eyJhbGciOiAiSFMyNTYiLCAidHlwIjogIkpXVCJ9.ew0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgInVzZXJuYW1lIjoiYmVobmFtIiwNCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICJyb2xlIjoiYWRtaW4iLA0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIkNlcnRpZmljYXRlVGh1bWIiOiJBNTAyNTdENzUzMzI4MDAwRThFOThBMTZCREM4RkI5MkQxN0RGQ0RFIg0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB9.vvKBxjqnkl/G7DK3TW2UjsM4Mp562xB6+F2dowhlvlfjkwylOIDZsy5Foc6jCq6Yo9uTFMZ2e3rCzohRznPev1pnHjNVWdC75nOJe63LsI/DugILGHYPdGEaGMdAzdIaQhaRfmXD2d0TC/y9R9VkRZny4hOtsd7e3mwn430QxeTx55IQs6OuufgOs1yYsEJK0dHSBIYPVzPv2gKPpBth/6Rlar8UDcchfyMx6qqPvJglOgjsBx5xAfJlA/UfS9n3kjy+kG0dSJq2/lenjJV/7RMryH+tdiR4vKM7yvMovqN3CSjB7IL4fxQHxhBQYHIHdXpdXpIAWKODvWW343NcFg==";
+            return @"eyJhbGciOiAiSFMyNTYiLCAidHlwIjogIkpXVCJ9.ew0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgInVzZXJuYW1lIjoiYmVobmFtIiwNCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICJyb2xlIjoiYWRtaW4iLA0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgImNlcnRpZmljYXRlVGh1bWIiOiJBNTAyNTdENzUzMzI4MDAwRThFOThBMTZCREM4RkI5MkQxN0RGQ0RFIg0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB9.GxUF0RaDfl7VFE7sF42ATMPsrLO87N7c9uklwtWAuIZu1+YrpkDi5BEol2XTmdh8PtWPBxVJBjAByIc8GLACmvbzq1glwFZVjzs0kFAGgRvMqYRwiyiN7dA3R4XAQPqe9FXQrLTV0LjO4YCRLXJIlc1e04S72V0TEw12c0FkiSexoP1Y0T9BmK6YKkkbQNrXZJWAAaUc6VhO5Q0vf7+VrFs+a1FiuHtIrV78oAtieW78ucU/cqbWqI5/BhejmvSDRohEH5K30/L+eSi6lb7bFgSrAkBymN6Vdl+XAIjxw6dBRSyXnClbmvlgngsC0+ukV57ukV8Sl7ACnCxaKYW/pA==";
         }
 
         internal static string AppContext()
@@ -116,7 +116,7 @@ namespace DirectSp.Core.Test.Mock
             return @"{
                                     ""username"":""behnam"",
                                     ""role"":""admin"",
-                                    ""CertificateThumb"":""A50257D753328000E8E98A16BDC8FB92D17DFCDE""
+                                    ""certificateThumb"":""A50257D753328000E8E98A16BDC8FB92D17DFCDE""
                                 }";
         }
 

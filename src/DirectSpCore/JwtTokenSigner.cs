@@ -34,7 +34,7 @@ namespace DirectSp.Core
             byte[] data = encoding.GetBytes(jwt);
             byte[] hash = sha256.ComputeHash(data);
             string sign = Convert.ToBase64String(rsa.SignHash(hash, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1));
-            string tokenHeader = @"{'alg': 'HS256', 'typ': 'JWT'}".Replace("'", "\"");
+            string tokenHeader = @"{'alg': 'SHA256', 'typ': 'JWT'}".Replace("'", "\"");
             return $"{tokenHeader.ToBase64()}.{jwt.ToBase64()}.{sign}";
         }
 

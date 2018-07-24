@@ -17,6 +17,7 @@ using DirectSp.Core.DI;
 using DirectSp.Core.Infrastructure;
 using System.Collections.Concurrent;
 using System.Threading;
+using DirectSp.Core.Helpers;
 
 namespace DirectSp.Core
 {
@@ -301,29 +302,25 @@ namespace DirectSp.Core
 
                 //set all sql parameters value
                 var spCallParams = spCall.Params ?? new Dictionary<string, object>();
-                foreach (var callerParam in spCallParams)
+                foreach (var param in spCallParams)
                 {
                     //find sqlParam for callerParam
-                    var spParam = spInfo.Params.FirstOrDefault(x => x.ParamName.Equals($"@{callerParam.Key}", StringComparison.OrdinalIgnoreCase));
+                    var spParam = spInfo.Params.FirstOrDefault(x => x.ParamName.Equals($"@{param.Key}", StringComparison.OrdinalIgnoreCase));
                     if (spParam == null)
-                        throw new ArgumentException($"parameter '{callerParam.Key}' does not exists!");
+                        throw new ArgumentException($"parameter '{param.Key}' does not exists!");
                     spInfo.ExtendedProps.Params.TryGetValue(spParam.ParamName, out SpParamEx spParamEx);
 
                     //make sure Context has not been set be the caller
-                    if (callerParam.Key.Equals("Context", StringComparison.OrdinalIgnoreCase))
-                        throw new ArgumentException($"You can not set '{callerParam.Key}' parameter!");
+                    if (param.Key.Equals("Context", StringComparison.OrdinalIgnoreCase))
+                        throw new ArgumentException($"You can not set '{param.Key}' parameter!");
 
-                    // Sign text if need to sign
-                    if (spParamEx?.SignType == SpSignMode.JwtByCertThumb && !spParam.IsOutput)
-                    {
-                        var tokenSigner = Resolver.Instance.Resolve<JwtTokenSigner>();
-                        if (!tokenSigner.CheckSign(callerParam.Value.ToString()))
-                            throw new SpInvalidParamSignature(callerParam.Key);
-                    }
+                    // Check jwt token
+                    string tokenPayload = CheckJwt(param, spParam, spParamEx);
 
                     //convert data for db
                     var isMoney = spParamEx != null ? spParamEx.IsUseMoneyConversionRate : false;
-                    object callParamValue = ConvertDataForDb(invokeOptions, spParam.SystemTypeName.ToString(), callerParam.Value, isMoney);
+                    var value = string.IsNullOrEmpty(tokenPayload) ? param.Value : tokenPayload;
+                    object callParamValue = ConvertDataForDb(invokeOptions, spParam.SystemTypeName.ToString(), value, isMoney);
 
                     //add parameter
                     sqlParameters.Add(new SqlParameter(spParam.ParamName, spParam.SystemTypeName, spParam.Length) { Direction = spParam.IsOutput ? ParameterDirection.InputOutput : ParameterDirection.Input, Value = callParamValue });
@@ -376,12 +373,8 @@ namespace DirectSp.Core
                         if (sqlParam.ParameterName.Equals("@ReturnValue", StringComparison.OrdinalIgnoreCase))
                             continue; //process after close
 
-                        // Sign text if need
-                        if (spParamEx?.SignType == SpSignMode.JwtByCertThumb)
-                        {
-                            var tokenSigner = Resolver.Instance.Resolve<JwtTokenSigner>();
-                            sqlParam.Value = tokenSigner.Sign(sqlParam.Value.ToString());
-                        }
+                        // Sign text if is need
+                        SignJwt(sqlParam, spParamEx);
 
                         //convert data form db
                         var isMoney = spParamEx != null ? spParamEx.IsUseMoneyConversionRate : false;
@@ -397,6 +390,32 @@ namespace DirectSp.Core
                 dbLayer.CloseConnection(sqlConnection);
             }
             return spCallResults;
+        }
+
+        private static void SignJwt(SqlParameter sqlParam, SpParamEx spParamEx)
+        {
+            if (spParamEx?.SignType == SpSignMode.JwtByCertThumb)
+            {
+                var tokenSigner = Resolver.Instance.Resolve<JwtTokenSigner>();
+                sqlParam.Value = tokenSigner.Sign(sqlParam.Value.ToString());
+            }
+        }
+
+        private static string CheckJwt(KeyValuePair<string, object> callerParam, SpParam spParam, SpParamEx spParamEx)
+        {
+            // Sign text if need to sign
+            if (spParamEx?.SignType == SpSignMode.JwtByCertThumb && !spParam.IsOutput)
+            {
+                string token = callerParam.Value.ToString();
+                if (string.IsNullOrEmpty(token)) return string.Empty;
+                var tokenSigner = Resolver.Instance.Resolve<JwtTokenSigner>();
+                if (!tokenSigner.CheckSign(token))
+                    throw new SpInvalidParamSignature(callerParam.Key);
+                // Set param value by token payload
+                return token.Split('.')[1].FromBase64();
+            }
+
+            return string.Empty;
         }
 
         private string GetConnectionString(SpInfo spInfo, UserSession userSession, SpInvokeParamsInternal spi)
