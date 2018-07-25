@@ -107,7 +107,7 @@ directSp.DirectSpClient.prototype = {
 
     get username() {
         let uInfo = this._userInfo ? this._userInfo : this._userInfoLast;
-        return uInfo ? uInfo.username : null;
+        return uInfo && uInfo.username ? uInfo.username : null;
     },
 
     get userDisplayName() {
