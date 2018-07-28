@@ -138,7 +138,6 @@ namespace DirectSp.Core
 
             try
             {
-                //tasks.ForEach(task => task.Start());
                 Task.WaitAll(tasks.ToArray());
             }
             catch
