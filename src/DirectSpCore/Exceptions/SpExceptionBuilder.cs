@@ -32,7 +32,12 @@ namespace DirectSp.Core.Exceptions
 
     internal static class SpExceptionBuilder
     {
-        public static SpException Create(SpInvoker spInvokerInternal, Exception ex)
+        public static SpException Create(Exception ex)
+        {
+            return Create(ex, null);
+        }
+
+        public static SpException Create(Exception ex, SpInvoker spInvokerInternal)
         {
             if (ex is SpException)
                 return (SpException)ex;

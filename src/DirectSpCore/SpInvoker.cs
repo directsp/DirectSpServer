@@ -138,7 +138,7 @@ namespace DirectSp.Core
 
             try
             {
-                tasks.ForEach(task => task.Start());
+                //tasks.ForEach(task => task.Start());
                 Task.WaitAll(tasks.ToArray());
             }
             catch
@@ -152,7 +152,7 @@ namespace DirectSp.Core
                     if (item.IsCompletedSuccessfully)
                         spCallResults.Add(item.Result);
                     else 
-                        spCallResults.Add(new SpCallResult { { "error", item.Exception.Message } });
+                        spCallResults.Add(new SpCallResult { { "error", item.Exception?.Message } });
                 }
             }
             return Task.FromResult(spCallResults.ToArray());
@@ -239,7 +239,7 @@ namespace DirectSp.Core
             }
             catch (Exception ex)
             {
-                throw SpExceptionBuilder.Create(InternalSpInvoker, ex);
+                throw SpExceptionBuilder.Create(ex, InternalSpInvoker);
             }
         }
 

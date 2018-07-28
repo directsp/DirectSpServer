@@ -7,6 +7,8 @@ using System.Text;
 using Microsoft.AspNetCore.Http.Extensions;
 using Newtonsoft.Json;
 using System.IO;
+using System;
+using Microsoft.AspNetCore.Http;
 
 namespace DirectSp.Core.Controllers
 {
@@ -41,10 +43,13 @@ namespace DirectSp.Core.Controllers
                 AddResponseHeaders();
                 return StatusCode(ex.StatusCode, ex.SpCallError);
             }
-
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, SpExceptionBuilder.Create(ex)); //prevent server error for CORS
+            }
         }
 
-        public async Task<IActionResult> InvokeBatch([FromBody] InvokeParamsBatch invokeParamsBatch)
+            public async Task<IActionResult> InvokeBatch([FromBody] InvokeParamsBatch invokeParamsBatch)
         {
             try
             {
@@ -65,6 +70,10 @@ namespace DirectSp.Core.Controllers
             {
                 AddResponseHeaders();
                 return StatusCode(ex.StatusCode, ex.SpCallError);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, SpExceptionBuilder.Create(ex)); //prevent server error for CORS
             }
         }
 
@@ -101,6 +110,10 @@ namespace DirectSp.Core.Controllers
             {
                 AddResponseHeaders();
                 return StatusCode(ex.StatusCode, ex.SpCallError);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, SpExceptionBuilder.Create(ex)); //prevent server error for CORS
             }
         }
         private JsonResult JsonHelper(object data)
