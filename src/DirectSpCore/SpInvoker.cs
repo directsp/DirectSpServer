@@ -140,10 +140,6 @@ namespace DirectSp.Core
             {
                 Task.WaitAll(tasks.ToArray());
             }
-            catch
-            {
-
-            }
             finally
             {
                 foreach (var item in tasks)
