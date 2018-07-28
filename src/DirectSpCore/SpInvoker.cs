@@ -151,10 +151,9 @@ namespace DirectSp.Core
                 {
                     if (item.IsCompletedSuccessfully)
                         spCallResults.Add(item.Result);
-                    else if (item.IsFaulted)
+                    else 
                         spCallResults.Add(new SpCallResult { { "error", item.Exception.Message } });
                 }
-                Console.WriteLine("OK");
             }
             return Task.FromResult(spCallResults.ToArray());
         }
