@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
-    <PreserveCompilationContext>false</PreserveCompilationContext>
     <AssemblyName>DirectSpAuth</AssemblyName>
     <OutputType>Exe</OutputType>
     <PackageId>DirectSpAuth</PackageId>
@@ -10,8 +9,8 @@
     <Authors>DirectSp</Authors>
     <Company>DirectSp</Company>
     <Product>DirectSpAuth</Product>
-    <Description />
     <MvcRazorCompileOnPublish>false</MvcRazorCompileOnPublish>
+    <PreserveCompilationContext>true</PreserveCompilationContext>
   </PropertyGroup>
 
   <ItemGroup>
@@ -38,9 +37,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AspNet.Security.OpenIdConnect.Extensions" Version="2.0.0-rc2-final" />
-    <PackageReference Include="AspNet.Security.OpenIdConnect.Primitives" Version="2.0.0-rc2-final" />
-    <PackageReference Include="AspNet.Security.OpenIdConnect.Server" Version="2.0.0-rc2-final" />
+    <PackageReference Include="AspNet.Security.OpenIdConnect.Extensions" Version="2.0.0-rc3-final" />
+    <PackageReference Include="AspNet.Security.OpenIdConnect.Primitives" Version="2.0.0-rc3-final" />
+    <PackageReference Include="AspNet.Security.OpenIdConnect.Server" Version="2.0.0-rc3-final" />
     <PackageReference Include="Microsoft.AspNetCore.All" Version="2.1.2" />
     <PackageReference Include="System.Data.SqlClient" Version="4.5.1" />
   </ItemGroup>

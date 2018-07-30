@@ -2,16 +2,14 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
-    <PreserveCompilationContext>true</PreserveCompilationContext>
     <AssemblyName>DirectSpHost</AssemblyName>
     <OutputType>Exe</OutputType>
     <PackageId>DirectSpHost</PackageId>
-    <AssetTargetFallback>$(PackageTargetFallback);dotnet5.6;portable-net45+win8</AssetTargetFallback>
     <RootNamespace>DirectSp.Host</RootNamespace>
-    <MvcRazorCompileOnPublish>false</MvcRazorCompileOnPublish>
     <Authors>DirectSp</Authors>
     <Product>DirectSpHost</Product>
     <Company>DirectSp</Company>
+    <MvcRazorCompileOnPublish>false</MvcRazorCompileOnPublish>
   </PropertyGroup>
 
   <ItemGroup>
