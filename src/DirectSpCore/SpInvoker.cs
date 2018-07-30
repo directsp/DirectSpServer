@@ -140,10 +140,6 @@ namespace DirectSp.Core
             {
                 await Task.WhenAll(tasks.ToArray());
             }
-            catch
-            {
-                // prevent rol-up the aggregation exception
-            }
             finally
             {
                 foreach (var item in tasks)

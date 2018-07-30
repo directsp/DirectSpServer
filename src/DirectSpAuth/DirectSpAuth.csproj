@@ -10,7 +10,6 @@
     <Company>DirectSp</Company>
     <Product>DirectSpAuth</Product>
     <MvcRazorCompileOnPublish>false</MvcRazorCompileOnPublish>
-    <PreserveCompilationContext>true</PreserveCompilationContext>
   </PropertyGroup>
 
   <ItemGroup>

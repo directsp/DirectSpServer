@@ -99,8 +99,8 @@ namespace DirectSp.AuthServer
             app.UseCors("CorsPolicy");
 
             //User Authentication Server and Client (Before Static Files and MVC)
-            //app.UseAppFilter(env); //WARNING: UseAppFilter MUST be called before UseAuthentication
-            //app.UseAuthentication();
+            app.UseAppFilter(env); //WARNING: UseAppFilter MUST be called before UseAuthentication
+            app.UseAuthentication();
 
             //Add System services
             app.UseDefaultFiles();
