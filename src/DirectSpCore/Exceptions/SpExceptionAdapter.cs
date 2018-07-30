@@ -1,8 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Newtonsoft.Json;
-using DirectSp.Core.Entities;
-using System;
-using System.Data.SqlClient;
+﻿using System;
 
 namespace DirectSp.Core.Exceptions
 {
@@ -30,7 +26,7 @@ namespace DirectSp.Core.Exceptions
         InvalidParamSignature = 55029,
     }
 
-    internal static class SpExceptionBuilder
+    internal static class SpExceptionAdapter
     {
         public static SpException Create(Exception ex)
         {
