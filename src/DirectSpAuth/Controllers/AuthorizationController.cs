@@ -25,6 +25,14 @@ namespace DirectSp.AuthServer.Controllers
         {
         }
 
+        [HttpGet]
+        [Route("[controller]/download/recordset")]
+        public Task<IActionResult> DownloadRecordset()
+        {
+            var i = 0;
+            throw new Exception("sss");
+        }
+
         [HttpGet("~/connect/authorize")]
         public async Task<IActionResult> Authorize()
         {

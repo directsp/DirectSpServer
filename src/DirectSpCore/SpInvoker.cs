@@ -30,7 +30,7 @@ namespace DirectSp.Core
         public string ConnectionStringReadWrite { get { return new SqlConnectionStringBuilder(ConnectionString) { ApplicationIntent = ApplicationIntent.ReadWrite }.ToString(); } }
         public DspKeyValue KeyValue { get; private set; }
         private UserSessionManager SessionManager;
-        private SpInvoker InternalSpInvoker;
+        private readonly SpInvoker InternalSpInvoker;
 
         public SpInvoker(string connectionString, string schema, SpInvokerOptions options, SpInvoker spInvokerInternal = null)
         {
@@ -103,7 +103,7 @@ namespace DirectSp.Core
                 throw new SpException("Too many request! Please try a few minutes later!", StatusCodes.Status429TooManyRequests);
         }
 
-        private object LockObject = new object();
+        private readonly object LockObject = new object();
 
         private void RefreshApi()
         {
@@ -123,7 +123,7 @@ namespace DirectSp.Core
             }
         }
 
-        public Task<SpCallResult[]> Invoke(SpCall[] spCalls, SpInvokeParams spInvokeParams)
+        public async Task<SpCallResult[]> Invoke(SpCall[] spCalls, SpInvokeParams spInvokeParams)
         {
             var spi = new SpInvokeParamsInternal
             {
@@ -138,7 +138,7 @@ namespace DirectSp.Core
 
             try
             {
-                Task.WaitAll(tasks.ToArray());
+                await Task.WhenAll(tasks.ToArray());
             }
             catch
             {
@@ -150,11 +150,12 @@ namespace DirectSp.Core
                 {
                     if (item.IsCompletedSuccessfully)
                         spCallResults.Add(item.Result);
-                    else 
-                        spCallResults.Add(new SpCallResult { { "error", item.Exception?.Message } });
+                    else
+                        spCallResults.Add(new SpCallResult { { "error", SpExceptionAdapter.Create(item.Exception.InnerException).SpCallError} });
                 }
             }
-            return Task.FromResult(spCallResults.ToArray());
+
+            return spCallResults.ToArray();
         }
 
         public async Task<SpCallResult> Invoke(SpCall spCall)
@@ -238,7 +239,7 @@ namespace DirectSp.Core
             }
             catch (Exception ex)
             {
-                throw SpExceptionBuilder.Create(ex, InternalSpInvoker);
+                throw SpExceptionAdapter.Create(ex, InternalSpInvoker);
             }
         }
 
