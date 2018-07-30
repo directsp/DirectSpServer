@@ -6,3 +6,4 @@ Publish*.bat
 appsettings.json
 /DirectSpClientNetTest
 DirectSpClientNetTest
+/src/DirectSpHost/Properties/PublishProfiles
