@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
     <PreserveCompilationContext>false</PreserveCompilationContext>
     <AssemblyName>DirectSpAuth</AssemblyName>
     <OutputType>Exe</OutputType>
@@ -41,8 +41,8 @@
     <PackageReference Include="AspNet.Security.OpenIdConnect.Extensions" Version="2.0.0-rc2-final" />
     <PackageReference Include="AspNet.Security.OpenIdConnect.Primitives" Version="2.0.0-rc2-final" />
     <PackageReference Include="AspNet.Security.OpenIdConnect.Server" Version="2.0.0-rc2-final" />
-    <PackageReference Include="Microsoft.AspNetCore.All" Version="2.0.6" />
-    <PackageReference Include="System.Data.SqlClient" Version="4.4.3" />
+    <PackageReference Include="Microsoft.AspNetCore.All" Version="2.1.2" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.5.1" />
   </ItemGroup>
 
   <ItemGroup>

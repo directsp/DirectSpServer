@@ -43,9 +43,10 @@ namespace DirectSp.Core.Controllers
                 AddResponseHeaders();
                 return StatusCode(ex.StatusCode, ex.SpCallError);
             }
-            catch (Exception ex)
+            catch (Exception err)
             {
-                return StatusCode(StatusCodes.Status400BadRequest, SpExceptionBuilder.Create(ex)); //prevent server error for CORS
+                var ex = SpExceptionBuilder.Create(new Exception(err.ToString())); //prevent server error for CORS
+                return StatusCode(ex.StatusCode, ex.SpCallError);
             }
         }
 
@@ -71,9 +72,10 @@ namespace DirectSp.Core.Controllers
                 AddResponseHeaders();
                 return StatusCode(ex.StatusCode, ex.SpCallError);
             }
-            catch (Exception ex)
+            catch (Exception err)
             {
-                return StatusCode(StatusCodes.Status400BadRequest, SpExceptionBuilder.Create(ex)); //prevent server error for CORS
+                var ex = SpExceptionBuilder.Create(new Exception(err.ToString())); //prevent server error for CORS
+                return StatusCode(ex.StatusCode, ex.SpCallError);
             }
         }
 
@@ -111,9 +113,10 @@ namespace DirectSp.Core.Controllers
                 AddResponseHeaders();
                 return StatusCode(ex.StatusCode, ex.SpCallError);
             }
-            catch (Exception ex)
+            catch (Exception err)
             {
-                return StatusCode(StatusCodes.Status400BadRequest, SpExceptionBuilder.Create(ex)); //prevent server error for CORS
+                var ex = SpExceptionBuilder.Create(new Exception(err.ToString())); //prevent server error for CORS
+                return StatusCode(ex.StatusCode, ex.SpCallError);
             }
         }
         private JsonResult JsonHelper(object data)
