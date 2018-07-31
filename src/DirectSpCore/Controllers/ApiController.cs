@@ -50,7 +50,7 @@ namespace DirectSp.Core.Controllers
             }
         }
 
-            public async Task<IActionResult> InvokeBatch([FromBody] InvokeParamsBatch invokeParamsBatch)
+        public async Task<IActionResult> InvokeBatch([FromBody] InvokeParamsBatch invokeParamsBatch)
         {
             try
             {
