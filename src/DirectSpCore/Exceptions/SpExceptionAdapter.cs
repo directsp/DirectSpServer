@@ -28,12 +28,12 @@ namespace DirectSp.Core.Exceptions
 
     internal static class SpExceptionAdapter
     {
-        public static SpException Create(Exception ex)
+        public static SpException Convert(Exception ex)
         {
-            return Create(ex, null);
+            return Convert(ex, null);
         }
 
-        public static SpException Create(Exception ex, SpInvoker spInvokerInternal)
+        public static SpException Convert(Exception ex, SpInvoker spInvokerInternal)
         {
             if (ex is SpException)
                 return (SpException)ex;

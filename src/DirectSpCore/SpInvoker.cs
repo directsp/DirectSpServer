@@ -142,17 +142,15 @@ namespace DirectSp.Core
             }
             catch
             {
-                // prevent rol-up the aggregation exception
+                // catch await single exception
             }
-            finally
+
+            foreach (var item in tasks)
             {
-                foreach (var item in tasks)
-                {
-                    if (item.IsCompletedSuccessfully)
-                        spCallResults.Add(item.Result);
-                    else
-                        spCallResults.Add(new SpCallResult { { "error", SpExceptionAdapter.Create(item.Exception.InnerException).SpCallError} });
-                }
+                if (item.IsCompletedSuccessfully)
+                    spCallResults.Add(item.Result);
+                else
+                    spCallResults.Add(new SpCallResult { { "error", SpExceptionAdapter.Convert(item.Exception.InnerException).SpCallError } });
             }
 
             return spCallResults.ToArray();
@@ -239,7 +237,7 @@ namespace DirectSp.Core
             }
             catch (Exception ex)
             {
-                throw SpExceptionAdapter.Create(ex, InternalSpInvoker);
+                throw SpExceptionAdapter.Convert(ex, InternalSpInvoker);
             }
         }
 

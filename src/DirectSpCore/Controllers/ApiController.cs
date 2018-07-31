@@ -45,7 +45,7 @@ namespace DirectSp.Core.Controllers
             }
             catch (Exception err)
             {
-                var ex = SpExceptionAdapter.Create(new Exception(err.ToString())); //prevent server error for CORS
+                var ex = SpExceptionAdapter.Convert(new Exception(err.ToString())); //prevent server error for CORS
                 return StatusCode(ex.StatusCode, ex.SpCallError);
             }
         }
@@ -74,7 +74,7 @@ namespace DirectSp.Core.Controllers
             }
             catch (Exception err)
             {
-                var ex = SpExceptionAdapter.Create(new Exception(err.ToString())); //prevent server error for CORS
+                var ex = SpExceptionAdapter.Convert(new Exception(err.ToString())); //prevent server error for CORS
                 return StatusCode(ex.StatusCode, ex.SpCallError);
             }
         }
@@ -115,7 +115,7 @@ namespace DirectSp.Core.Controllers
             }
             catch (Exception err)
             {
-                var ex = SpExceptionAdapter.Create(new Exception(err.ToString())); //prevent server error for CORS
+                var ex = SpExceptionAdapter.Convert(new Exception(err.ToString())); //prevent server error for CORS
                 return StatusCode(ex.StatusCode, ex.SpCallError);
             }
         }
