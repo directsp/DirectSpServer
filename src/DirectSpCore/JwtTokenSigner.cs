@@ -42,13 +42,19 @@ namespace DirectSp.Core
         {
             var jwtParts = jwt.Split('.');
             if (jwtParts == null || jwtParts.Length < 3)
-                throw new ArgumentException("Token does not have 3 part!" ,nameof(jwt));
+                throw new ArgumentException("Token does not have 3 part!", nameof(jwt));
 
             var signature = Convert.FromBase64String(jwtParts[2]);
 
             //  Find certificate by thumb number 
             var payload = jwtParts[1].FromBase64();
             dynamic json = JObject.Parse(payload);
+
+            // Check token expiration
+            var exp = new DateTime().FromUnixDate((double)json.exp);
+            if (DateTime.Now > exp)
+                throw new ArgumentException("Token has been expired.", nameof(jwt));
+
             RSA rsa = _certificateProvider.GetByThumb(json.CertificateThumb.ToString()).PublicKey.Key;
 
             // Check sign by certificate public key
