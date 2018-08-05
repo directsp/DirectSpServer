@@ -244,7 +244,11 @@ namespace DirectSp.Core
         private async Task<SpCallResult> InvokeSp(SpCall spCall, SpInvokeParamsInternal spi)
         {
             if (!spi.IsSystem && string.IsNullOrWhiteSpace(spi.SpInvokeParams.UserRemoteIp))
-                throw new ArgumentException(spi.SpInvokeParams.UserRemoteIp, "UserRemoteIp");
+            {
+                var ex = new ArgumentException(spi.SpInvokeParams.UserRemoteIp, "UserRemoteIp");
+                Logger.Log4Net.Error(ex.Message, ex);//Log exception
+                throw ex;
+            }
 
             // retrieve user session
             var invokeParams = spi.SpInvokeParams;
@@ -258,7 +262,15 @@ namespace DirectSp.Core
             var spName = Schema + "." + spCall.Method;
             var spInfo = FindSpInfo(spName);
             if (spInfo == null)
-                throw new SpException($"Could not find the API: {spName}");
+            {
+                var ex = new SpException($"Could not find the API: {spName}");
+                Logger.Log4Net.Error(ex.Message, ex);//Log exception
+                throw ex;
+            }
+
+            //Log invoke
+            var log = JsonConvert.SerializeObject(new { AppUserContext.AuthUserId, SpCall = spCall, SpInvokeParamsInternal = spi });
+            Logger.Log4Net.Info(log);
 
             //check IsCaptcha by meta-data
             if ((spInfo.ExtendedProps.CaptchaMode == SpCaptchaMode.Always || spInfo.ExtendedProps.CaptchaMode == SpCaptchaMode.Auto) && !spi.IsCaptcha)
@@ -309,8 +321,11 @@ namespace DirectSp.Core
 
                     //make sure Context has not been set be the caller
                     if (param.Key.Equals("Context", StringComparison.OrdinalIgnoreCase))
-                        throw new ArgumentException($"You can not set '{param.Key}' parameter!");
-
+                    {
+                        var ex = new ArgumentException($"You can not set '{param.Key}' parameter!");
+                        Logger.Log4Net.Error(ex.Message, ex);// Log exception
+                        throw ex;
+                    }
                     // Check jwt token
                     string tokenPayload = CheckJwt(param, spParam, spParamEx);
 

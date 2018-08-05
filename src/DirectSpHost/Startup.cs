@@ -82,7 +82,6 @@ namespace DirectSp.Host
             app.UseResponseCompression();
             app.UseDefaultFiles();
             app.UseStaticFiles();
-            loggerFactory.AddLog4Net(); // << Add this line
             app.UseMvc();
         }
     }
