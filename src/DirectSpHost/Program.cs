@@ -22,6 +22,7 @@ namespace DirectSp.Host
                         {
                             listenOptions.UseHttps(App.KestrelSslCertificate);
                         });
+
                     }
                 })
                 .UseSetting("detailedErrors", "true")

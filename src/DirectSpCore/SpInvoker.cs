@@ -418,18 +418,18 @@ namespace DirectSp.Core
         private string GetConnectionString(SpInfo spInfo, UserSession userSession, SpInvokeParamsInternal spi)
         {
             //Select ReadOnly Or Write Connection
-            var executeMode = spInfo.ExtendedProps != null ? spInfo.ExtendedProps.ExecuteMode : SpExecuteMode.NotSet;
+            var dataAccessMode = spInfo.ExtendedProps != null ? spInfo.ExtendedProps.DataAccessMode : SpDataAccessMode.Write;
 
             //Write procedures cannot be called in ForceReadOnly anyway
-            if (spi.IsForceReadOnly && executeMode == SpExecuteMode.Write)
+            if (spi.IsForceReadOnly && dataAccessMode == SpDataAccessMode.Write)
                 throw new SpMaintenanceReadOnlyException(spInfo.ProcedureName);
 
             //Set write request
-            userSession.SetWriteMode(!spi.IsForceReadOnly && (executeMode == SpExecuteMode.NotSet || executeMode == SpExecuteMode.Write));
+            userSession.SetWriteMode(!spi.IsForceReadOnly && dataAccessMode == SpDataAccessMode.Write);
 
             // Find connection string
-            var isSecondary = spi.IsForceReadOnly || executeMode == SpExecuteMode.ReadSnapshot ||
-                (executeMode == SpExecuteMode.ReadWise && userSession.LastWriteTime.AddSeconds(Options.ReadonlyConnectionSyncInterval) < DateTime.Now);
+            var isSecondary = spi.IsForceReadOnly || dataAccessMode == SpDataAccessMode.ReadSnapshot ||
+                (dataAccessMode == SpDataAccessMode.Read && userSession.LastWriteTime.AddSeconds(Options.ReadonlyConnectionSyncInterval) < DateTime.Now);
             return isSecondary ? ConnectionStringReadOnly : ConnectionStringReadWrite;
         }
 

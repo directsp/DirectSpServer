@@ -55,7 +55,7 @@ namespace DirectSp.Core
             if (DateTime.Now > exp)
                 throw new ArgumentException("Token has been expired.", nameof(jwt));
 
-            RSA rsa = _certificateProvider.GetByThumb(json.CertificateThumb.ToString()).PublicKey.Key;
+            RSA rsa = _certificateProvider.GetByThumb(json["CertificateThumb"].ToString()).PublicKey.Key;
 
             // Check sign by certificate public key
             SHA256 sha256 = SHA256.Create();

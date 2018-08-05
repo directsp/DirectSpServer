@@ -27,16 +27,16 @@ namespace DirectSp.Core.Test
             var o = new
             {
                 OrderNumber = 2,
-                ReceiverLoyaltyAccountId = 11037933,
+                ReceiverLoyaltyAccountId = 11037931,
                 ClubName = "Nike (باشگاه)",
                 Amount = 1,
                 PointTypeId = 2020,
                 PointTypeName = "نقدی",
                 PayeeLoyaltyAccountId = 1183,
                 PayeeLoyaltyAccountName = "بهنام عیوض پور",
-                exp = DateTime.Now.AddSeconds(1).ToUnixDate(),
+                exp = DateTime.Now.AddDays(1).ToUnixDate(),
                 ReturnUrl = "http://www.google.com",
-                CertificateThumb = "93A152E2CD70A3782558A9EC8EBDC691BBB42F48"
+                CertificateThumb = "775a9292f19f14fc2b9b80ab062a06be8623619c"
             };
 
             var tokenSign = tokenSigner.Sign(JsonConvert.SerializeObject(o));

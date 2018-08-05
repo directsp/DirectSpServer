@@ -7,3 +7,4 @@ appsettings.json
 /DirectSpClientNetTest
 DirectSpClientNetTest
 /src/DirectSpHost/Properties/PublishProfiles
+/src/DirectSpHost/log4net.config
