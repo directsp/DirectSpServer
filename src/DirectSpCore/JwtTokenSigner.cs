@@ -23,6 +23,9 @@ namespace DirectSp.Core
             //  Find certificate by thumb number 
             dynamic json = JObject.Parse(jwt);
             string certificateThumb = json.CertificateThumb;
+            if (string.IsNullOrEmpty(certificateThumb))
+                throw new NullReferenceException(nameof(certificateThumb));
+
             RSA rsa = _certificateProvider.GetByThumb(certificateThumb).GetRSAPrivateKey();
 
             if (rsa == null)
