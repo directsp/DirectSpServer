@@ -525,7 +525,7 @@ namespace DirectSp.Core
 
             // Read to tabSeparatedValues
             if (invokeOptions.RecordsetFormat == RecordsetFormat.TabSeparatedValues)
-                spCallResult.RecordsetText = ReadRecordsetByTab(dataReader, spInfo, fieldInfos.ToArray(), invokeOptions);
+                spCallResult.RecordsetText = ReadRecordsetAsTabSeparatedValues(dataReader, spInfo, fieldInfos.ToArray(), invokeOptions);
         }
 
         private IEnumerable<IDictionary<string, object>> ReadRecordsetAsObject(IDataReader dataReader, SpInfo spInfo, FieldInfo[] fieldInfos, InvokeOptions invokeOptions)
@@ -548,7 +548,7 @@ namespace DirectSp.Core
             return recordset;
         }
 
-        private string ReadRecordsetByTab(IDataReader dataReader, SpInfo spInfo, FieldInfo[] fieldInfos, InvokeOptions invokeOptions)
+        private string ReadRecordsetAsTabSeparatedValues(IDataReader dataReader, SpInfo spInfo, FieldInfo[] fieldInfos, InvokeOptions invokeOptions)
         {
             var stringBuilder = new StringBuilder(1 * 1000000); //1MB
 
@@ -579,9 +579,10 @@ namespace DirectSp.Core
                     // Remove tabs
                     if (itemValue is string)
                     {
-                        itemValueString = itemValueString.Replace("'", "''");
+                        itemValueString = itemValueString.Replace("\"", "\"\"");
                         itemValueString = itemValueString.Replace("\t", " ");
-                        itemValueString = $"'{itemValueString}'";
+                        itemValueString = $"\"{itemValueString}\"";
+
                         // Add ="" if it was a number
                         if (double.TryParse(itemValue.ToString(), out double t))
                             itemValueString = $"={itemValueString}";
@@ -607,7 +608,6 @@ namespace DirectSp.Core
             return stringBuilder.ToString();
         }
 
-        #region helpers
         private async Task<bool> CheckCaptcha(SpInvokeParamsInternal spi)
         {
             bool ret = false;
@@ -708,6 +708,5 @@ namespace DirectSp.Core
         {
             return typeName.ToLower().Substring(0, 4) == "date" && Options.AlternativeCalendar != null;
         }
-        #endregion helper
     }
 }
