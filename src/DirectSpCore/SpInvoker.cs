@@ -15,8 +15,6 @@ using System.IO;
 using DirectSp.Core.SpSchema;
 using DirectSp.Core.DI;
 using DirectSp.Core.Infrastructure;
-using System.Collections.Concurrent;
-using System.Threading;
 using DirectSp.Core.Helpers;
 
 namespace DirectSp.Core
@@ -201,18 +199,6 @@ namespace DirectSp.Core
                 RefreshApi();
                 return await Invoke(spCall, spi);
             }
-            catch (SpMaintenanceReadOnlyException ex)
-            {
-                try
-                {
-                    spi.IsForceReadOnly = true;
-                    return await InvokeCore(spCall, spi);
-                }
-                catch (SpException spException)
-                {
-                    throw spException.SpCallError.ErrorNumber == 3906 ? ex : spException;
-                }
-            }
             catch (SpException spException) //catch any read-only errors
             {
                 throw spException.SpCallError.ErrorNumber == 3906 ? new SpMaintenanceReadOnlyException(spCall.Method) : spException;
@@ -289,6 +275,7 @@ namespace DirectSp.Core
                 RecordIndex = invokeOptions.RecordIndex,
                 RecordCount = invokeOptions.RecordCount,
                 InvokerAppVersion = AppVersion,
+                IsReadonlyIntent = spInfo.ExtendedProps.DataAccessMode == SpDataAccessMode.Read || spInfo.ExtendedProps.DataAccessMode == SpDataAccessMode.ReadSnapshot
             };
 
             //Get Connection String caring about ReadScale

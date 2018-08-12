@@ -30,5 +30,7 @@ namespace DirectSp.Core.Entities
         [DefaultValue(null)]
         public string InvokerAppVersion { get; set; }
 
+        public bool IsReadonlyIntent { get; set; }
+
     }
 }
