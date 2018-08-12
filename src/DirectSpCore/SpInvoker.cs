@@ -142,17 +142,15 @@ namespace DirectSp.Core
             }
             catch
             {
-                // prevent rol-up the aggregation exception
+                // catch await single exception
             }
-            finally
+
+            foreach (var item in tasks)
             {
-                foreach (var item in tasks)
-                {
-                    if (item.IsCompletedSuccessfully)
-                        spCallResults.Add(item.Result);
-                    else
-                        spCallResults.Add(new SpCallResult { { "error", SpExceptionAdapter.Create(item.Exception.InnerException).SpCallError} });
-                }
+                if (item.IsCompletedSuccessfully)
+                    spCallResults.Add(item.Result);
+                else
+                    spCallResults.Add(new SpCallResult { { "error", SpExceptionAdapter.Convert(item.Exception.InnerException).SpCallError } });
             }
 
             return spCallResults.ToArray();
@@ -239,14 +237,18 @@ namespace DirectSp.Core
             }
             catch (Exception ex)
             {
-                throw SpExceptionAdapter.Create(ex, InternalSpInvoker);
+                throw SpExceptionAdapter.Convert(ex, InternalSpInvoker);
             }
         }
 
         private async Task<SpCallResult> InvokeSp(SpCall spCall, SpInvokeParamsInternal spi)
         {
             if (!spi.IsSystem && string.IsNullOrWhiteSpace(spi.SpInvokeParams.UserRemoteIp))
-                throw new ArgumentException(spi.SpInvokeParams.UserRemoteIp, "UserRemoteIp");
+            {
+                var ex = new ArgumentException(spi.SpInvokeParams.UserRemoteIp, "UserRemoteIp");
+                Logger.Log4Net.Error(ex.Message, ex);//Log exception
+                throw ex;
+            }
 
             // retrieve user session
             var invokeParams = spi.SpInvokeParams;
@@ -260,7 +262,15 @@ namespace DirectSp.Core
             var spName = Schema + "." + spCall.Method;
             var spInfo = FindSpInfo(spName);
             if (spInfo == null)
-                throw new SpException($"Could not find the API: {spName}");
+            {
+                var ex = new SpException($"Could not find the API: {spName}");
+                Logger.Log4Net.Error(ex.Message, ex);//Log exception
+                throw ex;
+            }
+
+            //Log invoke
+            var log = JsonConvert.SerializeObject(new { AppUserContext.AuthUserId, SpCall = spCall, SpInvokeParamsInternal = spi });
+            Logger.Log4Net.Info(log);
 
             //check IsCaptcha by meta-data
             if ((spInfo.ExtendedProps.CaptchaMode == SpCaptchaMode.Always || spInfo.ExtendedProps.CaptchaMode == SpCaptchaMode.Auto) && !spi.IsCaptcha)
@@ -311,8 +321,11 @@ namespace DirectSp.Core
 
                     //make sure Context has not been set be the caller
                     if (param.Key.Equals("Context", StringComparison.OrdinalIgnoreCase))
-                        throw new ArgumentException($"You can not set '{param.Key}' parameter!");
-
+                    {
+                        var ex = new ArgumentException($"You can not set '{param.Key}' parameter!");
+                        Logger.Log4Net.Error(ex.Message, ex);// Log exception
+                        throw ex;
+                    }
                     // Check jwt token
                     string tokenPayload = CheckJwt(param, spParam, spParamEx);
 
@@ -420,18 +433,18 @@ namespace DirectSp.Core
         private string GetConnectionString(SpInfo spInfo, UserSession userSession, SpInvokeParamsInternal spi)
         {
             //Select ReadOnly Or Write Connection
-            var executeMode = spInfo.ExtendedProps != null ? spInfo.ExtendedProps.ExecuteMode : SpExecuteMode.NotSet;
+            var dataAccessMode = spInfo.ExtendedProps != null ? spInfo.ExtendedProps.DataAccessMode : SpDataAccessMode.Write;
 
             //Write procedures cannot be called in ForceReadOnly anyway
-            if (spi.IsForceReadOnly && executeMode == SpExecuteMode.Write)
+            if (spi.IsForceReadOnly && dataAccessMode == SpDataAccessMode.Write)
                 throw new SpMaintenanceReadOnlyException(spInfo.ProcedureName);
 
             //Set write request
-            userSession.SetWriteMode(!spi.IsForceReadOnly && (executeMode == SpExecuteMode.NotSet || executeMode == SpExecuteMode.Write));
+            userSession.SetWriteMode(!spi.IsForceReadOnly && dataAccessMode == SpDataAccessMode.Write);
 
             // Find connection string
-            var isSecondary = spi.IsForceReadOnly || executeMode == SpExecuteMode.ReadSnapshot ||
-                (executeMode == SpExecuteMode.ReadWise && userSession.LastWriteTime.AddSeconds(Options.ReadonlyConnectionSyncInterval) < DateTime.Now);
+            var isSecondary = spi.IsForceReadOnly || dataAccessMode == SpDataAccessMode.ReadSnapshot ||
+                (dataAccessMode == SpDataAccessMode.Read && userSession.LastWriteTime.AddSeconds(Options.ReadonlyConnectionSyncInterval) < DateTime.Now);
             return isSecondary ? ConnectionStringReadOnly : ConnectionStringReadWrite;
         }
 

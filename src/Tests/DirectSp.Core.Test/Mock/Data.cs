@@ -46,7 +46,7 @@ namespace DirectSp.Core.Test.Mock
                  ProcedureName="SignJwtToken",
                  ExtendedProps=new SpInfoEx{
                      CaptchaMode=SpCaptchaMode.Manual,
-                     ExecuteMode=SpExecuteMode.NotSet,
+                     DataAccessMode=SpDataAccessMode.Write,
                      Params=new Dictionary<string, SpParamEx>
                      {
                          {"@JwtToken",new SpParamEx{ SignType=SpSignMode.JwtByCertThumb} }
@@ -70,7 +70,7 @@ namespace DirectSp.Core.Test.Mock
                  ProcedureName="SignJwtTokenChecking",
                  ExtendedProps=new SpInfoEx{
                      CaptchaMode=SpCaptchaMode.Manual,
-                     ExecuteMode=SpExecuteMode.NotSet,
+                     DataAccessMode=SpDataAccessMode.Write,
                      Params=new Dictionary<string, SpParamEx>
                      {
                          {"@JwtToken",new SpParamEx{ SignType=SpSignMode.JwtByCertThumb} }
