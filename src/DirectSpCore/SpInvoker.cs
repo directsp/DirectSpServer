@@ -277,8 +277,7 @@ namespace DirectSp.Core
             };
 
             //Get Connection String caring about ReadScale
-            bool isWriteMode = false;
-            var connectionString = GetConnectionString(spInfo, userSession, spi, out isWriteMode);
+            var connectionString = GetConnectionString(spInfo, userSession, spi, out bool isWriteMode);
 
             //create SqlParameters
             var spCallResults = new SpCallResult();
