@@ -1,0 +1,3 @@
+﻿CREATE TYPE [dbo].[TJSON]
+    FROM NVARCHAR (MAX) NULL;
+
