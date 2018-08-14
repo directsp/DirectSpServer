@@ -1,9 +1,9 @@
-﻿using DirectSp.AuthServer.Settings;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using DirectSp.Core;
 using DirectSp.Core.Entities;
 using System;
 using System.Security.Cryptography.X509Certificates;
+using System.IO;
 
 namespace DirectSp.AuthServer
 {
@@ -21,7 +21,7 @@ namespace DirectSp.AuthServer
             configuration.GetSection("App").Bind(AppSettings);
             configuration.GetSection("Kestrel").Bind(KestlerSettings);
 
-            var spInvokerOptions = new SpInvokerOptions();
+            var spInvokerOptions = new SpInvokerOptions() { WorkingFolderPath = Path.Combine(AppSettings.WorkingFolderPath, "DirectSp") };
             configuration.GetSection("SpInvoker").Bind(spInvokerOptions);
 
             var spInvokerInternal = new SpInvoker(AppSettings.InternalDbConnectionString, AppSettings.InternalDbSchema, spInvokerOptions);

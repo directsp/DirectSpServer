@@ -57,15 +57,11 @@ namespace DirectSp.AuthServer
                     .SetPreflightMaxAge(TimeSpan.FromHours(24 * 30));
             }));
 
-            // configure data repository
-            services.Configure<Microsoft.AspNetCore.DataProtection.KeyManagement.KeyManagementOptions>(options =>
-            {
-                options.XmlRepository = new DspXmlRepository(App.SpInvoker.KeyValue);
-            });
 
             // configure data protection
             services.AddDataProtection()
                 .ProtectKeysWithCertificate(App.ServerCertificate)
+                .PersistKeysToFileSystem(new System.IO.DirectoryInfo(App.AppSettings.KeysFolderPath))
                 .SetApplicationName("DirectSpAuthServer");
 
             // Add framework services.

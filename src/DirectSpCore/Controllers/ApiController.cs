@@ -86,22 +86,13 @@ namespace DirectSp.Core.Controllers
                 if (string.IsNullOrWhiteSpace(fileName))
                     fileName = "result.csv";
 
-                //get file
-                Stream stream = null;
-                if (string.IsNullOrWhiteSpace(SpInvoker.Options.TempFolderPath))
-                {
-                    //use keyvalue database
-                    stream = await SpInvoker.KeyValue.GetTextStream($"recordset/{id}", Encoding.Unicode);
-                }
-                else
-                {
-                    var filePath = Path.Combine(SpInvoker.RecordsetsFolerPath, id);
-                    FileStream fs = System.IO.File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-                    return File(fs, "text/csv", fileName);
-                }
-
                 AddResponseHeaders();
-                return File(stream, "text/csv", fileName);
+
+                //get file
+                var filePath = Path.Combine(SpInvoker.InvokerPath.RecordsetsFolder, id);
+                var fs = System.IO.File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+
+                return File(fs, "text/csv", fileName);
             }
             catch (SpAccessDeniedOrObjectNotExistsException)
             {

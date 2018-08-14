@@ -12,6 +12,7 @@ namespace DirectSp.Core
     {
         private static Lazy<ILog> log4Net = new Lazy<ILog>(() => Start());
         public static ILog Log4Net => log4Net.Value;
+        public static string LogFolder { get; set; }
 
         private static ILog Start()
         {

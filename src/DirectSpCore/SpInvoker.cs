@@ -29,9 +29,12 @@ namespace DirectSp.Core
         public DspKeyValue KeyValue { get; private set; }
         private UserSessionManager SessionManager;
         private readonly SpInvoker InternalSpInvoker;
+        public InvokerPath InvokerPath { get; private set; }
 
         public SpInvoker(string connectionString, string schema, SpInvokerOptions options, SpInvoker spInvokerInternal = null)
         {
+            InvokerPath = new InvokerPath(options.WorkingFolderPath);
+
             //validate ConnectionString
             Schema = schema ?? throw new Exception("Schema is not set!");
             ConnectionString = connectionString ?? throw new Exception("ConnectionString is not set!");
@@ -45,11 +48,6 @@ namespace DirectSp.Core
             SessionManager = new UserSessionManager(options);
             KeyValue = new DspKeyValue(spInvokerInternal);
             SpException.UseCamelCase = options.UseCamelCase;
-        }
-
-        public string RecordsetsFolerPath
-        {
-            get { return string.IsNullOrWhiteSpace(Options.TempFolderPath) ? null : Path.Combine(Options.TempFolderPath, "recordsets"); }
         }
 
         private DateTime? LastCleanTempFolderTime;
@@ -647,21 +645,12 @@ namespace DirectSp.Core
                     recordSetId += ".csv";
                 }
 
-                //create file
-                if (RecordsetsFolerPath != null)
-                {
-                    //Cleanup
-                    CleanTempFolder();
+                //Cleanup
+                CleanTempFolder();
 
-                    //create file in UNC
-                    var filePath = Path.Combine(RecordsetsFolerPath, recordSetId);
-                    File.WriteAllText(filePath, value, Encoding.Unicode);
-                }
-                else
-                {
-                    //create file in DB
-                    await KeyValue.ValueSet($"recordset/{recordSetId}", value, Options.DownloadedRecordsetFileLifetime);
-                }
+                //Create file in UNC
+                var filePath = Path.Combine(InvokerPath.RecordsetsFolder, recordSetId);
+                File.WriteAllText(filePath, value, Encoding.Unicode);
 
                 spCallResult.Recordset = null;
                 spCallResult.RecordsetText = null;
@@ -673,20 +662,13 @@ namespace DirectSp.Core
         }
         private void CleanTempFolder()
         {
-            if (RecordsetsFolerPath == null)
-                return;
-
             // Check interval time
             var lifeTime = DateTime.Now.AddSeconds(-Options.DownloadedRecordsetFileLifetime);
             if (LastCleanTempFolderTime != null && LastCleanTempFolderTime > lifeTime)
                 return; // Last cleaning was not far
 
-            // InitFolder
-            Directory.CreateDirectory(Options.TempFolderPath);
-            Directory.CreateDirectory(RecordsetsFolerPath);
-
-            //clean temp folder
-            var files = Directory.GetFiles(RecordsetsFolerPath);
+            //clean recordets folder
+            var files = Directory.GetFiles(InvokerPath.RecordsetsFolder);
             foreach (string file in files)
             {
                 FileInfo fi = new FileInfo(file);

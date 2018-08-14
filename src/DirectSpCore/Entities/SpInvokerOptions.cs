@@ -9,6 +9,6 @@
         public bool UseCamelCase { get; set; } = true;
         public int DownloadedRecordsetFileLifetime { get; set; } = 5 * 3600; //5 hours
         public System.Globalization.CultureInfo AlternativeCalendar { get; set; }
-        public string TempFolderPath { get; set; }
+        public string WorkingFolderPath { get; set; }
     }
 }

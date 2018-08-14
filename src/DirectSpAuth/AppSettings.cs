@@ -1,7 +1,7 @@
 ﻿using Microsoft.IdentityModel.Tokens;
-using System;
+using System.IO;
 
-namespace DirectSp.AuthServer.Settings
+namespace DirectSp.AuthServer
 {
     public class AppSettings
     {
@@ -21,5 +21,7 @@ namespace DirectSp.AuthServer.Settings
         public int AccessTokenLifetime { get; set; } = 1800;// 30 min
         public int RefreshTokenLifetime { get; set; } = 3600 * 24 * 90; //90 days
         public int ClockSkew { get; set; } = (int)TokenValidationParameters.DefaultClockSkew.TotalSeconds;
+        public string WorkingFolderPath { get; set; } = Directory.GetCurrentDirectory();
+        public string KeysFolderPath => Path.Combine(WorkingFolderPath, "Keys");
     }
 }
