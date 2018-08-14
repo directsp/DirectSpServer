@@ -621,7 +621,7 @@ namespace DirectSp.Core
 
             return ret;
         }
-        private async Task<bool> UpdateRecodsetDownloadUri(SpCall spCall, SpInvokeParamsInternal spi, SpCallResult spCallResult)
+        private Task<bool> UpdateRecodsetDownloadUri(SpCall spCall, SpInvokeParamsInternal spi, SpCallResult spCallResult)
         {
             bool result = false;
 
@@ -658,7 +658,7 @@ namespace DirectSp.Core
                 result = true;
             }
 
-            return result;
+            return Task.FromResult<bool>(result);
         }
         private void CleanTempFolder()
         {
