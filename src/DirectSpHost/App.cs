@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using System.Security.Cryptography.X509Certificates;
 using DirectSp.Core.Entities;
+using System.IO;
 
 namespace DirectSp.Host
 {
@@ -15,10 +16,12 @@ namespace DirectSp.Host
         public static void Configure(IConfigurationRoot configuration)
         {
             //load settings
-            var spInvokerOptions = new SpInvokerOptions();
             configuration.GetSection("App").Bind(AppSettings);
-            configuration.GetSection("SpInvoker").Bind(spInvokerOptions);
             configuration.GetSection("Kestrel").Bind(KestlerSettings);
+
+            Directory.CreateDirectory(AppSettings.WorkspaceFolderPath);
+            var spInvokerOptions = new SpInvokerOptions() { WorkspaceFolderPath = Path.Combine(AppSettings.WorkspaceFolderPath, "DirectSp") };
+            configuration.GetSection("SpInvoker").Bind(spInvokerOptions);
 
             //load SpInvokers Settings
             var apiInvokerInternal = new SpInvoker(AppSettings.InternalDbConnectionString, AppSettings.InternalDbSchema, spInvokerOptions);

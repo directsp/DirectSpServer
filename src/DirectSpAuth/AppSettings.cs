@@ -21,7 +21,7 @@ namespace DirectSp.AuthServer
         public int AccessTokenLifetime { get; set; } = 1800;// 30 min
         public int RefreshTokenLifetime { get; set; } = 3600 * 24 * 90; //90 days
         public int ClockSkew { get; set; } = (int)TokenValidationParameters.DefaultClockSkew.TotalSeconds;
-        public string WorkingFolderPath { get; set; } = Directory.GetCurrentDirectory();
-        public string KeysFolderPath => Path.Combine(WorkingFolderPath, "Keys");
+        public string WorkspaceFolderPath { get; set; } = Path.Combine(Directory.GetCurrentDirectory(), "Workspace");
+        public string KeysFolderPath => Path.Combine(WorkspaceFolderPath, "Keys");
     }
 }

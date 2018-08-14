@@ -33,7 +33,7 @@ namespace DirectSp.Core
 
         public SpInvoker(string connectionString, string schema, SpInvokerOptions options, SpInvoker spInvokerInternal = null)
         {
-            InvokerPath = new InvokerPath(options.WorkingFolderPath);
+            InvokerPath = new InvokerPath(options.WorkspaceFolderPath);
 
             //validate ConnectionString
             Schema = schema ?? throw new Exception("Schema is not set!");
