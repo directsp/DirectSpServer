@@ -16,7 +16,7 @@ namespace DirectSp.Host
                     {
                         options.Listen(IPAddress.Parse(App.KestlerSettings.ListenIp), 443, listenOptions =>
                         {
-                            listenOptions.UseHttps(App.KestrelSslCertificate);
+                             listenOptions.UseHttps(App.KestrelSslCertificate);
                         });
 
                     }

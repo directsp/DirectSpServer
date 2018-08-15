@@ -6,19 +6,19 @@ namespace DirectSp.Core
 {
     public class InvokerPath
     {
-        public InvokerPath(string workingFolder)
+        public InvokerPath(string workspaceFolder)
         {
-            if (string.IsNullOrEmpty(workingFolder))
-                throw new ArgumentNullException(nameof(workingFolder));
+            if (string.IsNullOrEmpty(workspaceFolder))
+                throw new ArgumentNullException(nameof(workspaceFolder));
 
-            WorkingFolder = workingFolder;
+            WorkspaceFolder = workspaceFolder;
 
-            Directory.CreateDirectory(WorkingFolder);
+            Directory.CreateDirectory(WorkspaceFolder);
             Directory.CreateDirectory(RecordsetsFolder);
         }
 
-        public string WorkingFolder { get; }
+        public string WorkspaceFolder { get; }
 
-        public string RecordsetsFolder => Path.Combine(WorkingFolder, "Recordsets");
+        public string RecordsetsFolder => Path.Combine(WorkspaceFolder, "Recordsets");
     }
 }

@@ -33,7 +33,7 @@ namespace DirectSp.Core
 
         public SpInvoker(string connectionString, string schema, SpInvokerOptions options, SpInvoker spInvokerInternal = null)
         {
-            InvokerPath = new InvokerPath(options.WorkingFolderPath);
+            InvokerPath = new InvokerPath(options.WorkspaceFolderPath);
 
             //validate ConnectionString
             Schema = schema ?? throw new Exception("Schema is not set!");
@@ -277,7 +277,7 @@ namespace DirectSp.Core
             };
 
             //Get Connection String caring about ReadScale
-            var connectionString = GetConnectionString(spInfo, userSession, spi);
+            var connectionString = GetConnectionString(spInfo, userSession, spi, out bool isWriteMode);
 
             //create SqlParameters
             var spCallResults = new SpCallResult();
@@ -386,6 +386,8 @@ namespace DirectSp.Core
 
                 dbLayer.CloseConnection(sqlConnection);
             }
+
+            userSession.SetWriteMode(isWriteMode);
             return spCallResults;
         }
 
@@ -415,7 +417,7 @@ namespace DirectSp.Core
             return string.Empty;
         }
 
-        private string GetConnectionString(SpInfo spInfo, UserSession userSession, SpInvokeParamsInternal spi)
+        private string GetConnectionString(SpInfo spInfo, UserSession userSession, SpInvokeParamsInternal spi, out bool isWriteMode)
         {
             //Select ReadOnly Or Write Connection
             var dataAccessMode = spInfo.ExtendedProps != null ? spInfo.ExtendedProps.DataAccessMode : SpDataAccessMode.Write;
@@ -425,7 +427,7 @@ namespace DirectSp.Core
                 throw new SpMaintenanceReadOnlyException(spInfo.ProcedureName);
 
             //Set write request
-            userSession.SetWriteMode(!spi.IsForceReadOnly && dataAccessMode == SpDataAccessMode.Write);
+            isWriteMode = !spi.IsForceReadOnly && dataAccessMode == SpDataAccessMode.Write;
 
             // Find connection string
             var isSecondary = spi.IsForceReadOnly || dataAccessMode == SpDataAccessMode.ReadSnapshot ||
@@ -621,7 +623,7 @@ namespace DirectSp.Core
 
             return ret;
         }
-        private async Task<bool> UpdateRecodsetDownloadUri(SpCall spCall, SpInvokeParamsInternal spi, SpCallResult spCallResult)
+        private Task<bool> UpdateRecodsetDownloadUri(SpCall spCall, SpInvokeParamsInternal spi, SpCallResult spCallResult)
         {
             bool result = false;
 
@@ -658,7 +660,7 @@ namespace DirectSp.Core
                 result = true;
             }
 
-            return result;
+            return Task.FromResult<bool>(result);
         }
         private void CleanTempFolder()
         {

@@ -79,7 +79,7 @@ namespace DirectSp.Core.Controllers
             }
         }
 
-        public async Task<IActionResult> DownloadRecordset(string id, string fileName)
+        public Task<IActionResult> DownloadRecordset(string id, string fileName)
         {
             try
             {
@@ -92,22 +92,22 @@ namespace DirectSp.Core.Controllers
                 var filePath = Path.Combine(SpInvoker.InvokerPath.RecordsetsFolder, id);
                 var fs = System.IO.File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
 
-                return File(fs, "text/csv", fileName);
+                return Task.FromResult<IActionResult>(File(fs, "text/csv", fileName));
             }
             catch (SpAccessDeniedOrObjectNotExistsException)
             {
                 AddResponseHeaders();
-                return new NotFoundResult();
+                return Task.FromResult<IActionResult>(new NotFoundResult());
             }
             catch (SpException ex)
             {
                 AddResponseHeaders();
-                return StatusCode(ex.StatusCode, ex.SpCallError);
+                return Task.FromResult<IActionResult>(StatusCode(ex.StatusCode, ex.SpCallError));
             }
             catch (Exception err)
             {
                 var ex = SpExceptionAdapter.Convert(new Exception(err.ToString())); //prevent server error for CORS
-                return StatusCode(ex.StatusCode, ex.SpCallError);
+                return Task.FromResult<IActionResult>(StatusCode(ex.StatusCode, ex.SpCallError));
             }
         }
         private JsonResult JsonHelper(object data)

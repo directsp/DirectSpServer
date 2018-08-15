@@ -1,4 +1,5 @@
 ﻿using Microsoft.IdentityModel.Tokens;
+using System.IO;
 
 namespace DirectSp.Host
 {
@@ -19,5 +20,6 @@ namespace DirectSp.Host
         public AuthSettings Authentication { get; set; }
         public bool EnableCors { get; set; }
         public int InvokeDelayInterval { get; set; }
+        public string WorkspaceFolderPath { get; set; } = Path.Combine(Directory.GetCurrentDirectory(), "Workspace");
     }
 }

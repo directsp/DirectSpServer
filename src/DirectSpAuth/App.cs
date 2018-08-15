@@ -21,7 +21,8 @@ namespace DirectSp.AuthServer
             configuration.GetSection("App").Bind(AppSettings);
             configuration.GetSection("Kestrel").Bind(KestlerSettings);
 
-            var spInvokerOptions = new SpInvokerOptions() { WorkingFolderPath = Path.Combine(AppSettings.WorkingFolderPath, "DirectSp") };
+            Directory.CreateDirectory(AppSettings.WorkspaceFolderPath);
+            var spInvokerOptions = new SpInvokerOptions() { WorkspaceFolderPath = Path.Combine(AppSettings.WorkspaceFolderPath, "DirectSp") };
             configuration.GetSection("SpInvoker").Bind(spInvokerOptions);
 
             var spInvokerInternal = new SpInvoker(AppSettings.InternalDbConnectionString, AppSettings.InternalDbSchema, spInvokerOptions);
