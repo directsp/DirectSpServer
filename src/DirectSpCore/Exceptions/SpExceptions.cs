@@ -5,13 +5,15 @@ namespace DirectSp.Core.Exceptions
     public class SpAccessDeniedOrObjectNotExistsException : SpException
     {
         public SpAccessDeniedOrObjectNotExistsException(SpException baseException) : base(baseException) { }
+        public SpAccessDeniedOrObjectNotExistsException()
+            : base(new SpCallError() { ErrorName = SpCommonExceptionId.AccessDeniedOrObjectNotExists.ToString(), ErrorNumber = (int)SpCommonExceptionId.AccessDeniedOrObjectNotExists }) { }
     }
 
     public class SpObjectAlreadyExists : SpException
     {
         public SpObjectAlreadyExists(SpException baseException) : base(baseException) { }
         public SpObjectAlreadyExists()
-            : base(new SpCallError() { ErrorName = SpCommonExceptionId.ObjectAlreadyExists.ToString(), ErrorNumber = (int)SpCommonExceptionId.MaintenanceReadOnly } ) {}
+            : base(new SpCallError() { ErrorName = SpCommonExceptionId.ObjectAlreadyExists.ToString(), ErrorNumber = (int)SpCommonExceptionId.ObjectAlreadyExists }) { }
     }
 
     public class SpInvokerAppVersionException : SpException

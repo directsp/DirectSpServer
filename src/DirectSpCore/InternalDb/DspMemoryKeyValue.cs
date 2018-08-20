@@ -21,25 +21,27 @@ namespace DirectSp.Core.InternalDb
 
         private ConcurrentDictionary<string, DspMemoryKeyValueItem> _keyValueItems = new ConcurrentDictionary<string, DspMemoryKeyValueItem>();
 
-
-        public Task<IEnumerable<DspKeyValueItem>> All(string keyNamePattern = null)
+        public Task<List<DspKeyValueItem>> All(string keyNamePattern = null)
         {
-            var all = _keyValueItems.Keys.Where(key => key.StartsWith(keyNamePattern)).Select(key =>
-            {
-                var item = _keyValueItems[key];
-                return new DspKeyValueItem
-                {
-                    KeyName = key,
-                    ModifiedTime = item.ModifiedTime,
-                    TextValue = item.Value
-                };
-            });
-            return Task.FromResult(all);
+            var all = _keyValueItems.Where(item => item.Value.ExpirationTime > DateTime.Now
+            && (item.Key.StartsWith(keyNamePattern) || string.IsNullOrEmpty(keyNamePattern))).Select(item =>
+                  {
+                      return new DspKeyValueItem
+                      {
+                          KeyName = item.Key,
+                          ModifiedTime = item.Value.ModifiedTime,
+                          TextValue = item.Value.Value
+                      };
+                  });
+            return Task.FromResult<List<DspKeyValueItem>>(all.ToList());
         }
 
         public Task<object> GetValue(string keyName)
         {
-            var item = _keyValueItems[keyName];
+            DspMemoryKeyValueItem item;
+            if (!_keyValueItems.Keys.Contains(keyName) || (item = _keyValueItems[keyName]).ExpirationTime < DateTime.Now)
+                throw new SpAccessDeniedOrObjectNotExistsException();
+
             return Task.FromResult<object>(new DspKeyValueItem
             {
                 KeyName = keyName,
@@ -53,9 +55,12 @@ namespace DirectSp.Core.InternalDb
             if (_keyValueItems.Keys.Contains(keyName) && !isOverwrite)
                 throw new SpObjectAlreadyExists();
 
+            // Cleanup expired KeyValues
+            Cleanup();
+
             var dspMemoryKeyValueItem = new DspMemoryKeyValueItem
             {
-                ExpirationTime = DateTime.Now.AddMinutes(timeToLife),
+                ExpirationTime = DateTime.Now.AddSeconds(timeToLife),
                 Value = value
             };
 
@@ -65,9 +70,27 @@ namespace DirectSp.Core.InternalDb
                 return dspMemoryKeyValueItem;
             });
 
-
             return Task.FromResult<object>(null);
         }
 
+        private void Cleanup()
+        {
+            var expiredItems = _keyValueItems.Where(item => item.Value.ExpirationTime < DateTime.Now).Select(item => item.Key);
+            DspMemoryKeyValueItem value;
+            foreach (var key in expiredItems)
+                _keyValueItems.Remove(key, out value);
+        }
+
+        public async Task Delete(string keyNamePattern)
+        {
+            var matchItems = await All(keyNamePattern);
+
+            if (matchItems.Count == 0)
+                throw new SpAccessDeniedOrObjectNotExistsException();
+
+            DspMemoryKeyValueItem value;
+            foreach (var item in matchItems)
+                _keyValueItems.Remove(item.KeyName, out value);
+        }
     }
 }

@@ -25,8 +25,8 @@ namespace DirectSp.Core
         private JwtTokenSigner _tokenSigner;
         private IDbLayer _dbLayer;
 
-        public string ConnectionStringReadOnly { get { return new SqlConnectionStringBuilder(ConnectionString) { ApplicationIntent = ApplicationIntent.ReadOnly }.ToString(); } }
-        public string ConnectionStringReadWrite { get { return new SqlConnectionStringBuilder(ConnectionString) { ApplicationIntent = ApplicationIntent.ReadWrite }.ToString(); } }
+        public string ConnectionStringReadOnly { get; }
+        public string ConnectionStringReadWrite { get; }
         public SpInvokerOptions Options { get; }
         public string ConnectionString { get; }
         public string Schema { get; }
@@ -47,6 +47,8 @@ namespace DirectSp.Core
             _tokenSigner = config.TokenSigner;
             _dbLayer = config.DbLayer;
             SpException.UseCamelCase = Options.UseCamelCase;
+            ConnectionStringReadOnly = new SqlConnectionStringBuilder(config.ConnectionString) { ApplicationIntent = ApplicationIntent.ReadOnly }.ToString();
+            ConnectionStringReadWrite = new SqlConnectionStringBuilder(config.ConnectionString) { ApplicationIntent = ApplicationIntent.ReadWrite }.ToString();
         }
 
         private DateTime? LastCleanTempFolderTime;
@@ -168,7 +170,7 @@ namespace DirectSp.Core
 
         public async Task<SpCallResult> Invoke(string method, object param, SpInvokeParams spInvokeParams, bool isSystem = false)
         {
-            // create spCall
+            // Create spCall
             var spCall = new SpCall
             {
                 Method = method
@@ -182,10 +184,10 @@ namespace DirectSp.Core
 
         public async Task<SpCallResult> Invoke(SpCall spCall, SpInvokeParams spInvokeParams, bool isSystem = false)
         {
-            //Check duplicate request
+            // Check duplicate request
             await CheckDuplicateRequest(spInvokeParams.InvokeOptions.RequestId);
 
-            //call main invoke
+            // Call main invoke
             var spi = new SpInvokeParamsInternal { SpInvokeParams = spInvokeParams, IsSystem = isSystem };
             if (isSystem)
                 spi.SpInvokeParams.AuthUserId = AppUserContext.AuthUserId;

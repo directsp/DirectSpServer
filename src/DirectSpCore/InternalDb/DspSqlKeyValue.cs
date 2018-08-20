@@ -19,7 +19,7 @@ namespace DirectSp.Core.InternalDb
 
         public SpInvoker SpInvoker { get; private set; }
 
-        public async Task<IEnumerable<DspKeyValueItem>> All(string keyNamePattern = null)
+        public async Task<List<DspKeyValueItem>> All(string keyNamePattern = null)
         {
             using (var sqlConnection = new SqlConnection(_connectionString))
             using (var sqlCommand = new SqlCommand("KeyValue_All", sqlConnection))
@@ -62,6 +62,7 @@ namespace DirectSp.Core.InternalDb
 
             }
         }
+
         public async Task<object> GetValue(string keyName)
         {
             using (var sqlConnection = new SqlConnection(_connectionString))
@@ -73,6 +74,19 @@ namespace DirectSp.Core.InternalDb
 
                 await sqlCommand.ExecuteNonQueryAsync();
                 return sqlCommand.Parameters["TextValue"].Value;
+            }
+        }
+
+        public async Task Delete(string keyNamePattern)
+        {
+            using (var sqlConnection = new SqlConnection(_connectionString))
+            using (var sqlCommand = new SqlCommand("KeyValue_Delete", sqlConnection))
+            {
+                sqlConnection.Open();
+                sqlCommand.Parameters.AddWithValue("KeyNamePattern", keyNamePattern);
+                sqlCommand.Parameters.AddWithValue("Context", "$$");
+
+                await sqlCommand.ExecuteNonQueryAsync();
             }
         }
 
