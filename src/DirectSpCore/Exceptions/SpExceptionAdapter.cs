@@ -62,6 +62,9 @@ namespace DirectSp.Core.Exceptions
                 case (int)SpCommonExceptionId.InvalidParamSignature:
                     return new SpInvalidParamSignature(ret);
 
+                case (int)SpCommonExceptionId.ObjectAlreadyExists:
+                    return new SpObjectAlreadyExists(ret);
+
                 default:
                     return ret;
             }

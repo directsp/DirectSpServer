@@ -1,9 +1,7 @@
-﻿using DirectSp.Core.DI;
-using DirectSp.Core.Entities;
+﻿using DirectSp.Core.Entities;
 using DirectSp.Core.Exceptions;
-using DirectSp.Core.Test.DI;
+using DirectSp.Core.InternalDb;
 using DirectSp.Core.Test.Mock;
-using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
@@ -19,14 +17,22 @@ namespace DirectSp.Core.Test
         [TestInitialize]
         public void Init()
         {
-
-            SpInvokerOptions spInvokerOptions = new SpInvokerOptions();
-
-            // Create SpInvoke instance base on application settings
-            _spInvoker = new SpInvoker("", "api", spInvokerOptions);
-
-            // Swich resolver ninject module to TestModule
-            Resolver.Instance.SetModule(new TestModule());
+            // Resolve SpInvoker internal dependencies
+            var spInvokerConfig = new SpInvokerConfig
+            {
+                ConnectionString = string.Empty,
+                Options = new SpInvokerOptions { WorkspaceFolderPath = "Workspace/Directsp" },
+                Schema = "api",
+                KeyValue = null,
+                TokenSigner = new JwtTokenSigner(new Mock.CertificateProvider()),
+                DbLayer = new DbLayer(),
+                
+            };
+            var internalSpInvoker = new SpInvoker(spInvokerConfig);
+            spInvokerConfig.KeyValue = new DspMemoryKeyValue();
+            spInvokerConfig.InternalSpInvoker = internalSpInvoker;
+            spInvokerConfig.Schema = "api";
+            _spInvoker = new SpInvoker(spInvokerConfig);
         }
 
         [TestMethod]
@@ -66,9 +72,10 @@ namespace DirectSp.Core.Test
             {
                 Method = "SignJwtToken",
                 Params = new Dictionary<string, object>
-                {
-                    {"JwtToken","" }
-                }
+                    {
+                    // Value of this parameter is setting by DbLayer
+                        {"JwtToken","" }
+                    }
             };
 
             var result = await _spInvoker.Invoke(spCall);
@@ -82,9 +89,9 @@ namespace DirectSp.Core.Test
             {
                 Method = "SignJwtTokenChecking",
                 Params = new Dictionary<string, object>
-                {
-                    {"JwtToken", Data.SignedJwtToken() }
-                }
+                    {
+                        {"JwtToken", Data.SignedJwtToken() }
+                    }
             };
 
             await _spInvoker.Invoke(spCall);
@@ -108,6 +115,28 @@ namespace DirectSp.Core.Test
                 Assert.Fail();
             }
             catch (Exception) { }
+        }
+
+        [TestMethod]
+        public async Task TestDouplicateRequestHandling()
+        {
+            var spCall = new SpCall
+            {
+                Method = "TestApi"
+            };
+
+            var requestId = Guid.NewGuid();
+            var spInvokeParams = new SpInvokeParams { InvokeOptions = new InvokeOptions { RequestId = requestId.ToString() }, UserRemoteIp = "1" };
+            await _spInvoker.Invoke(spCall, spInvokeParams);
+
+            try
+            {
+                await _spInvoker.Invoke(spCall, spInvokeParams);
+            }
+            catch (DuplicateRequestException)
+            {
+                Assert.IsTrue(true);
+            }
         }
 
     }

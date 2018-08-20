@@ -1,9 +1,9 @@
 ﻿using Microsoft.IdentityModel.Tokens;
 using System.IO;
 
-namespace DirectSp.AuthServer
+namespace DirectSp.AuthServer.Settings
 {
-    public class AppSettings
+    class AppSettings
     {
         public string ResourceDbConnectionString { get; set; }
         public string ResourceDbSchema { get; set; } = "api";
@@ -23,5 +23,7 @@ namespace DirectSp.AuthServer
         public int ClockSkew { get; set; } = (int)TokenValidationParameters.DefaultClockSkew.TotalSeconds;
         public string WorkspaceFolderPath { get; set; } = Path.Combine(Directory.GetCurrentDirectory(), "Workspace");
         public string KeysFolderPath => Path.Combine(WorkspaceFolderPath, "Keys");
+        public KeyValueProviderSettings KeyValueProvider { get; set; } = new KeyValueProviderSettings();
+
     }
 }

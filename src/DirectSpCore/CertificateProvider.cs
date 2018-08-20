@@ -4,7 +4,7 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace DirectSp.Core
 {
-    class CertificateProvider : ICertificateProvider
+    public class CertificateProvider : ICertificateProvider
     {
         public X509Certificate2 GetByThumb(string thumbNumber)
         {

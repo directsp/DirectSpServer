@@ -4,10 +4,13 @@ using DirectSp.Core.Entities;
 using System;
 using System.Security.Cryptography.X509Certificates;
 using System.IO;
+using DirectSp.Core.Database;
+using DirectSp.AuthServer.Settings;
+using DirectSp.Core.InternalDb;
 
 namespace DirectSp.AuthServer
 {
-    public static class App
+    static class App
     {
         public static AppSettings AppSettings = new AppSettings();
         public static KestlerSettings KestlerSettings = new KestlerSettings();
@@ -25,13 +28,40 @@ namespace DirectSp.AuthServer
             var spInvokerOptions = new SpInvokerOptions() { WorkspaceFolderPath = Path.Combine(AppSettings.WorkspaceFolderPath, "DirectSp") };
             configuration.GetSection("SpInvoker").Bind(spInvokerOptions);
 
-            var spInvokerInternal = new SpInvoker(AppSettings.InternalDbConnectionString, AppSettings.InternalDbSchema, spInvokerOptions);
-            SpInvoker = new SpInvoker(AppSettings.ResourceDbConnectionString, AppSettings.ResourceDbSchema, spInvokerOptions, spInvokerInternal);
+
+            // Resolve SpInvoker internal dependencies
+            var spInvokerConfig = new SpInvokerConfig
+            {
+                ConnectionString = AppSettings.InternalDbConnectionString,
+                Options = spInvokerOptions,
+                Schema = AppSettings.InternalDbSchema,
+                KeyValue = null,
+                TokenSigner = new JwtTokenSigner(new CertificateProvider()),
+                DbLayer = new DbLayer()
+            };
+            var internalSpInvoker = new SpInvoker(spInvokerConfig);
+
+            // Create KeyValue instance base of AppSetting.json settings
+            switch (AppSettings.KeyValueProvider.Name)
+            {
+                case KeyValueProviderType.DspSqlKeyValue:
+                    spInvokerConfig.KeyValue = new DspSqlKeyValue(AppSettings.KeyValueProvider.ConnectionString);
+                    break;
+                case KeyValueProviderType.DspMemoryKeyValue:
+                    spInvokerConfig.KeyValue = new DspMemoryKeyValue();
+                    break;
+                default:
+                    throw new NotImplementedException($"KeyValueProvider has not been implemented. Name: {AppSettings.KeyValueProvider.Name}");
+            }
+
+            spInvokerConfig.InternalSpInvoker = internalSpInvoker;
+            spInvokerConfig.Schema = AppSettings.ResourceDbSchema;
+            SpInvoker = new SpInvoker(spInvokerConfig);
 
             // Set server certificate
             var certStore = new X509Store(StoreName.My, StoreLocation.LocalMachine, OpenFlags.OpenExistingOnly);
             var certList = certStore.Certificates.Find(X509FindType.FindByThumbprint, AppSettings.ServerCertificateThumb, false);
-            ServerCertificate = certList.Count > 0 ? certList[0] : null; 
+            ServerCertificate = certList.Count > 0 ? certList[0] : null;
             if (ServerCertificate == null)
                 throw new Exception($"Could not find Server certificate: Thumb: {AppSettings.ServerCertificateThumb}!");
 

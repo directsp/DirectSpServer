@@ -13,7 +13,6 @@ using Microsoft.AspNetCore.Http;
 using DirectSp.Core.InternalDb;
 using System.IO;
 using DirectSp.Core.SpSchema;
-using DirectSp.Core.DI;
 using DirectSp.Core.Infrastructure;
 using DirectSp.Core.Helpers;
 
@@ -21,33 +20,33 @@ namespace DirectSp.Core
 {
     public class SpInvoker
     {
-        public SpInvokerOptions Options { get; private set; }
-        public string ConnectionString { get; private set; }
-        public string Schema { get; private set; }
+        private UserSessionManager SessionManager;
+        private readonly SpInvoker _internalSpInvoker;
+        private JwtTokenSigner _tokenSigner;
+        private IDbLayer _dbLayer;
+
         public string ConnectionStringReadOnly { get { return new SqlConnectionStringBuilder(ConnectionString) { ApplicationIntent = ApplicationIntent.ReadOnly }.ToString(); } }
         public string ConnectionStringReadWrite { get { return new SqlConnectionStringBuilder(ConnectionString) { ApplicationIntent = ApplicationIntent.ReadWrite }.ToString(); } }
-        public DspKeyValue KeyValue { get; private set; }
-        private UserSessionManager SessionManager;
-        private readonly SpInvoker InternalSpInvoker;
-        public InvokerPath InvokerPath { get; private set; }
+        public SpInvokerOptions Options { get; }
+        public string ConnectionString { get; }
+        public string Schema { get; }
+        public IDspKeyValue KeyValue { get; }
+        public InvokerPath InvokerPath { get; }
 
-        public SpInvoker(string connectionString, string schema, SpInvokerOptions options, SpInvoker spInvokerInternal = null)
+        public SpInvoker(SpInvokerConfig config)
         {
-            InvokerPath = new InvokerPath(options.WorkspaceFolderPath);
+            InvokerPath = new InvokerPath(config.Options.WorkspaceFolderPath);
 
             //validate ConnectionString
-            Schema = schema ?? throw new Exception("Schema is not set!");
-            ConnectionString = connectionString ?? throw new Exception("ConnectionString is not set!");
-            var connStringBuilder = new SqlConnectionStringBuilder(connectionString);
-
-            if (connectionString.IndexOf("ApplicationIntent", StringComparison.OrdinalIgnoreCase) != -1)
-                throw new Exception("ConnectionString should have a ApplicationIntent parameter!");
-
-            Options = options;
-            InternalSpInvoker = spInvokerInternal ?? this;
-            SessionManager = new UserSessionManager(options);
-            KeyValue = new DspKeyValue(spInvokerInternal);
-            SpException.UseCamelCase = options.UseCamelCase;
+            Schema = config.Schema ?? throw new Exception("Schema is not set!");
+            ConnectionString = config.ConnectionString ?? throw new Exception("ConnectionString is not set!");
+            Options = config.Options;
+            _internalSpInvoker = config.InternalSpInvoker ?? this;
+            SessionManager = new UserSessionManager(Options);
+            KeyValue = config.KeyValue;
+            _tokenSigner = config.TokenSigner;
+            _dbLayer = config.DbLayer;
+            SpException.UseCamelCase = Options.UseCamelCase;
         }
 
         private DateTime? LastCleanTempFolderTime;
@@ -108,7 +107,7 @@ namespace DirectSp.Core
                 var spInfos = new Dictionary<string, SpInfo>();
                 using (var sqlConnection = new SqlConnection(ConnectionStringReadOnly))
                 {
-                    var spList = ResourceDb.System_Api(sqlConnection, out string appUserContext);
+                    var spList = ResourceDb.System_Api(_dbLayer, sqlConnection, out string appUserContext);
                     foreach (var item in spList)
                         spInfos.Add(item.SchemaName + "." + item.ProcedureName, item);
 
@@ -121,6 +120,9 @@ namespace DirectSp.Core
 
         public async Task<SpCallResult[]> Invoke(SpCall[] spCalls, SpInvokeParams spInvokeParams)
         {
+            //Check DuplicateRequest
+            await CheckDuplicateRequest(spInvokeParams.InvokeOptions.RequestId);
+
             var spi = new SpInvokeParamsInternal
             {
                 SpInvokeParams = spInvokeParams,
@@ -180,6 +182,10 @@ namespace DirectSp.Core
 
         public async Task<SpCallResult> Invoke(SpCall spCall, SpInvokeParams spInvokeParams, bool isSystem = false)
         {
+            //Check duplicate request
+            await CheckDuplicateRequest(spInvokeParams.InvokeOptions.RequestId);
+
+            //call main invoke
             var spi = new SpInvokeParamsInternal { SpInvokeParams = spInvokeParams, IsSystem = isSystem };
             if (isSystem)
                 spi.SpInvokeParams.AuthUserId = AppUserContext.AuthUserId;
@@ -221,7 +227,7 @@ namespace DirectSp.Core
             }
             catch (Exception ex)
             {
-                throw SpExceptionAdapter.Convert(ex, InternalSpInvoker);
+                throw SpExceptionAdapter.Convert(ex, _internalSpInvoker);
             }
         }
 
@@ -258,7 +264,7 @@ namespace DirectSp.Core
 
             //check IsCaptcha by meta-data
             if ((spInfo.ExtendedProps.CaptchaMode == SpCaptchaMode.Always || spInfo.ExtendedProps.CaptchaMode == SpCaptchaMode.Auto) && !spi.IsCaptcha)
-                throw new SpInvalidCaptchaException(InternalSpInvoker, spInfo.ProcedureName);
+                throw new SpInvalidCaptchaException(_internalSpInvoker, spInfo.ProcedureName);
 
             //check IsBatchAllowed by meta-data
             if (!spInfo.ExtendedProps.IsBatchAllowed && spi.IsBatch)
@@ -337,10 +343,9 @@ namespace DirectSp.Core
                 //create command and run it
                 sqlCommand.CommandType = CommandType.StoredProcedure;
                 sqlCommand.Parameters.AddRange(sqlParameters.ToArray());
-                var dbLayer = Resolver.Instance.Resolve<IDbLayer>();
-                dbLayer.OpenConnection(sqlConnection);
+                _dbLayer.OpenConnection(sqlConnection);
 
-                using (var dataReader = await dbLayer.ExecuteReaderAsync(sqlCommand))
+                using (var dataReader = await _dbLayer.ExecuteReaderAsync(sqlCommand))
                 {
                     //Fill Recordset and close dataReader BEFORE reading sqlParameters
                     ReadRecordset(spCallResults, dataReader, spInfo, invokeOptions);
@@ -384,31 +389,29 @@ namespace DirectSp.Core
                     }
                 }
 
-                dbLayer.CloseConnection(sqlConnection);
+                _dbLayer.CloseConnection(sqlConnection);
             }
 
             userSession.SetWriteMode(isWriteMode);
             return spCallResults;
         }
 
-        private static void SignJwt(SqlParameter sqlParam, SpParamEx spParamEx)
+        private void SignJwt(SqlParameter sqlParam, SpParamEx spParamEx)
         {
             if (spParamEx?.SignType == SpSignMode.JwtByCertThumb)
             {
-                var tokenSigner = Resolver.Instance.Resolve<JwtTokenSigner>();
-                sqlParam.Value = tokenSigner.Sign(sqlParam.Value.ToString());
+                sqlParam.Value = _tokenSigner.Sign(sqlParam.Value.ToString());
             }
         }
 
-        private static string CheckJwt(KeyValuePair<string, object> callerParam, SpParam spParam, SpParamEx spParamEx)
+        private string CheckJwt(KeyValuePair<string, object> callerParam, SpParam spParam, SpParamEx spParamEx)
         {
             // Sign text if need to sign
             if (spParamEx?.SignType == SpSignMode.JwtByCertThumb && !spParam.IsOutput)
             {
                 string token = callerParam.Value.ToString();
                 if (string.IsNullOrEmpty(token)) return string.Empty;
-                var tokenSigner = Resolver.Instance.Resolve<JwtTokenSigner>();
-                if (!tokenSigner.CheckSign(token))
+                if (!_tokenSigner.CheckSign(token))
                     throw new SpInvalidParamSignature(callerParam.Key);
                 // Set param value by token payload
                 return token.Split('.')[1].FromBase64();
@@ -615,7 +618,7 @@ namespace DirectSp.Core
             //validate captcha
             if (spi.SpInvokeParams.InvokeOptions.CaptchaId != null || spi.SpInvokeParams.InvokeOptions.CaptchaCode != null)
             {
-                var captcha = new Captcha(InternalSpInvoker);
+                var captcha = new Captcha(_internalSpInvoker);
                 await captcha.Match(spi.SpInvokeParams.InvokeOptions.CaptchaId, spi.SpInvokeParams.InvokeOptions.CaptchaCode);
                 spi.IsCaptcha = true;
                 ret = true;
@@ -691,6 +694,21 @@ namespace DirectSp.Core
         private bool AlternativeIsDateTime(string typeName)
         {
             return typeName.ToLower().Substring(0, 4) == "date" && Options.AlternativeCalendar != null;
+        }
+
+        private async Task CheckDuplicateRequest(string requestId)
+        {
+            if (string.IsNullOrEmpty(requestId))
+                return;
+
+            try
+            {
+                await KeyValue.SetValue(requestId, "", isOverwrite: false);
+            }
+            catch (SpObjectAlreadyExists)
+            {
+                throw new DuplicateRequestException(requestId);
+            }
         }
     }
 }

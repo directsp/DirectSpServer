@@ -8,6 +8,6 @@ namespace DirectSp.Core.Entities
     {
         public string KeyName { get; set; }
         public string TextValue { get; set; }
-        public DateTime ModifiedTime { get; set; }
+        public DateTime? ModifiedTime { get; set; }
     }
 }

@@ -1,23 +1,15 @@
-﻿using Microsoft.IdentityModel.Tokens;
-using System.IO;
+﻿using System.IO;
 
-namespace DirectSp.Host
+namespace DirectSp.Host.Settings
 {
-    public class AuthSettings
-    {
-        public string CertificateFile { get; set; }
-        public string ValidIssuer { get; set; }
-        public string[] ValidAudiences { get; set; }
-        public int ClockSkew { get; set; } = (int)TokenValidationParameters.DefaultClockSkew.TotalSeconds;
-    }
-
-    public class AppSettings
+    class AppSettings
     {
         public string ResourceDbConnectionString { get; set; }
         public string ResourceDbSchema { get; set; } = "api";
         public string InternalDbConnectionString { get; set; }
         public string InternalDbSchema { get; set; } = "api";
         public AuthSettings Authentication { get; set; }
+        public KeyValueProviderSettings KeyValueProvider { get; set; } = new KeyValueProviderSettings();
         public bool EnableCors { get; set; }
         public int InvokeDelayInterval { get; set; }
         public string WorkspaceFolderPath { get; set; } = Path.Combine(Directory.GetCurrentDirectory(), "Workspace");
