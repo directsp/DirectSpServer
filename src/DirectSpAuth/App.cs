@@ -32,9 +32,9 @@ namespace DirectSp.AuthServer
             // Resolve SpInvoker internal dependencies
             var spInvokerConfig = new SpInvokerConfig
             {
-                ConnectionString = AppSettings.InternalDbConnectionString,
+                ConnectionString = AppSettings.ResourceDbConnectionString,
                 Options = spInvokerOptions,
-                Schema = AppSettings.InternalDbSchema,
+                Schema = AppSettings.ResourceDbSchema,
                 KeyValue = null,
                 TokenSigner = new JwtTokenSigner(new CertificateProvider()),
                 DbLayer = new DbLayer()
@@ -53,7 +53,6 @@ namespace DirectSp.AuthServer
                     throw new NotImplementedException($"KeyValueProvider has not been implemented. Name: {AppSettings.KeyValueProvider.Name}");
             }
 
-            spInvokerConfig.Schema = AppSettings.ResourceDbSchema;
             SpInvoker = new SpInvoker(spInvokerConfig);
 
             // Set server certificate

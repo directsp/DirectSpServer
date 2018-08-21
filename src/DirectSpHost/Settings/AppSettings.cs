@@ -6,8 +6,6 @@ namespace DirectSp.Host.Settings
     {
         public string ResourceDbConnectionString { get; set; }
         public string ResourceDbSchema { get; set; } = "api";
-        public string InternalDbConnectionString { get; set; }
-        public string InternalDbSchema { get; set; } = "api";
         public AuthSettings Authentication { get; set; }
         public KeyValueProviderSettings KeyValueProvider { get; set; } = new KeyValueProviderSettings();
         public bool EnableCors { get; set; }

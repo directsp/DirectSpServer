@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Timers;
 
 namespace DirectSp.Core.InternalDb
 {
@@ -20,6 +21,19 @@ namespace DirectSp.Core.InternalDb
         }
 
         private ConcurrentDictionary<string, DspMemoryKeyValueItem> _keyValueItems = new ConcurrentDictionary<string, DspMemoryKeyValueItem>();
+        private Timer _timer = new Timer(30 * 60 * 1000);// 30 minutes
+
+        public DspMemoryKeyValue()
+        {
+            _timer.Elapsed += _timer_Elapsed;
+            _timer.Start();
+        }
+
+        private void _timer_Elapsed(object sender, ElapsedEventArgs e)
+        {
+            // Cleanup expired KeyValues
+            Cleanup();
+        }
 
         public Task<List<DspKeyValueItem>> All(string keyNamePattern = null)
         {
@@ -54,9 +68,6 @@ namespace DirectSp.Core.InternalDb
         {
             if (_keyValueItems.Keys.Contains(keyName) && !isOverwrite)
                 throw new SpObjectAlreadyExists();
-
-            // Cleanup expired KeyValues
-            Cleanup();
 
             var dspMemoryKeyValueItem = new DspMemoryKeyValueItem
             {

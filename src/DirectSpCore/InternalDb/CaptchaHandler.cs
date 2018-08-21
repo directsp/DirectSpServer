@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using DirectSp.Core.Infrastructure;
 using DirectSp.Core.Exceptions;
+using System.Data.SqlClient;
 
 namespace DirectSp.Core.InternalDb
 {
@@ -54,6 +55,7 @@ namespace DirectSp.Core.InternalDb
             {
                 throw new SpInvalidCaptchaException(reCreate ? await Create() : null, spName);
             }
+
         }
 
 

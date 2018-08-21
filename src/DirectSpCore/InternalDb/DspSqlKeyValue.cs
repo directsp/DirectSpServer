@@ -6,6 +6,7 @@ using DirectSp.Core.Infrastructure;
 using System.Data.SqlClient;
 using System;
 using System.Data;
+using DirectSp.Core.Exceptions;
 
 namespace DirectSp.Core.InternalDb
 {
@@ -23,11 +24,12 @@ namespace DirectSp.Core.InternalDb
         public async Task<List<DspKeyValueItem>> All(string keyNamePattern = null)
         {
             using (var sqlConnection = new SqlConnection(_connectionString))
-            using (var sqlCommand = new SqlCommand("KeyValue_All", sqlConnection))
+            using (var sqlCommand = new SqlCommand("api.KeyValue_All", sqlConnection))
             {
                 sqlConnection.Open();
-                sqlCommand.Parameters.AddWithValue("KeyNamePattern", keyNamePattern);
-                sqlCommand.Parameters.AddWithValue("Context", "$$");
+                sqlCommand.CommandType = CommandType.StoredProcedure;
+                sqlCommand.Parameters.AddWithValue("@KeyNamePattern", keyNamePattern);
+                sqlCommand.Parameters.Add(new SqlParameter("@Context", SqlDbType.NVarChar, -1) { Direction = ParameterDirection.InputOutput, Value = "$$" });
 
                 var dataReader = await sqlCommand.ExecuteReaderAsync();
                 var keyValueItems = new List<DspKeyValueItem>();
@@ -50,14 +52,15 @@ namespace DirectSp.Core.InternalDb
         public async Task SetValue(string keyName, string value, int timeToLife = 0, bool isOverwrite = true)
         {
             using (var sqlConnection = new SqlConnection(_connectionString))
-            using (var sqlCommand = new SqlCommand("KeyValue_ValueSet", sqlConnection))
+            using (var sqlCommand = new SqlCommand("api.KeyValue_ValueSet", sqlConnection))
             {
                 sqlConnection.Open();
+                sqlCommand.CommandType = CommandType.StoredProcedure;
+                sqlCommand.Parameters.Add(new SqlParameter("Context", SqlDbType.NVarChar, -1) { Direction = ParameterDirection.InputOutput, Value = "$$" });
                 sqlCommand.Parameters.AddWithValue("KeyName", keyName);
                 sqlCommand.Parameters.AddWithValue("TextValue", value);
                 sqlCommand.Parameters.AddWithValue("TimeToLife", timeToLife);
                 sqlCommand.Parameters.AddWithValue("IsOverwrite", isOverwrite);
-                sqlCommand.Parameters.AddWithValue("Context", "$$");
 
                 await sqlCommand.ExecuteNonQueryAsync();
 
@@ -67,29 +70,46 @@ namespace DirectSp.Core.InternalDb
         public async Task<object> GetValue(string keyName)
         {
             using (var sqlConnection = new SqlConnection(_connectionString))
-            using (var sqlCommand = new SqlCommand("KeyValue_Value", sqlConnection))
+            using (var sqlCommand = new SqlCommand("api.KeyValue_Value", sqlConnection))
             {
                 sqlConnection.Open();
+                sqlCommand.CommandType = CommandType.StoredProcedure;
                 sqlCommand.Parameters.AddWithValue("KeyName", keyName);
-                sqlCommand.Parameters.AddWithValue("Context", "$$");
-
-                await sqlCommand.ExecuteNonQueryAsync();
-                return sqlCommand.Parameters["TextValue"].Value;
+                sqlCommand.Parameters.Add(new SqlParameter("TextValue", SqlDbType.NVarChar, -1) { Direction = ParameterDirection.Output, Value = "$$" });
+                sqlCommand.Parameters.Add(new SqlParameter("ModifiedTime", SqlDbType.DateTime, -1) { Direction = ParameterDirection.Output, Value = "$$" });
+                sqlCommand.Parameters.Add(new SqlParameter("Context", SqlDbType.NVarChar, -1) { Direction = ParameterDirection.InputOutput, Value = "$$" });
+                try
+                {
+                    await sqlCommand.ExecuteNonQueryAsync();
+                }
+                catch (SqlException ex)
+                {
+                    if (ex.Errors[0].Number == 55002)
+                        throw new SpAccessDeniedOrObjectNotExistsException();
+                    throw ex;
+                }
+                return new DspKeyValueItem
+                {
+                    KeyName = keyName,
+                    TextValue = (string)sqlCommand.Parameters["TextValue"].Value,
+                    ModifiedTime = (DateTime?)sqlCommand.Parameters["ModifiedTime"].Value
+                };
             }
         }
 
         public async Task<bool> Delete(string keyNamePattern)
         {
             using (var sqlConnection = new SqlConnection(_connectionString))
-            using (var sqlCommand = new SqlCommand("KeyValue_Delete", sqlConnection))
+            using (var sqlCommand = new SqlCommand("api.KeyValue_Delete", sqlConnection))
             {
                 sqlConnection.Open();
+                sqlCommand.CommandType = CommandType.StoredProcedure;
                 sqlCommand.Parameters.AddWithValue("KeyNamePattern", keyNamePattern);
-                sqlCommand.Parameters.Add(new SqlParameter("IsUpdated", SqlDbType.Bit) { Direction = ParameterDirection.InputOutput });
+                sqlCommand.Parameters.Add(new SqlParameter("AffectedCount", SqlDbType.Int) { Direction = ParameterDirection.Output });
                 sqlCommand.Parameters.AddWithValue("Context", "$$");
 
                 await sqlCommand.ExecuteNonQueryAsync();
-                return (bool)sqlCommand.Parameters["IsUpdated"].Value;
+                return ((int)sqlCommand.Parameters["AffectedCount"].Value) > 0;
             }
         }
 

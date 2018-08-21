@@ -1,5 +1,6 @@
 ﻿using DirectSp.Core.Entities;
 using DirectSp.Core.Exceptions;
+using DirectSp.Core.Infrastructure;
 using DirectSp.Core.InternalDb;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Threading.Tasks;
@@ -9,10 +10,16 @@ namespace DirectSp.Core.Test.TestClass
     [TestClass]
     public class CaptchaHandlerTest
     {
+        private IDspKeyValue CreateKeyValue()
+        {
+            //return new DspSqlKeyValue("Data source =.; initial catalog = DirectSpInternal; Integrated Security = true;");
+            return new DspMemoryKeyValue();
+        }
+
         [TestMethod]
         public async Task CreateCaptchaTest()
         {
-            var dspKeyValue = new DspMemoryKeyValue();
+            var dspKeyValue = CreateKeyValue();
             var captchaHandler = new CaptchaHandler(dspKeyValue);
             var captcha = await captchaHandler.Create();
             Assert.IsTrue(captcha.Image != null || captcha.Image.Length > 0);
@@ -23,7 +30,7 @@ namespace DirectSp.Core.Test.TestClass
         [TestMethod]
         public async Task VerifyCaptchaTest()
         {
-            var dspKeyValue = new DspMemoryKeyValue();
+            var dspKeyValue = CreateKeyValue();
             var captchaHandler = new CaptchaHandler(dspKeyValue);
             var captcha = await captchaHandler.Create();
 
@@ -50,7 +57,7 @@ namespace DirectSp.Core.Test.TestClass
         [TestMethod]
         public async Task RejectCaptchaInSecondChecking_FirstCheckingHasBeenSucceeded()
         {
-            var dspKeyValue = new DspMemoryKeyValue();
+            var dspKeyValue = CreateKeyValue();
             var captchaHandler = new CaptchaHandler(dspKeyValue);
             var captcha = await captchaHandler.Create();
 
@@ -70,7 +77,7 @@ namespace DirectSp.Core.Test.TestClass
         [TestMethod]
         public async Task RejectCaptchaInSecondChecking_FirstCheckingHasBeenFailed()
         {
-            var dspKeyValue = new DspMemoryKeyValue();
+            var dspKeyValue = CreateKeyValue();
             var captchaHandler = new CaptchaHandler(dspKeyValue);
             var captcha = await captchaHandler.Create();
 
