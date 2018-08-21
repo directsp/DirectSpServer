@@ -7,7 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace DirectSp.Core.Test
+namespace DirectSp.Core.Test.TestClass
 {
     [TestClass]
     public class SpInvokerTest
@@ -28,9 +28,7 @@ namespace DirectSp.Core.Test
                 DbLayer = new DbLayer(),
                 
             };
-            var internalSpInvoker = new SpInvoker(spInvokerConfig);
             spInvokerConfig.KeyValue = new DspMemoryKeyValue();
-            spInvokerConfig.InternalSpInvoker = internalSpInvoker;
             spInvokerConfig.Schema = "api";
             _spInvoker = new SpInvoker(spInvokerConfig);
         }

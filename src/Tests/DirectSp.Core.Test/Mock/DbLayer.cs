@@ -34,7 +34,7 @@ namespace DirectSp.Core.Test.Mock
                     return Task.Factory.StartNew(() => Data.DataReaderForTestSp());
 
                 case "api.SignJwtToken":
-                    command.Parameters["@JwtToken"].Value = Data.JwtToken();
+                    command.Parameters["@JwtToken"].Value = Data.JwtToken;
                     return Task.Factory.StartNew(() => Data.EmptyDataReader());
 
                 case "api.SignJwtTokenChecking":

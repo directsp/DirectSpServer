@@ -81,16 +81,18 @@ namespace DirectSp.Core.InternalDb
                 _keyValueItems.Remove(key, out value);
         }
 
-        public async Task Delete(string keyNamePattern)
+        public async Task<bool> Delete(string keyNamePattern)
         {
             var matchItems = await All(keyNamePattern);
 
             if (matchItems.Count == 0)
-                throw new SpAccessDeniedOrObjectNotExistsException();
+                return false;
 
+            bool result = false;
             DspMemoryKeyValueItem value;
             foreach (var item in matchItems)
-                _keyValueItems.Remove(item.KeyName, out value);
+                result = _keyValueItems.TryRemove(item.KeyName, out value);
+            return result;
         }
     }
 }

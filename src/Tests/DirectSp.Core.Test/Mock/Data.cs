@@ -1,4 +1,5 @@
-﻿using DirectSp.Core.SpSchema;
+﻿using DirectSp.Core.Helpers;
+using DirectSp.Core.SpSchema;
 using Moq;
 using Newtonsoft.Json;
 using System;
@@ -138,20 +139,14 @@ namespace DirectSp.Core.Test.Mock
             });
         }
 
-        internal static string SignedJwtToken()
-        {
-            return @"eyJhbGciOiAiU0hBMjU2IiwgInR5cCI6ICJKV1QifQ==.eydPcmRlck51bWJlcic6MiwnUmVjZWl2ZXJMb3lhbHR5QWNjb3VudElkJzoxMTAzNzkzMSwnQ2x1Yk5hbWUnOidOaWtlKNio2KfYtNqv2KfZhyknLCdBbW91bnQnOjEsJ1BvaW50VHlwZUlkJzoyMDIwLCdQb2ludFR5cGVOYW1lJzon2YbZgtiv24wnLCdQYXllZUxveWFsdHlBY2NvdW50SWQnOjExODMsJ1BheWVlTG95YWx0eUFjY291bnROYW1lJzon2KjZh9mG2KfZhSDYuduM2YjYtiDZvtmI2LEnLCdleHAnOjE1MzQ4Mjg4MjEuMTY2MTM3OSwnUmV0dXJuVXJsJzonaHR0cDovL3d3dy5nb29nbGUuY29tJywnQ2VydGlmaWNhdGVUaHVtYic6Jzc3IDVhIDkyIDkyIGYxIDlmIDE0IGZjIDJiIDliIDgwIGFiIDA2IDJhIDA2IGJlIDg2IDIzIDYxIDljJ30=.ij7o7uTSQrxNDAKZNc/7ZASNM/EqE/7V+h2iokDhQ1eKgM+bgwSMstAtHEio+QpT9H5aoWvFGdXexdruwHnNHIqFYfRziH7f2CgmYDuBdN3OenzCaQ+YAxr90iebcM+ZUiSOYJDmUDpY3ZUE3A/i9LNMy1Ua4pSLiOMqVWLvPZLcq8Ffe9rjFbegfX/hIF83QKJ6CTWgh9AHSUQrgG2RDXXr1P/1LmEHXsj4WGJOXXRbAXx70p2ebwEMsWHqr1we+/uYr/qtbkcHC7NYpQ/niXqkngXE/giTf4DLhDfKufU/LJDzj9fqT21vQTNeuKglOy7lVRkYRPAYVKfFhkC4WA==";
-        }
+        internal static string SignedJwtToken() => @"eyJhbGciOiAiU0hBMjU2IiwgInR5cCI6ICJKV1QifQ==.eyJPcmRlck51bWJlciI6MiwiUmVjZWl2ZXJMb3lhbHR5QWNjb3VudElkIjoxMTAzNzkzMSwiQ2x1Yk5hbWUiOiJOaWtlIiwiQW1vdW50IjoxLCJQb2ludFR5cGVJZCI6MjAyMCwiUG9pbnRUeXBlTmFtZSI6IlRlc3RUeXBlIiwiUGF5ZWVMb3lhbHR5QWNjb3VudElkIjoxMTgzLCJQYXllZUxveWFsdHlBY2NvdW50TmFtZSI6IkJlaG5hbSBFeXZhenBvb3IiLCJleHAiOjI3OTcxMzI3MTUuMTI4NDQyMywiUmV0dXJuVXJsIjoiaHR0cDovL3d3dy5nb29nbGUuY29tIiwiQ2VydGlmaWNhdGVUaHVtYiI6Ijc3IDVhIDkyIDkyIGYxIDlmIDE0IGZjIDJiIDliIDgwIGFiIDA2IDJhIDA2IGJlIDg2IDIzIDYxIDljIn0=.ELVhB5/a5rz0jI2WdIwnrzlOgm8s6eHz0yaCCAff1osfF4dhUWxUcDYVTBWadkHWelIh52qUsP0FVEV1075phsQDPuOPT7RR4BuP72nJzt/PsUoMb6fuKEygdutv3dyKEllZp7VAJny3PeSLf20aOy0MCXzdBDw7ZVF4kz/e62iwFHHqLwLDH1cfXaCAnRdEqtR6tkXwOYbvS1XJVw2fxVBBx1LLDLWD5q8gAtlVIGymI85AuveA477fcb0HzEz5ds9f3Wd0NkkGyolRSNcPlV6MHL/D2c6iF+nx6LDU9HTQ6jKPsKdjnbHRDwDo5Q1NeB8Z4FXHWutDpncRc+yCMA==";
 
         internal static string AppContext()
         {
             return "{'AppName':'IcLoyalty','AppVersion':'2.0.14','UserId':'21','InvokeOptions':{'IsCaptcha':true}}".Replace("'", "\"");
         }
 
-        internal static string JwtToken()
-        {
-            return @"{'OrderNumber':2,'ReceiverLoyaltyAccountId':11037931,'ClubName':'Nike(باشگاه)','Amount':1,'PointTypeId':2020,'PointTypeName':'نقدی','PayeeLoyaltyAccountId':1183,'PayeeLoyaltyAccountName':'بهنام عیوض پور','exp':1534828821.1661379,'ReturnUrl':'http://www.google.com','CertificateThumb':'77 5a 92 92 f1 9f 14 fc 2b 9b 80 ab 06 2a 06 be 86 23 61 9c'}";
-        }
+        internal static string JwtToken => "{'OrderNumber':2,'ReceiverLoyaltyAccountId':11037931,'ClubName':'Nike','Amount':1,'PointTypeId':2020,'PointTypeName':'TestType','PayeeLoyaltyAccountId':1183,'PayeeLoyaltyAccountName':'Behnam Eyvazpoor','exp':2797132715.1284423,'ReturnUrl':'http://www.google.com','CertificateThumb':'77 5a 92 92 f1 9f 14 fc 2b 9b 80 ab 06 2a 06 be 86 23 61 9c'}".Replace("'", "\"");
 
         internal static IDataReader DataReaderForTestSp()
         {

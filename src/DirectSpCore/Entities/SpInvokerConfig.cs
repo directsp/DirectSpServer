@@ -8,7 +8,6 @@ namespace DirectSp.Core
         public string ConnectionString { get; set; }
         public string Schema { get; set; }
         public SpInvokerOptions Options { get; set; }
-        public SpInvoker InternalSpInvoker { get; set; }
         public IDspKeyValue KeyValue { get; set; }
         public IDbLayer DbLayer { get; set; }
         public JwtTokenSigner TokenSigner { get; set; }

@@ -15,7 +15,7 @@ namespace DirectSp.Core.Infrastructure
 
         Task<object> GetValue(string keyName);
 
-        Task Delete(string keyNamePattern);
+        Task<bool> Delete(string keyNamePattern);
 
     }
 }

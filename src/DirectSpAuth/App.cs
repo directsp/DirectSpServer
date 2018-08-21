@@ -39,7 +39,6 @@ namespace DirectSp.AuthServer
                 TokenSigner = new JwtTokenSigner(new CertificateProvider()),
                 DbLayer = new DbLayer()
             };
-            var internalSpInvoker = new SpInvoker(spInvokerConfig);
 
             // Create KeyValue instance base of AppSetting.json settings
             switch (AppSettings.KeyValueProvider.Name)
@@ -54,7 +53,6 @@ namespace DirectSp.AuthServer
                     throw new NotImplementedException($"KeyValueProvider has not been implemented. Name: {AppSettings.KeyValueProvider.Name}");
             }
 
-            spInvokerConfig.InternalSpInvoker = internalSpInvoker;
             spInvokerConfig.Schema = AppSettings.ResourceDbSchema;
             SpInvoker = new SpInvoker(spInvokerConfig);
 

@@ -21,7 +21,6 @@ namespace DirectSp.Core
     public class SpInvoker
     {
         private UserSessionManager SessionManager;
-        private readonly SpInvoker _internalSpInvoker;
         private JwtTokenSigner _tokenSigner;
         private IDbLayer _dbLayer;
 
@@ -32,6 +31,7 @@ namespace DirectSp.Core
         public string Schema { get; }
         public IDspKeyValue KeyValue { get; }
         public InvokerPath InvokerPath { get; }
+        internal CaptchaHandler CaptchaHandler { get; }
 
         public SpInvoker(SpInvokerConfig config)
         {
@@ -41,7 +41,6 @@ namespace DirectSp.Core
             Schema = config.Schema ?? throw new Exception("Schema is not set!");
             ConnectionString = config.ConnectionString ?? throw new Exception("ConnectionString is not set!");
             Options = config.Options;
-            _internalSpInvoker = config.InternalSpInvoker ?? this;
             SessionManager = new UserSessionManager(Options);
             KeyValue = config.KeyValue;
             _tokenSigner = config.TokenSigner;
@@ -49,6 +48,7 @@ namespace DirectSp.Core
             SpException.UseCamelCase = Options.UseCamelCase;
             ConnectionStringReadOnly = new SqlConnectionStringBuilder(config.ConnectionString) { ApplicationIntent = ApplicationIntent.ReadOnly }.ToString();
             ConnectionStringReadWrite = new SqlConnectionStringBuilder(config.ConnectionString) { ApplicationIntent = ApplicationIntent.ReadWrite }.ToString();
+            CaptchaHandler = new CaptchaHandler(KeyValue);
         }
 
         private DateTime? LastCleanTempFolderTime;
@@ -150,7 +150,7 @@ namespace DirectSp.Core
                 if (item.IsCompletedSuccessfully)
                     spCallResults.Add(item.Result);
                 else
-                    spCallResults.Add(new SpCallResult { { "error", SpExceptionAdapter.Convert(item.Exception.InnerException).SpCallError } });
+                    spCallResults.Add(new SpCallResult { { "error", SpExceptionAdapter.Convert(this, item.Exception.InnerException).SpCallError } });
             }
 
             return spCallResults.ToArray();
@@ -216,7 +216,7 @@ namespace DirectSp.Core
             try
             {
                 // Check captcha
-                await CheckCaptcha(spi);
+                await CheckCaptcha(spCall, spi);
 
                 // Call core
                 var result = await InvokeSp(spCall, spi);
@@ -229,7 +229,7 @@ namespace DirectSp.Core
             }
             catch (Exception ex)
             {
-                throw SpExceptionAdapter.Convert(ex, _internalSpInvoker);
+                throw SpExceptionAdapter.Convert(this, ex);
             }
         }
 
@@ -266,7 +266,7 @@ namespace DirectSp.Core
 
             //check IsCaptcha by meta-data
             if ((spInfo.ExtendedProps.CaptchaMode == SpCaptchaMode.Always || spInfo.ExtendedProps.CaptchaMode == SpCaptchaMode.Auto) && !spi.IsCaptcha)
-                throw new SpInvalidCaptchaException(_internalSpInvoker, spInfo.ProcedureName);
+                throw new SpInvalidCaptchaException(await CaptchaHandler.Create(), spInfo.ProcedureName);
 
             //check IsBatchAllowed by meta-data
             if (!spInfo.ExtendedProps.IsBatchAllowed && spi.IsBatch)
@@ -613,21 +613,21 @@ namespace DirectSp.Core
             return stringBuilder.ToString();
         }
 
-        private async Task<bool> CheckCaptcha(SpInvokeParamsInternal spi)
+        private async Task<bool> CheckCaptcha(SpCall spCall, SpInvokeParamsInternal spi)
         {
             bool ret = false;
 
             //validate captcha
             if (spi.SpInvokeParams.InvokeOptions.CaptchaId != null || spi.SpInvokeParams.InvokeOptions.CaptchaCode != null)
             {
-                var captcha = new Captcha(_internalSpInvoker);
-                await captcha.Match(spi.SpInvokeParams.InvokeOptions.CaptchaId, spi.SpInvokeParams.InvokeOptions.CaptchaCode);
+                await CaptchaHandler.Verify(spi.SpInvokeParams.InvokeOptions.CaptchaId, spi.SpInvokeParams.InvokeOptions.CaptchaCode, spCall.Method);
                 spi.IsCaptcha = true;
                 ret = true;
             }
 
             return ret;
         }
+
         private Task<bool> UpdateRecodsetDownloadUri(SpCall spCall, SpInvokeParamsInternal spi, SpCallResult spCallResult)
         {
             bool result = false;
