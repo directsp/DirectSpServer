@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using DirectSp.Core.Infrastructure;
 using System.Data.SqlClient;
 using System;
+using System.Data;
 
 namespace DirectSp.Core.InternalDb
 {
@@ -77,16 +78,18 @@ namespace DirectSp.Core.InternalDb
             }
         }
 
-        public async Task Delete(string keyNamePattern)
+        public async Task<bool> Delete(string keyNamePattern)
         {
             using (var sqlConnection = new SqlConnection(_connectionString))
             using (var sqlCommand = new SqlCommand("KeyValue_Delete", sqlConnection))
             {
                 sqlConnection.Open();
                 sqlCommand.Parameters.AddWithValue("KeyNamePattern", keyNamePattern);
+                sqlCommand.Parameters.Add(new SqlParameter("IsUpdated", SqlDbType.Bit) { Direction = ParameterDirection.InputOutput });
                 sqlCommand.Parameters.AddWithValue("Context", "$$");
 
                 await sqlCommand.ExecuteNonQueryAsync();
+                return (bool)sqlCommand.Parameters["IsUpdated"].Value;
             }
         }
 
