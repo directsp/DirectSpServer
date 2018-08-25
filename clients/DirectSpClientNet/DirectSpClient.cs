@@ -135,12 +135,15 @@ namespace DirectSp.Client
 
         public async Task<JObject> invoke(SpCall[] spCalls, InvokeOptions invokeOptions = null)
         {
-            invokeOptions.RequestId = Guid.NewGuid().ToString();
+            // send requests to server
             var invokeParamsBatch = new InvokeParamsBatch()
             {
                 spCalls = spCalls,
                 invokeOptions = invokeOptions ?? new InvokeOptions()
             };
+
+            //append request id
+            invokeParamsBatch.invokeOptions.RequestId = Guid.NewGuid().ToString();
 
             var content = JsonConvert.SerializeObject(invokeParamsBatch);
             return await invokePost("invokeBatch", content);
@@ -148,6 +151,7 @@ namespace DirectSp.Client
 
         private async Task<JObject> invoke(InvokeParams invokeParams)
         {
+            // validate arguments
             if (invokeParams == null) throw new ArgumentNullException("invokeParam");
             if (invokeParams.spCall == null) throw new ArgumentNullException("invokeParams.spCall");
             if (string.IsNullOrWhiteSpace(invokeParams.spCall.method)) throw new ArgumentNullException("invokeParams.spCall.method");
@@ -156,6 +160,7 @@ namespace DirectSp.Client
             if (invokeParams.invokeOptions == null)
                 invokeParams.invokeOptions = new InvokeOptions();
 
+            //append request id
             invokeParams.invokeOptions.RequestId = Guid.NewGuid().ToString();
 
             var content = JsonConvert.SerializeObject(invokeParams);
