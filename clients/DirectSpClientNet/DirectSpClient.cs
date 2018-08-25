@@ -135,6 +135,7 @@ namespace DirectSp.Client
 
         public async Task<JObject> invoke(SpCall[] spCalls, InvokeOptions invokeOptions = null)
         {
+            invokeOptions.RequestId = Guid.NewGuid().ToString();
             var invokeParamsBatch = new InvokeParamsBatch()
             {
                 spCalls = spCalls,
@@ -154,6 +155,8 @@ namespace DirectSp.Client
             // set defaults
             if (invokeParams.invokeOptions == null)
                 invokeParams.invokeOptions = new InvokeOptions();
+
+            invokeParams.invokeOptions.RequestId = Guid.NewGuid().ToString();
 
             var content = JsonConvert.SerializeObject(invokeParams);
             return await invokePost(invokeParams.spCall.method, content);

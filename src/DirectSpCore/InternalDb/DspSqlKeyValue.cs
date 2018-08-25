@@ -62,7 +62,16 @@ namespace DirectSp.Core.InternalDb
                 sqlCommand.Parameters.AddWithValue("TimeToLife", timeToLife);
                 sqlCommand.Parameters.AddWithValue("IsOverwrite", isOverwrite);
 
-                await sqlCommand.ExecuteNonQueryAsync();
+                try
+                {
+                    await sqlCommand.ExecuteNonQueryAsync();
+                }
+                catch (SqlException ex)
+                {
+                    if (ex.Errors[0].Number == 55004)
+                        throw new SpObjectAlreadyExists();
+                    throw ex;
+                }
 
             }
         }

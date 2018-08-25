@@ -122,8 +122,16 @@ namespace DirectSp.Core
 
         public async Task<SpCallResult[]> Invoke(SpCall[] spCalls, SpInvokeParams spInvokeParams)
         {
-            //Check DuplicateRequest
-            await CheckDuplicateRequest(spInvokeParams.InvokeOptions.RequestId);
+            //Check DuplicateRequest if spCalls contian at least one write
+            foreach (var spCall in spCalls)
+            {
+                var spInfo = FindSpInfo($"{Schema}.{spCall.Method}");
+                if (spInfo != null && spInfo.ExtendedProps.DataAccessMode == SpDataAccessMode.Write)
+                {
+                    await CheckDuplicateRequest(spInvokeParams.InvokeOptions.RequestId);
+                    break;
+                }
+            }
 
             var spi = new SpInvokeParamsInternal
             {
@@ -185,7 +193,9 @@ namespace DirectSp.Core
         public async Task<SpCallResult> Invoke(SpCall spCall, SpInvokeParams spInvokeParams, bool isSystem = false)
         {
             // Check duplicate request
-            await CheckDuplicateRequest(spInvokeParams.InvokeOptions.RequestId);
+            var spInfo = FindSpInfo($"{Schema}.{spCall.Method}");
+            if (spInfo != null && spInfo.ExtendedProps.DataAccessMode == SpDataAccessMode.Write)
+                await CheckDuplicateRequest(spInvokeParams.InvokeOptions.RequestId);
 
             // Call main invoke
             var spi = new SpInvokeParamsInternal { SpInvokeParams = spInvokeParams, IsSystem = isSystem };
