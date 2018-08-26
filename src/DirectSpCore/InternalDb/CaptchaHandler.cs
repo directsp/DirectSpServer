@@ -32,7 +32,7 @@ namespace DirectSp.Core.InternalDb
         {
             var captchaCode = new Random().Next(100, 999);
             var image = CreateCaptchaImageByNumber(captchaCode);
-            var captchaId = $"captcha-{Guid.NewGuid()}";
+            var captchaId = $"captcha/{Guid.NewGuid()}";
             await _dspKeyValue.SetValue(captchaId, captchaCode.ToString(), 600, true);
             return new Captcha
             {

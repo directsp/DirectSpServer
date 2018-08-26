@@ -128,7 +128,7 @@ namespace DirectSp.Core
                 var spInfo = FindSpInfo($"{Schema}.{spCall.Method}");
                 if (spInfo != null && spInfo.ExtendedProps.DataAccessMode == SpDataAccessMode.Write)
                 {
-                    await CheckDuplicateRequest(spInvokeParams.InvokeOptions.RequestId);
+                    await CheckDuplicateRequest(spInvokeParams.InvokeOptions.RequestId, 3600 * 2);
                     break;
                 }
             }
@@ -195,7 +195,7 @@ namespace DirectSp.Core
             // Check duplicate request
             var spInfo = FindSpInfo($"{Schema}.{spCall.Method}");
             if (spInfo != null && spInfo.ExtendedProps.DataAccessMode == SpDataAccessMode.Write)
-                await CheckDuplicateRequest(spInvokeParams.InvokeOptions.RequestId);
+                await CheckDuplicateRequest(spInvokeParams.InvokeOptions.RequestId, spInfo.ExtendedProps.CommandTimeout);
 
             // Call main invoke
             var spi = new SpInvokeParamsInternal { SpInvokeParams = spInvokeParams, IsSystem = isSystem };
@@ -708,14 +708,20 @@ namespace DirectSp.Core
             return typeName.ToLower().Substring(0, 4) == "date" && Options.AlternativeCalendar != null;
         }
 
-        private async Task CheckDuplicateRequest(string requestId)
+        private async Task CheckDuplicateRequest(string requestId, int commandTimeout = 30)
         {
             if (string.IsNullOrEmpty(requestId))
                 return;
 
+            // 0 is treated as 2 hours
+            if (commandTimeout == 0) commandTimeout = 2 * 3600;
+
+            // Calculating time to life base on sp command time out
+            int timeToLife = Math.Max(commandTimeout * 2, 15 * 60); //the minimum value of timeToLife is 15 min
+
             try
             {
-                await KeyValue.SetValue(requestId, "", isOverwrite: false);
+                await KeyValue.SetValue($"RequestId/{requestId}", "", timeToLife, false);
             }
             catch (SpObjectAlreadyExists)
             {
