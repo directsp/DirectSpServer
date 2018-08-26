@@ -12,6 +12,32 @@
 //namespace
 if (!directSp) var directSp = {};
 
+//DirectSpHtmlStorage
+directSp.DirectSpHtmlStorage = function (storage) {
+    this.storage = storage;
+}
+
+directSp.DirectSpHtmlStorage.prototype.getItem = function (keyName) {
+    return new Promise((resolve, reject) => {
+        resolve(this.storage.getItem(keyName));
+    });
+}
+
+directSp.DirectSpHtmlStorage.prototype.setItem = function (keyName, value) {
+    return new Promise((resolve, reject) => {
+        this.storage.setItem(keyName, value);
+        resolve(null);
+    });
+}
+
+directSp.DirectSpHtmlStorage.prototype.removeItem = function (keyName) {
+    return new Promise((resolve, reject) => {
+        this.storage.removeItem(keyName);
+        resolve(null);
+    });
+}
+
+//DirectSpError
 directSp.DirectSpError = function (error) {
     let message = '';
     if (error.errorName) message += error.errorName + "; ";
@@ -43,24 +69,23 @@ directSp.DirectSpError.prototype = Object.create(Error.prototype, {
 });
 
 //DirectSpClient
-directSp.DirectSpClient = function () {
-    this._settings = {
-        clientId: "",
-        homePageUri: window.location.origin,
-        authRedirectUri: window.location.origin + "/oauth2/callback",
-        authEndpointUri: null,
-        tokenEndpointUri: null,
-        userinfoEndpointUri: null,
-        logoutEndpointUri: null,
-        authScope: "offline_access", //openid offline_access profile phone email address
-        authType: "token", //token, code
-        resourceApiUri: null,
-        isPersistentSignIn: true,
-        isAutoSignIn: false,
-        isLogEnabled: true,
-        isUseAppErrorHandler: false,
-        refreshClockSkew: 60
-    };
+directSp.DirectSpClient = function (options) {
+
+    options.clientId = directSp.Utility.checkUndefined(options.clientId, "");
+    options.homePageUri = directSp.Utility.checkUndefined(options.homePageUri, window.location.origin);
+    options.authRedirectUri = directSp.Utility.checkUndefined(options.authRedirectUri, window.location.origin + "/oauth2/callback");
+    options.authEndpointUri = directSp.Utility.checkUndefined(options.authEndpointUri, null);
+    options.tokenEndpointUri = directSp.Utility.checkUndefined(options.tokenEndpointUri, null);
+    options.userinfoEndpointUri = directSp.Utility.checkUndefined(options.userinfoEndpointUri, null);
+    options.logoutEndpointUri = directSp.Utility.checkUndefined(options.logoutEndpointUri, null);
+    options.authScope = directSp.Utility.checkUndefined(options.authScope, "offline_access"); //openid offline_access profile phone email address
+    options.authType = directSp.Utility.checkUndefined(options.authType, "token"); //token, code
+    options.resourceApiUri = directSp.Utility.checkUndefined(options.resourceApiUri, null);
+    options.isPersistentSignIn = directSp.Utility.checkUndefined(options.isPersistentSignIn, true);
+    this._options = options;
+
+
+
 
     this._authRequest = {
         client_id: directSp.Uri.getParameterByName("client_id"),
@@ -75,26 +100,33 @@ directSp.DirectSpClient = function () {
         name: null
     };
 
+    this._isAutoReload = true;
+    this._isAutoSignIn = false;
+    this._isLogEnabled = true;
+    this._isUseAppErrorHandler = false;
+    this._refreshClockSkew = 60;
     this._storageNamePrefix = "DirectSp:";
     this._tokens = null; //{ access_token: "", expires_in: 0, refresh_token: "", token_type: "" },
     this._sessionState = Math.floor(Math.random() * 10000000000000);
-    this._resourceAppVersion = localStorage.getItem(
-        this._storageNamePrefix + "resouceAppVersion"
-    );
+    this._resourceAppVersion = null;
     this._lastPageUri = null;
-    this._onBeforeInvoke = function (hookParams) {
-        return null;
-    };
     this._authError = null;
     this._userInfo = null;
     this._userInfoLast = null;
     this._accessTokenInfo = null;
-    this._onAuthorized = null;
-    this._onError = null;
     this._originalUri = location.href;
     this._originalQueryString = location.search;
     this._systemApi = null;
     this._seqGroups = [];
+    this._dspdspLocalStorage = options.dspLocalStorage;
+    this._dspdspSessionStorage = options.dspSessionStorage;
+
+    //events
+    this._onBeforeInvoke = function (hookParams) { return null; };
+    this._onNewVersion = null;
+    this._onAuthorized = null;
+    this._onError = null;
+
     this._load();
 };
 
@@ -122,10 +154,10 @@ directSp.DirectSpClient.prototype = {
     },
 
     get clientId() {
-        return this._settings.clientId;
+        return this._options.clientId;
     },
     set clientId(value) {
-        this._settings.clientId = value;
+        this._options.clientId = value;
     },
 
     get authError() {
@@ -133,103 +165,109 @@ directSp.DirectSpClient.prototype = {
     },
 
     get homePageUri() {
-        return this._settings.homePageUri;
+        return this._options.homePageUri;
     },
     set homePageUri(value) {
-        this._settings.homePageUri = value;
+        this._options.homePageUri = value;
     },
 
     //check is client token exists and user has already signed it. The token may not valid
     get isAutoSignIn() {
-        return this._settings.isAutoSignIn;
+        return this._isAutoSignIn;
     },
     set isAutoSignIn(value) {
-        this._settings.isAutoSignIn = value;
+        this._isAutoSignIn = value;
+    },
+    get isAutoReload() {
+        return this._isAutoReload;
+    },
+    set isAutoReload(value) {
+        this._isAutoReload = value;
     },
     get isUseAppErrorHandler() {
-        return this._settings.isUseAppErrorHandler;
+        return this._isUseAppErrorHandler;
     },
     set isUseAppErrorHandler(value) {
-        this._settings.isUseAppErrorHandler = value;
+        this._isUseAppErrorHandler = value;
     },
     get isAuthorized() {
         return this._tokens != null;
     },
     get isPersistentSignIn() {
-        return this._settings.isPersistentSignIn;
+        return this._options.isPersistentSignIn;
     },
     set isPersistentSignIn(value) {
-        this._settings.isPersistentSignIn = value;
+        this._options.isPersistentSignIn = value;
     },
     get resourceApiUri() {
-        return this._settings.resourceApiUri;
+        return this._options.resourceApiUri;
     },
     set resourceApiUri(value) {
-        this._settings.resourceApiUri = value;
+        this._options.resourceApiUri = value;
     },
     get authBaseUri() {
-        return this._settings.authBaseUri;
+        return this._options.authBaseUri;
     },
     set authBaseUri(value) {
-        this._settings.authBaseUri = value;
-        this._settings.authEndpointUri = directSp.Uri.combine(
+        this._options.authBaseUri = value;
+        this._options.authEndpointUri = directSp.Uri.combine(
             value,
             "/connect/authorize"
         );
-        this._settings.tokenEndpointUri = directSp.Uri.combine(
+        this._options.tokenEndpointUri = directSp.Uri.combine(
             value,
             "/connect/token"
         );
-        this._settings.userinfoEndpointUri = directSp.Uri.combine(
+        this._options.userinfoEndpointUri = directSp.Uri.combine(
             value,
             "/connect/userinfo"
         );
-        this._settings.logoutEndpointUri = directSp.Uri.combine(
+        this._options.logoutEndpointUri = directSp.Uri.combine(
             value,
             "/connect/logout"
         );
     },
     get authEndpointUri() {
-        return this._settings.authEndpointUri;
+        return this._options.authEndpointUri;
     },
     set authEndpointUri(value) {
-        this._settings.authEndpointUri = value;
+        this._options.authEndpointUri = value;
     },
     get tokenEndpointUri() {
-        return this._settings.tokenEndpointUri;
+        return this._options.tokenEndpointUri;
     },
     set tokenEndpointUri(value) {
-        this._settings.authEndpointUri = value;
+        this._options.authEndpointUri = value;
     },
     get userinfoEndpointUri() {
-        return this._settings.userinfoEndpointUri;
+        return this._options.userinfoEndpointUri;
     },
     set userinfoEndpointUri(value) {
-        this._settings.userinfoEndpointUri = value;
+        this._options.userinfoEndpointUri = value;
     },
     get logoutEndpointUri() {
-        return this._settings.logoutEndpointUri;
+        return this._options.logoutEndpointUri;
     },
     set logoutEndpointUri(value) {
-        this._settings.logoutEndpointUri = value;
+        this._options.logoutEndpointUri = value;
     },
     get authRedirectUri() {
-        return this._settings.authRedirectUri;
+        return this._options.authRedirectUri;
     },
     set authRedirectUri(value) {
-        this._settings.authRedirectUri = value;
+        this._options.authRedirectUri = value;
     },
     get authScope() {
-        return this._settings.authScope;
+        return this._options.authScope;
     },
     set authScope(value) {
-        this._settings.authScope = value;
+        this._options.authScope = value;
     },
     get authType() {
-        return this._settings.authType;
+        return this._options.authType;
     },
     set authType(value) {
-        this._settings.authType = value;
+        this._options.authType = value;
     },
     get tokens() {
         return this._tokens;
@@ -266,10 +304,10 @@ directSp.DirectSpClient.prototype = {
         return this.authRequest.client_id != null && this.authRequest.state != null;
     },
     get isLogEnabled() {
-        return this._settings.isLogEnabled;
+        return this._isLogEnabled;
     },
     set isLogEnabled(value) {
-        this._settings.isLogEnabled = value;
+        this._isLogEnabled = value;
     },
     get isAuthCallback() {
         let callbackPattern = this.authRedirectUri;
@@ -283,11 +321,26 @@ directSp.DirectSpClient.prototype = {
     set onBeforeInvoke(value) {
         this._onBeforeInvoke = value;
     },
+    get onNewVersion() {
+        return this._onNewVersion;
+    },
+    set onNewVersion(value) {
+        this._onNewVersion = value;
+    },
     get originalQueryString() {
         return this._originalQueryString;
     },
     get originalUri() {
         return this._originalUri;
+    },
+    get resourceAppVersion() {
+        return this._resourceAppVersion;
+    },
+    get dspLocalStorage() {
+        return this._dspdspLocalStorage;
+    },
+    get dspSessionStorage() {
+        return this._dspdspSessionStorage;
     }
 };
 
@@ -305,27 +358,26 @@ directSp.DirectSpClient.prototype.init = function () {
         console.error("DirectSp: Auth Error!", this._authError);
         if (this.isAutoSignIn) {
             this.isAutoSignIn = false;
-            console.warn(
-                "DirectSp: isAutoSignIn is set to false due Auth Error",
-                this.authError
-            );
+            console.warn("DirectSp: isAutoSignIn is set to false due Auth Error", this.authError);
         }
     }
 
-    return this._processAuthCallback()
-        .then(result => {
-            if (!this.isAuthorized && this._tokensLast)
-                return this.setTokens(this._tokensLast);
-            return result;
-        })
-        .then(result => {
-            this._fireAuthorizedEvent();
-            return result;
-        })
-        .catch(error => {
-            this._fireAuthorizedEvent();
-            throw error;
-        });
+    return this._load().then(data => {
+        return this._processAuthCallback()
+            .then(result => {
+                if (!this.isAuthorized && this._tokensLast)
+                    return this.setTokens(this._tokensLast);
+                return result;
+            })
+            .then(result => {
+                this._fireAuthorizedEvent();
+                return result;
+            })
+            .catch(error => {
+                this._fireAuthorizedEvent();
+                throw error;
+            });
+    });
 };
 
 directSp.DirectSpClient.prototype._getInvokeOptionsFromAjaxOptions = function (
@@ -417,7 +469,7 @@ directSp.DirectSpClient.prototype._fireAuthorizedEvent = function () {
         }
 
         this._lastPageUri = null; //reset last page notifying user
-        sessionStorage.removeItem(this._storageNamePrefix + "lastPageUri");
+        this.dspSessionStorage.removeItem(this._storageNamePrefix + "lastPageUri");
     }, 0);
 };
 
@@ -482,7 +534,7 @@ directSp.DirectSpClient.prototype._refreshToken = function () {
     if (this.accessTokenInfo && this.accessTokenInfo["exp"]) {
         let dateNow = new Date();
         if (
-            parseInt(this.accessTokenInfo["exp"]) - this._settings.refreshClockSkew >
+            parseInt(this.accessTokenInfo["exp"]) - this._refreshClockSkew >
             dateNow.getTime() / 1000
         )
             return Promise.resolve(false); //token is not refreshed
@@ -527,70 +579,81 @@ directSp.DirectSpClient.prototype._refreshToken = function () {
 };
 
 directSp.DirectSpClient.prototype._load = function () {
-    try {
-        //restore tokens
-        let tokensString = sessionStorage.getItem(
-            this._storageNamePrefix + "auth.tokens"
-        );
-        if (!tokensString)
-            tokensString = localStorage.getItem(
-                this._storageNamePrefix + "auth.tokens"
-            );
-        if (tokensString) this._tokensLast = JSON.parse(tokensString);
+    let promises = [];
 
-        //save lastUser
-        let userStringInfo = localStorage.getItem(
-            this._storageNamePrefix + "userInfoLast"
-        );
-        if (userStringInfo) this._userInfoLast = JSON.parse(userStringInfo);
+    try {
+        let promise = null;
+
+        //restore tokens
+        promise = this.dspSessionStorage.getItem(this._storageNamePrefix + "auth.tokens").then(data => {
+            if (!data)
+                return this.dspLocalStorage.getItem(this._storageNamePrefix + "auth.tokens");
+            return data;
+        }).then(data => {
+            if (data) this._tokensLast = JSON.parse(data);
+        });
+        promises.push(promise);
+
+        //load resourceAppVersion
+        promise = this.dspLocalStorage.getItem(this._storageNamePrefix + "resouceAppVersion").then(data => {
+            this._resourceAppVersion = data;
+        });
+        promises.push(promise);
+
+        //load userInfoLast
+        promise = this.dspLocalStorage.getItem(this._storageNamePrefix + "userInfoLast").then(data => {
+            if (data)
+                this._userInfoLast = JSON.parse(data);
+        });
+        promises.push(promise);
 
         //restore isPersistentSignIn if it is not set by caller
-        let isPersistentSignIn = localStorage.getItem(
-            this._storageNamePrefix + "isPersistentSignIn"
-        );
-        if (isPersistentSignIn != null)
-            this._settings.isPersistentSignIn = directSp.Convert.toBoolean(
-                isPersistentSignIn
-            );
+        promise = this.dspLocalStorage.getItem(this._storageNamePrefix + "isPersistentSignIn").then(data => {
+            if (data != null)
+                this._options.isPersistentSignIn = directSp.Convert.toBoolean(data);
+        });
+        promises.push(promise);
 
         //load sessionState; use current session if there is not session
-        let sessionState = sessionStorage.getItem(
-            this._storageNamePrefix + "sessionState"
-        );
-        if (sessionState != null) this._sessionState = sessionState;
-        else
-            sessionStorage.setItem(
-                this._storageNamePrefix + "sessionState",
-                this._sessionState
-            );
+        promise = this.dspSessionStorage.getItem(this._storageNamePrefix + "sessionState").then(data => {
+            let sessionState = data;
+            if (sessionState != null)
+                this._sessionState = sessionState;
+            else
+                this.dspSessionStorage.setItem(this._storageNamePrefix + "sessionState", this._sessionState);
+        });
+        promises.push(promise);
+
     } catch (err) { }
+
+    return Promise.all(promises);
 };
 
 directSp.DirectSpClient.prototype._save = function () {
     //save tokens
     let tokenString = JSON.stringify(this._tokens);
-    sessionStorage.setItem(this._storageNamePrefix + "auth.tokens", tokenString);
+    this.dspSessionStorage.setItem(this._storageNamePrefix + "auth.tokens", tokenString);
     if (this.isPersistentSignIn)
-        localStorage.setItem(this._storageNamePrefix + "auth.tokens", tokenString);
-    else localStorage.removeItem(this._storageNamePrefix + "auth.tokens");
+        this.dspLocalStorage.setItem(this._storageNamePrefix + "auth.tokens", tokenString);
+    else this.dspLocalStorage.removeItem(this._storageNamePrefix + "auth.tokens");
 
     //save lastUser login
     let userInfoLastString = JSON.stringify(this._userInfoLast);
     if (this._lastUser)
-        localStorage.setItem(
+        this.dspLocalStorage.setItem(
             this._storageNamePrefix + "userInfoLast",
             userInfoLastString
         );
-    else localStorage.removeItem(this._storageNamePrefix + "userInfoLast");
+    else this.dspLocalStorage.removeItem(this._storageNamePrefix + "userInfoLast");
 
     //save isPersistentSignIn
-    localStorage.setItem(
+    this.dspLocalStorage.setItem(
         this._storageNamePrefix + "isPersistentSignIn",
-        this._settings.isPersistentSignIn
+        this._options.isPersistentSignIn
     );
 
     //save sessionState
-    sessionStorage.setItem(
+    this.dspSessionStorage.setItem(
         this._storageNamePrefix + "sessionState",
         this._sessionState
     );
@@ -699,7 +762,7 @@ directSp.DirectSpClient.prototype.denyAuthorization = function () {
 //navigate to directSp auth server
 directSp.DirectSpClient.prototype.signIn = function () {
     //save current location
-    sessionStorage.setItem(
+    this.dspSessionStorage.setItem(
         this._storageNamePrefix + "lastPageUri",
         window.location.href
     );
@@ -723,59 +786,60 @@ directSp.DirectSpClient.prototype._processAuthCallback = function () {
     if (!this.isAuthCallback) return Promise.resolve(false);
 
     // restore last pageUri
-    this._lastPageUri = sessionStorage.getItem(
-        this._storageNamePrefix + "lastPageUri"
-    );
-    if (this._lastPageUri == null) this._lastPageUri = this.homePageUri;
+    return this.dspSessionStorage.getItem(this._storageNamePrefix + "lastPageUri").then(data => {
+        this._lastPageUri = data;
 
-    //check state and do nothing if it is not matched
-    let state = directSp.Uri.getParameterByName("state");
-    if (this._sessionState != state) {
-        console.error("DirectSp: Invalid sessionState!");
-        this.setTokens(null);
-        return Promise.reject(this.createError("Invalid sessionState!"));
-    }
+        if (this._lastPageUri == null) this._lastPageUri = this.homePageUri;
 
-    //process authorization_code flow
-    let code = directSp.Uri.getParameterByName("code");
-    if (code != null) {
-        let requestParam = {
-            client_id: this.clientId,
-            redirect_uri: this.authRedirectUri,
-            grant_type: "authorization_code",
-            code: code
-        };
+        //check state and do nothing if it is not matched
+        let state = directSp.Uri.getParameterByName("state");
+        if (this._sessionState != state) {
+            console.error("DirectSp: Invalid sessionState!");
+            this.setTokens(null);
+            return Promise.reject(this.createError("Invalid sessionState!"));
+        }
 
-        return this._ajax({
-            url: this.tokenEndpointUri,
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
-            },
-            data: requestParam,
-            method: "POST"
-        })
-            .then(result => {
-                result = JSON.parse(result);
-                return this.setTokens(result);
+        //process authorization_code flow
+        let code = directSp.Uri.getParameterByName("code");
+        if (code != null) {
+            let requestParam = {
+                client_id: this.clientId,
+                redirect_uri: this.authRedirectUri,
+                grant_type: "authorization_code",
+                code: code
+            };
+
+            return this._ajax({
+                url: this.tokenEndpointUri,
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
+                },
+                data: requestParam,
+                method: "POST"
             })
-            .catch(error => {
-                this.setTokens(null);
-                throw error;
+                .then(result => {
+                    result = JSON.parse(result);
+                    return this.setTokens(result);
+                })
+                .catch(error => {
+                    this.setTokens(null);
+                    throw error;
+                });
+        }
+
+        //process implicit flow
+        let access_token = directSp.Uri.getParameterByName("access_token");
+        if (access_token != null) {
+            return this.setTokens({
+                access_token: access_token,
+                token_type: directSp.Uri.getParameterByName("token_type"),
+                expires_in: directSp.Uri.getParameterByName("expires_in")
             });
-    }
+        }
 
-    //process implicit flow
-    let access_token = directSp.Uri.getParameterByName("access_token");
-    if (access_token != null) {
-        return this.setTokens({
-            access_token: access_token,
-            token_type: directSp.Uri.getParameterByName("token_type"),
-            expires_in: directSp.Uri.getParameterByName("expires_in")
-        });
-    }
-
-    //finish processAuthCallback without any result
-    return Promise.resolve(false);
+        //finish processAuthCallback without any result
+        return false;
+    });
 };
 
 directSp.DirectSpClient.prototype._convertToError = function (data) {
@@ -1132,25 +1196,33 @@ directSp.DirectSpClient.prototype._checkNewVersion = function (
     resourceAppVersion
 ) {
     // app versin does not available if resourceAppVersion is null
-    if (!resourceAppVersion || resourceAppVersion == this._resourceAppVersion)
+    if (!resourceAppVersion || resourceAppVersion == this.resourceAppVersion)
         return;
 
     //detect new versio
     let isReloadNeeded =
-        this._resourceAppVersion != null &&
-        this._resourceAppVersion != resourceAppVersion;
+        this.resourceAppVersion != null &&
+        this.resourceAppVersion != resourceAppVersion;
 
     // save new version
     this._resourceAppVersion = resourceAppVersion;
-    localStorage.setItem(
+    this.dspLocalStorage.setItem(
         this._storageNamePrefix + "resouceAppVersion",
         resourceAppVersion
     );
 
     // reloading
     if (isReloadNeeded) {
-        console.log("DirectSp: New version detected! Reloading ...");
-        window.location.reload(true);
+
+        //call new version event
+        if (this.onNewVersion)
+            this.onNewVersion();
+
+        // auto reload page
+        if (this.isAutoReload) {
+            console.log("DirectSp: New version detected! Reloading ...");
+            window.location.reload(true);
+        }
     }
 
     return isReloadNeeded;
@@ -1955,4 +2027,14 @@ directSp.Html.submit = function (url, params) {
 };
 
 //Create object
-let dspClient = new directSp.DirectSpClient();
+let dspClient = null;
+
+// set dspClient in HTML
+if (window.localStorage) {
+    let options = {
+        dspLocalStorage: new directSp.DirectSpHtmlStorage(window.localStorage),
+        dspSessionStorage: new directSp.DirectSpHtmlStorage(window.sessionStorage)
+    };
+
+    dspClient = new directSp.DirectSpClient(options);
+}
