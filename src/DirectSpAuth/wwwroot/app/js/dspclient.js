@@ -72,8 +72,8 @@ directSp.DirectSpError.prototype = Object.create(Error.prototype, {
 directSp.DirectSpClient = function (options) {
 
     options.clientId = directSp.Utility.checkUndefined(options.clientId, "");
-    options.homePageUri = directSp.Utility.checkUndefined(options.homePageUri, window.location.origin);
-    options.authRedirectUri = directSp.Utility.checkUndefined(options.authRedirectUri, window.location.origin + "/oauth2/callback");
+    options.homePageUri = directSp.Utility.checkUndefined(options.homePageUri, this.isHtmlHost ? window.location.origin : null);
+    options.authRedirectUri = directSp.Utility.checkUndefined(options.authRedirectUri, this.isHtmlHost ? window.location.origin + "/oauth2/callback" : null);
     options.authEndpointUri = directSp.Utility.checkUndefined(options.authEndpointUri, null);
     options.tokenEndpointUri = directSp.Utility.checkUndefined(options.tokenEndpointUri, null);
     options.userinfoEndpointUri = directSp.Utility.checkUndefined(options.userinfoEndpointUri, null);
@@ -83,9 +83,6 @@ directSp.DirectSpClient = function (options) {
     options.resourceApiUri = directSp.Utility.checkUndefined(options.resourceApiUri, null);
     options.isPersistentSignIn = directSp.Utility.checkUndefined(options.isPersistentSignIn, true);
     this._options = options;
-
-
-
 
     this._authRequest = {
         client_id: directSp.Uri.getParameterByName("client_id"),
@@ -114,8 +111,8 @@ directSp.DirectSpClient = function (options) {
     this._userInfo = null;
     this._userInfoLast = null;
     this._accessTokenInfo = null;
-    this._originalUri = location.href;
-    this._originalQueryString = location.search;
+    this._originalUri = this.isHtmlHost ? window.location.href : null;
+    this._originalQueryString = this.isHtmlHost ? window.location.search : null;
     this._systemApi = null;
     this._seqGroups = [];
     this._dspdspLocalStorage = options.dspLocalStorage;
@@ -131,6 +128,10 @@ directSp.DirectSpClient = function (options) {
 };
 
 directSp.DirectSpClient.prototype = {
+    get isHtmlHost() {
+        return directSp.Utility.isHtmlHost();
+    },
+
     get userInfo() {
         return this._userInfo;
     },
@@ -294,11 +295,9 @@ directSp.DirectSpClient.prototype = {
         return this._authRequest;
     },
     get authRequestUri() {
-        return (
-            window.location.origin +
-            "?" +
-            directSp.Convert.toQueryString(this._authRequest)
-        );
+        if (!this.isHtmlHost)
+            this.throwNotSupportedException();
+        return (window.location.origin + "?" + directSp.Convert.toQueryString(this._authRequest));
     },
     get isAuthRequest() {
         return this.authRequest.client_id != null && this.authRequest.state != null;
@@ -311,9 +310,7 @@ directSp.DirectSpClient.prototype = {
     },
     get isAuthCallback() {
         let callbackPattern = this.authRedirectUri;
-        return (
-            callbackPattern != null && location.href.indexOf(callbackPattern) != -1
-        );
+        return (callbackPattern != null && location.href.indexOf(callbackPattern) != -1);
     },
     get onBeforeInvoke() {
         return this._onBeforeInvoke;
@@ -386,6 +383,10 @@ directSp.DirectSpClient.prototype._getInvokeOptionsFromAjaxOptions = function (
     return ajaxOptions && ajaxOptions.data && ajaxOptions.data.invokeOptions
         ? ajaxOptions.data.invokeOptions
         : null;
+};
+
+directSp.DirectSpClient.prototype.throwNotSupportedException = function () {
+    throw this.createError("NotSupported");
 };
 
 directSp.DirectSpClient.prototype.setTokens = function (value, refreshUserInfo) {
@@ -743,29 +744,23 @@ directSp.DirectSpClient.prototype.grantAuthorization = function (password) {
     requestParam.SpApp_Authorization = this.authHeader;
     requestParam.permission = "grant";
     if (password != null) requestParam.password = password;
-    directSp.Html.submit(
-        this.authEndpointUri + this._originalQueryString,
-        requestParam
-    );
+    directSp.Html.submit(this.authEndpointUri + this._originalQueryString, requestParam);
 };
 
 directSp.DirectSpClient.prototype.denyAuthorization = function () {
     let requestParam = this.authRequest;
     requestParam.SpApp_Authorization = this.authHeader;
     requestParam.permission = "deny";
-    directSp.Html.submit(
-        this.authEndpointUri + this._originalQueryString,
-        requestParam
-    );
+    directSp.Html.submit(this.authEndpointUri + this._originalQueryString, requestParam);
 };
 
 //navigate to directSp auth server
 directSp.DirectSpClient.prototype.signIn = function () {
+    if (!this.isHtmlHost)
+        this.throwNotSupportedException();
+
     //save current location
-    this.dspSessionStorage.setItem(
-        this._storageNamePrefix + "lastPageUri",
-        window.location.href
-    );
+    this.dspSessionStorage.setItem(this._storageNamePrefix + "lastPageUri", window.location.href);
 
     //redirect to sign in
     let params = {
@@ -775,8 +770,7 @@ directSp.DirectSpClient.prototype.signIn = function () {
         response_type: this.authType,
         state: this._sessionState
     };
-    window.location.href =
-        this.authEndpointUri + "?" + directSp.Convert.toQueryString(params);
+    window.location.href = this.authEndpointUri + "?" + directSp.Convert.toQueryString(params);
 };
 
 //navigate to directSp authorization server
@@ -951,7 +945,12 @@ directSp.DirectSpClient.prototype.invoke2 = function (spCall, invokeOptions) {
 
     //call api
     return this._invokeCore(spCall.method, invokeParams).then(result => {
-        if (invokeOptions.autoDownload) window.location = result.recordsetUri;
+        // manage auto download
+        if (invokeOptions.autoDownload) {
+            if (!this.isHtmlHost)
+                this.throwNotSupportedException();
+            window.location = result.recordsetUri;
+        }
         return result;
     });
 };
@@ -987,10 +986,7 @@ directSp.DirectSpClient.prototype._invokeCore = function (method, invokeParams) 
     //invoke
     return this._invokeCore2(method, invokeParams)
         .then(result => {
-            if (
-                seqGroupValue != null &&
-                seqGroupValue != this._seqGroups[invokeParams.invokeOptions.seqGroup]
-            )
+            if (seqGroupValue != null && seqGroupValue != this._seqGroups[invokeParams.invokeOptions.seqGroup])
                 throw this.createError({ errorName: "seqCanceled" });
 
             //log response
@@ -1005,10 +1001,7 @@ directSp.DirectSpClient.prototype._invokeCore = function (method, invokeParams) 
             return result;
         })
         .catch(error => {
-            if (
-                seqGroupValue != null &&
-                seqGroupValue != this._seqGroups[invokeParams.invokeOptions.seqGroup]
-            )
+            if (seqGroupValue != null && seqGroupValue != this._seqGroups[invokeParams.invokeOptions.seqGroup])
                 throw this.createError({ errorName: "seqCanceled" });
 
             if (this.isLogEnabled)
@@ -1906,6 +1899,10 @@ directSp.Utility.tryParseJason = function (json) {
     }
 };
 
+directSp.Utility.isHtmlHost = function () {
+    return window.localStorage != null;
+}
+
 //Convert class
 directSp.Convert = {};
 
@@ -1956,7 +1953,7 @@ directSp.Convert.toQueryString = function (obj) {
 directSp.Uri = {};
 
 directSp.Uri.getParameterByName = function (name, url) {
-    if (!url) url = window.location.href;
+    if (!url && window && window.location && window.location.href) url = window.location.href;
 
     name = name.replace(/[\[\]]/g, "\\$&");
     let regex = new RegExp("[#?&]" + name + "(=([^&#]*)|&|#|$)"),
@@ -2030,7 +2027,7 @@ directSp.Html.submit = function (url, params) {
 let dspClient = null;
 
 // set dspClient in HTML
-if (window.localStorage) {
+if (directSp.Utility.isHtmlHost()) {
     let options = {
         dspLocalStorage: new directSp.DirectSpHtmlStorage(window.localStorage),
         dspSessionStorage: new directSp.DirectSpHtmlStorage(window.sessionStorage)
