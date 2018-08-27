@@ -973,7 +973,7 @@ directSp.DirectSpClient.prototype._invokeCore = function (method, invokeParams) 
         console.log("DirectSp: invoke (Request)", method, invokeParams);
 
     // check seqGroup
-    var seqGroupValue = null;
+    let seqGroupValue = null;
     if (invokeParams.invokeOptions.seqGroup) {
         seqGroupValue = this._seqGroups[invokeParams.invokeOptions.seqGroup]
             ? this._seqGroups[invokeParams.invokeOptions.seqGroup] + 1
@@ -982,8 +982,7 @@ directSp.DirectSpClient.prototype._invokeCore = function (method, invokeParams) 
     }
 
     // append request id to invoke options
-    var requestId = directSp.Utility.generateGuid();
-    invokeParams.invokeOptions.requestId = requestId;
+    invokeParams.invokeOptions.requestId = directSp.Utility.generateGuid();
 
     //invoke
     return this._invokeCore2(method, invokeParams)
@@ -1816,6 +1815,7 @@ directSp.ErrorController.prototype.retry = function () {
         if (invokeOptions) {
             invokeOptions.captchaId = this.error.errorData.captchaId;
             invokeOptions.captchaCode = this.captchaCode;
+            invokeOptions.requestId = directSp.Utility.generateGuid();
         }
 
         //try update param for authentication grantby password
