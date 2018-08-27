@@ -1850,7 +1850,7 @@ directSp.Utility.checkUndefined = function (value, defValue) {
 directSp.Utility.parseJwt = function (token) {
     let base64Url = token.split(".")[1];
     let base64 = base64Url.replace("-", "+").replace("_", "/");
-    return JSON.parse(window.atob(base64));
+    return JSON.parse(directSp.Convert.buffer_fromBase64(base64));
 };
 
 directSp.Utility.clone = function (obj) {
@@ -1947,6 +1947,35 @@ directSp.Convert.toQueryString = function (obj) {
         }
     }
     return parts.join("&");
+};
+
+directSp.Convert.buffer_fromBase64 = function (base64String) {
+    if (window.atob)
+        return window.atob(base64String);
+
+    var e = {},
+        i,
+        b = 0,
+        c,
+        x,
+        l = 0,
+        a,
+        r = "",
+        w = String.fromCharCode,
+        L = base64String.length;
+    var A = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    for (i = 0; i < 64; i++) {
+        e[A.charAt(i)] = i;
+    }
+    for (x = 0; x < L; x++) {
+        c = e[base64String.charAt(x)];
+        b = (b << 6) + c;
+        l += 6;
+        while (l >= 8) {
+            ((a = (b >>> (l -= 8)) & 0xff) || x < L - 2) && (r += w(a));
+        }
+    }
+    return r;
 };
 
 //Uri Class
