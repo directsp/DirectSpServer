@@ -2,6 +2,7 @@
 {
     public class InvokeOptions
     {
+        public string RequestId { get; set; }
         public string captchaId { get; set; }
         public string captchaCode { get; set; }
         public bool isWithRecordsetFields { get; set; }

@@ -11,4 +11,3 @@ BEGIN
     SET @Base64 = CAST(N'' AS XML).value('xs:base64Binary(xs:hexBinary(sql:variable("@bin")))','TSTRING')
     RETURN @Base64
 END
-

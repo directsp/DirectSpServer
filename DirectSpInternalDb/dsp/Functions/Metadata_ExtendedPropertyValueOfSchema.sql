@@ -11,4 +11,3 @@ BEGIN
 
 	RETURN @Value;
 END;
-

@@ -68,5 +68,3 @@ BEGIN
 
     EXEC(@Cmd);
 END;
-
-

@@ -28,8 +28,3 @@ BEGIN
 	CLOSE DeleteJob_Cursor
 	DEALLOCATE DeleteJob_Cursor
 END;
-
-
-
-
-

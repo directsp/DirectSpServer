@@ -17,5 +17,3 @@ BEGIN
  INSERT INTO #ExpectException(ExpectException, FailMessage)
  VALUES(0, @Message);
 END;
-
-

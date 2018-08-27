@@ -11,12 +11,6 @@ BEGIN
     EXEC dsp.Setting_Props @AppVersion = @AppVersion OUT, @AppName = @AppName OUT, @AppUserId = @AppUserId OUT, @SystemUserId = @SystemUserId OUT,
         @MaintenanceMode = @MaintenanceMode OUT;
 
-    -- Check MaintenanceMode
-    IF (@MaintenanceMode = 1 AND dsp.Database_IsReadOnly(DB_NAME()) = 0) --
-        EXEC err.ThrowMaintenanceReadOnly @ProcId = @@PROCID;
-    IF (@MaintenanceMode = 2) --
-        EXEC err.ThrowMaintenance @ProcId = @@PROCID;
-
     -- Set SystemContext
     IF (@Context = N'$') EXEC dsp.Context_CreateSystem @SystemContext = @Context OUTPUT;
     IF (@Context = N'$$') EXEC dsp.Context_Create @UserId = '$$', @Context = @Context OUT, @IsCaptcha = 1;
@@ -26,9 +20,24 @@ BEGIN
     DECLARE @ContextAppName TSTRING;
     DECLARE @ContextUserId TSTRING;
     DECLARE @ContextInvokerAppVersion TSTRING;
+    DECLARE @IsReadonlyIntent BIT;
+    DECLARE @IsInvokedByMidware BIT;
     EXEC dsp.Context_Props @Context = @Context OUTPUT, @AuthUserId = @ContextAuthUserId OUTPUT, @UserId = @ContextUserId OUTPUT,
-        @AppName = @ContextAppName OUTPUT, @InvokerAppVersion = @ContextInvokerAppVersion OUT;
+        @AppName = @ContextAppName OUTPUT, @InvokerAppVersion = @ContextInvokerAppVersion OUT, @IsReadonlyIntent = @IsReadonlyIntent OUT,
+        @IsInvokedByMidware = @IsInvokedByMidware OUT;
     DECLARE @ContextUserIdOrg TSTRING = @ContextUserId;
+
+
+    -- Check MaintenanceMode
+    IF (@IsInvokedByMidware = 1)
+    BEGIN
+        IF (@MaintenanceMode = 2) --
+            EXEC err.ThrowMaintenance @ProcId = @@PROCID;
+
+        IF (@IsReadonlyIntent = 0 AND   (@MaintenanceMode = 1 OR dsp.Database_IsReadOnly(DB_NAME()) = 1))
+            EXEC err.ThrowMaintenanceReadOnly @ProcId = @@PROCID;
+    END;
+
 
     -- Validate AppName
     IF (@ContextAppName IS NULL OR  @ContextAppName <> @AppName) --
@@ -70,6 +79,7 @@ BEGIN
     -- Call update context
     EXEC dbo.Context_Update @Context = @Context OUTPUT, @ProcId = @ProcId;
 END;
+
 
 
 

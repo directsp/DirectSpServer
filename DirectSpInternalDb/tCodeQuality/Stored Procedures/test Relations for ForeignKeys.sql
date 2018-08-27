@@ -72,18 +72,3 @@ BEGIN
 	CLOSE ForeignKeysCusrsor;
 	DEALLOCATE ForeignKeysCusrsor;
 END;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

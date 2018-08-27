@@ -38,9 +38,3 @@ BEGIN
 	IF (DATEADD(SECOND, @CaptchaLifetime, @CreatedTime) <= GETDATE()) --
 		EXEC err.ThrowInvalidCaptcha @ProcId = @@PROCID, @Message = N'Captcha has been expired!';
 END;
-
-
-
-
-
-

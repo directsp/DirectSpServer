@@ -11,5 +11,3 @@ BEGIN
 
     RETURN dsp.String_ReplaceEnter(@Value);
 END;
-
-

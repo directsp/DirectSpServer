@@ -4,5 +4,3 @@ AS
 BEGIN
 	RETURN NULLIF(TRIM(@str), '');
 END;
-
-

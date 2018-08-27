@@ -4,7 +4,3 @@ AS
 BEGIN
     RETURN 3;
 END
-
-
-
-

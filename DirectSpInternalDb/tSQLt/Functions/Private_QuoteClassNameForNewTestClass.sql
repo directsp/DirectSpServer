@@ -8,5 +8,3 @@ BEGIN
          ELSE QUOTENAME(@ClassName)
      END;
 END;
-
-

@@ -27,27 +27,3 @@ BEGIN
     -- PRINT @Msg;
     RAISERROR(@Msg, 0, 1) WITH NOWAIT; -- force to flush the buffer
 END;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

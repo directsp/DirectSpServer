@@ -11,8 +11,3 @@ AS
 BEGIN
 	RETURN IIF(@Value IS NULL OR dsp.Param_IsSetString(@Value) = 0, 0, 1);
 END;
-
-
-
-
-

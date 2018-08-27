@@ -8,4 +8,3 @@ BEGIN
 
 	RETURN @Time;
 END;
-

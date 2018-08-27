@@ -4,7 +4,7 @@ AS
 BEGIN
 	SET @LockId = N'{}';
 	SET @ObjectName = ISNULL(@ObjectName, '');
-	SET @IsTransactionMode = ISNULL(@IsTransactionMode, 0);
+	SET @IsTransactionMode = ISNULL(@IsTransactionMode, 1);
 	DECLARE @LockName TSTRING = @ObjectTypeName + @ObjectName;
 	DECLARE @LockOwner TSTRING = IIF(@IsTransactionMode = 1, 'Transaction', 'Session');
 
@@ -19,6 +19,7 @@ BEGIN
 	SET @LockId = JSON_MODIFY(@LockId, '$.LockOwner', @LockOwner);
 	SET @LockId = JSON_MODIFY(@LockId, '$.LockName', @LockName);
 END;
+
 
 
 

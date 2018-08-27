@@ -1,7 +1,7 @@
 ﻿/*
 #MetaStart 
 	{
-		"DataAccessMode": "Read"
+		"DataAccessMode": "Write"
 	} 
 #MetaEnd 
 */
@@ -18,6 +18,7 @@ BEGIN
 
     EXEC dbo.Captcha_Match @CaptchaId = @CaptchaId, @Code = @Code;
 END;
+
 
 
 

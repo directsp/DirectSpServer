@@ -11,5 +11,3 @@ BEGIN
    
    EXEC tSQLt.Private_RenameObjectToUniqueName @SchemaName,@ObjectName, @NewName OUTPUT;
 END;
-
-

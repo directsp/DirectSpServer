@@ -9,4 +9,3 @@ BEGIN
         UPDATE  dbo.Setting
            SET  CaptchaLifetime = @CaptchaLifetime;
 END;
-

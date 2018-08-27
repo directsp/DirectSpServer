@@ -1,7 +1,7 @@
 ﻿/*
 #MetaStart 
 	{
-		"DataAccessMode": "ReadSnapshot"
+		"DataAccessMode": "Read"
 	} 
 #MetaEnd 
 */
@@ -30,6 +30,7 @@ BEGIN
     IF (@IsExist = 0 AND @ThrowErrorIfNotExists = 1) --
         EXEC dsp.ThrowAppException @ProcId = @@PROCID, @ExceptionId = 55002;
 END;
+
 
 
 

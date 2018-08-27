@@ -8,4 +8,3 @@ BEGIN
     INSERT  dsp.Exception (ExceptionId, ExceptionName, Description)
     VALUES (55700, N'BatchItemResultIsTooLarge', N'');
 END;
-

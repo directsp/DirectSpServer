@@ -36,5 +36,3 @@ BEGIN
    
    EXEC (@Cmd);
 END;
-
-

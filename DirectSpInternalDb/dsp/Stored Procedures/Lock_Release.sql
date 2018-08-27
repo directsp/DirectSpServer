@@ -26,18 +26,3 @@ BEGIN
 	
 	SET @LockId = NULL;
 END;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

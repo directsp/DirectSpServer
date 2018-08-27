@@ -9,27 +9,21 @@ namespace DirectSp.Core.Exceptions
 {
     public class SpInvalidCaptchaException : SpException
     {
-        internal SpInvalidCaptchaException(SpInvoker spInvokerInternal, SpException baseException) : base(baseException) {
-            AttachNewCaptcha(spInvokerInternal);
+        internal SpInvalidCaptchaException(Captcha newCaptcha, SpException baseException) : base(baseException)
+        {
+            _SpCallError.ErrorData = newCaptcha;
         }
 
-        internal SpInvalidCaptchaException(SpInvoker spInvokerInternal, string spName)
-            : base(new SpCallError() { ErrorName= SpCommonExceptionId.InvalidCaptcha.ToString(), ErrorNumber = (int)SpCommonExceptionId.InvalidCaptcha, ErrorMessage = $"Invalid captcha for invoking {spName}" })
-        {
-            AttachNewCaptcha(spInvokerInternal);
-        }
-
-        public void AttachNewCaptcha(SpInvoker spInvokerInternal)
-        {
-            //create new captcha for error
-            var captcha = new Captcha(spInvokerInternal);
-            var spCallResult = captcha.Create().Result;
-            var captchaData = new JObject
+        internal SpInvalidCaptchaException(Captcha newCaptcha, string spName)
+            : base(new SpCallError()
             {
-                ["CaptchaId"] = spCallResult["CaptchaId"].ToString(),
-                ["CaptchaImage"] = spCallResult["Image"].ToString()
-            };
-            _SpCallError.ErrorData = captchaData;
-        }
+                ErrorName = SpCommonExceptionId.InvalidCaptcha.ToString(),
+                ErrorNumber = (int)SpCommonExceptionId.InvalidCaptcha,
+                ErrorMessage = $"Invalid captcha for invoking {spName}",
+                ErrorData = newCaptcha
+
+            })
+        { }
+
     }
 }

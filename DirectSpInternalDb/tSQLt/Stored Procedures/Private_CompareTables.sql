@@ -56,5 +56,3 @@ BEGIN
     
     RETURN @UnequalRowsExist;
 END;
-
-

@@ -6,11 +6,3 @@ BEGIN
 	IF (@ArgumentValue IS NULL) --
 		EXEC dsp.ThrowInvalidArgument @ProcId = @ProcId, @ArgumentName = @ArgumentName, @ArgumentValue = @ArgumentValue;
 END;
-
-
-
-
-
-
-
-

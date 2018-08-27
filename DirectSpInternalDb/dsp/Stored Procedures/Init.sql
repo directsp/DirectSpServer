@@ -3,7 +3,19 @@
 AS
 BEGIN
     SET NOCOUNT ON;
-	EXEC dsp.[Init_$Start] @IsProductionEnvironment = @IsProductionEnvironment, @IsWithCleanup = NULL, @Reserved = NULL
-    
+
+    DECLARE @TranCount INT = @@TRANCOUNT;
+    IF (@TranCount = 0)
+        BEGIN TRANSACTION;
+    BEGIN TRY
+        EXEC dsp.[Init_$Start] @IsProductionEnvironment = @IsProductionEnvironment, @IsWithCleanup = NULL, @Reserved = NULL;
+
+        IF (@TranCount = 0) COMMIT;
+    END TRY
+    BEGIN CATCH
+        IF (@TranCount = 0)
+            ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
 END;
 

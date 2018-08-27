@@ -33,21 +33,3 @@ BEGIN
 	DECLARE @msg TSTRING = @ProcName + '> ' + @Message;
 	RETURN @msg;
 END;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

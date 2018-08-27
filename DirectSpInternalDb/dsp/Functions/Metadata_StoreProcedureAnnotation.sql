@@ -13,7 +13,7 @@ BEGIN
 			"ExecuteMode": "Write|ReadSync|ReadSnapshot|ReadWise", 
 			"CommandTimeout": -1,
 			"IsBatchAllowed": false, 
-			"CaptchaMode": Manual|Always|Auto",
+			"CaptchaMode": "Manual|Always|Auto",
 			"Params": {"ParamName": {"IsUseMoneyConversionRate": true}},
 			"Fields": {"FieldName": {"IsUseMoneyConversionRate": true}}
 		} 
@@ -39,6 +39,7 @@ BEGIN
     RETURN SUBSTRING(@Script, @MetaStartIndex, @MetaEndIndex-@MetaStartIndex);
 END;
  
+
 
 
 

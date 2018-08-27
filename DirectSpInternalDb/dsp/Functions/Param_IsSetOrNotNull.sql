@@ -6,15 +6,3 @@ AS
 BEGIN
 	RETURN IIF(@value IS NULL OR dsp.Param_IsSet(@value) = 0, 0, 1);
 END;
-
-
-
-
-
-
-
-
-
-
-
-

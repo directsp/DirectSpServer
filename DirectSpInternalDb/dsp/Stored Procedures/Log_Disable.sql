@@ -10,5 +10,3 @@ BEGIN
 	EXEC sp_set_session_context 'dsp.Log_IsEnabled', 0, @read_only = 0;
 
 END
-
-

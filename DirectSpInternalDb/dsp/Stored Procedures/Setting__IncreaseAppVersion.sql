@@ -30,7 +30,3 @@ BEGIN
     -- Check format
     SET @AppVersion = @Part1 + '.' + @Part2 + '.' + @Part3;
 END;
-
-
-
-

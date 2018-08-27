@@ -9,9 +9,9 @@ namespace DirectSp.Core.InternalDb
     public class DspXmlRepository : IXmlRepository
     {
         public string Name { get; private set; }
-        public DspKeyValue SqlKeyValue { get; private set; }
+        public DspSqlKeyValue SqlKeyValue { get; private set; }
 
-        public DspXmlRepository(DspKeyValue sqlKeyValue, string name = "XmlRepo")
+        public DspXmlRepository(DspSqlKeyValue sqlKeyValue, string name = "XmlRepo")
         {
             Name = name;
             SqlKeyValue = sqlKeyValue;
@@ -19,14 +19,14 @@ namespace DirectSp.Core.InternalDb
 
         public IReadOnlyCollection<XElement> GetAllElements()
         {
-            var res = SqlKeyValue.All($"{Name}/%").Result;
+            var res = SqlKeyValue.All($"{Name}/").Result;
             var ret = res.Select(x => XElement.Parse(x.TextValue));
             return ret.ToArray();
         }
 
         public void StoreElement(XElement element, string friendlyName)
         {
-            SqlKeyValue.ValueSet($"{Name}/{friendlyName}", element.ToString()).ConfigureAwait(false);
+            SqlKeyValue.SetValue($"{Name}/{friendlyName}", element.ToString()).ConfigureAwait(false);
         }
     }
 }

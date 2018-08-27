@@ -19,6 +19,3 @@ BEGIN
 
     EXEC dbo.Captcha_Create @CaptchaCode = @Code, @CaptchaId = @CaptchaId OUT;
 END;
-
-
-

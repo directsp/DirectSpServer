@@ -32,5 +32,3 @@ BEGIN
 
   EXEC tSQLt.DropClass @SchemaName;
 END;
-
-

@@ -8,5 +8,3 @@ BEGIN
     RAISERROR('Attempted to execute tSQLt.NewTestClass on ''%s'' which is an existing schema but not a test class', 16, 10, @ClassName);
   END
 END;
-
-

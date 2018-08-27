@@ -1,14 +1,19 @@
 ﻿using DirectSp.Core.Entities;
-using DirectSp.Core.Exceptions;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace DirectSp.Core.Exceptions
 {
     public class SpAccessDeniedOrObjectNotExistsException : SpException
     {
         public SpAccessDeniedOrObjectNotExistsException(SpException baseException) : base(baseException) { }
+        public SpAccessDeniedOrObjectNotExistsException()
+            : base(new SpCallError() { ErrorName = SpCommonExceptionId.AccessDeniedOrObjectNotExists.ToString(), ErrorNumber = (int)SpCommonExceptionId.AccessDeniedOrObjectNotExists }) { }
+    }
+
+    public class SpObjectAlreadyExists : SpException
+    {
+        public SpObjectAlreadyExists(SpException baseException) : base(baseException) { }
+        public SpObjectAlreadyExists()
+            : base(new SpCallError() { ErrorName = SpCommonExceptionId.ObjectAlreadyExists.ToString(), ErrorNumber = (int)SpCommonExceptionId.ObjectAlreadyExists }) { }
     }
 
     public class SpInvokerAppVersionException : SpException
@@ -24,7 +29,7 @@ namespace DirectSp.Core.Exceptions
     public class SpMaintenanceReadOnlyException : SpException
     {
         public SpMaintenanceReadOnlyException(SpException baseException) : base(baseException) { }
-        public SpMaintenanceReadOnlyException(string spName) 
+        public SpMaintenanceReadOnlyException(string spName)
             : base(new SpCallError() { ErrorName = SpCommonExceptionId.MaintenanceReadOnly.ToString(), ErrorNumber = (int)SpCommonExceptionId.MaintenanceReadOnly, ErrorMessage = $"{spName} cannot be called in readonly mode!" })
         {
         }

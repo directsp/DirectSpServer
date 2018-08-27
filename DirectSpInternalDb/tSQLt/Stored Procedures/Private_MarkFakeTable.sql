@@ -14,5 +14,3 @@ BEGIN
       @level0type = N'SCHEMA', @level0name = @UnquotedSchemaName, 
       @level1type = N'TABLE',  @level1name = @UnquotedTableName;
 END;
-
-

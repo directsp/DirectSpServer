@@ -10,6 +10,3 @@ BEGIN
 	DECLARE @Value2 TSTRING = @Value;
 	RETURN dsp.Param_IsSet(@Value2);
 END;
-
-
-

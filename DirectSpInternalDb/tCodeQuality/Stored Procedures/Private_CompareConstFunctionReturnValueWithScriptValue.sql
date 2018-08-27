@@ -1,5 +1,5 @@
 ﻿CREATE PROC [tCodeQuality].[Private_CompareConstFunctionReturnValueWithScriptValue]
-	@Script TSTRING OUT, @ConstFunctionName TSTRING OUT, @ConstValueInFunction INT OUT, @ConstValueInScript INT OUT, @IsMatch BIT OUT
+	@Script TBIGSTRING OUT, @ConstFunctionName TSTRING OUT, @ConstValueInFunction INT OUT, @ConstValueInScript INT OUT, @IsMatch BIT OUT
 AS
 BEGIN
 	DECLARE @StartStrCharIndex INT;
@@ -12,19 +12,16 @@ BEGIN
 	SET @ConstValueInFunction = NULL;
 
 	-- Getting Function Name
-	EXEC dsp.Log_Trace @ProcId = @@PROCID, @Message = N'Getting Function Name';
 	SET @StartStrCharIndex = CHARINDEX('/*co' + 'nst.', @Script);
 	IF (@StartStrCharIndex = 0)
 		RETURN;
 
 	SET @EndStrCharIndex = CHARINDEX('()*/', @Script, @StartStrCharIndex) + 2;
 	SET @StartStrCharIndex = @StartStrCharIndex + 2;
-
 	SET @ConstFunctionName = SUBSTRING(@Script, @StartStrCharIndex, @EndStrCharIndex - @StartStrCharIndex);
-
+	
 	-- Getting Function Value
 	BEGIN TRY
-		EXEC dsp.Log_Trace @ProcId = @@PROCID, @Message = N'Getting Function Value';
 		SET @Script = SUBSTRING(@Script, @EndStrCharIndex + 2, LEN(@Script));
 		SET @StartNumPadIndex = PATINDEX('%[0-9]%', @Script);
 		SET @EndStrNumdIndex = PATINDEX('%[^0-9]%', @Script);
@@ -35,7 +32,6 @@ BEGIN
 	END CATCH;
 
 	-- Getting Function Id
-	EXEC dsp.Log_Trace @ProcId = @@PROCID, @Message = N'Getting Function Id';
 	BEGIN TRY
 		DECLARE @SqlQuery TSTRING = 'SET @Id = ' + @ConstFunctionName;
 		EXEC sys.sp_executesql @SqlQuery, N'@Id INT OUTPUT', @ConstValueInFunction OUTPUT;
@@ -45,6 +41,9 @@ BEGIN
 	END CATCH;
 
 	DECLARE @StartIndex INT = @EndStrCharIndex - @StartStrCharIndex;
+	
 	SET @Script = SUBSTRING(@Script, @StartIndex, (LEN(@Script)))
-
 END;
+
+
+

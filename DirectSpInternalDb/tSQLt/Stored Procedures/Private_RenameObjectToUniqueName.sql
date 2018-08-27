@@ -18,5 +18,3 @@ BEGIN
    EXEC tSQLt.SuppressOutput @RenameCmd;
 
 END;
-
-

@@ -30,5 +30,3 @@ BEGIN
     EXEC tSQLt.Fail @Message,@Msg;
   END
 END
-
-

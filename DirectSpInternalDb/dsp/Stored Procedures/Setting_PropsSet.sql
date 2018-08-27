@@ -57,12 +57,3 @@ BEGIN
            SET  MaintenanceMode = @MaintenanceMode;
 
 END;
-
-
-
-
-
-
-
-
-

@@ -1,7 +1,7 @@
 ﻿/*
 #MetaStart 
 	{
-		"DataAccessMode": "Delete"
+		"DataAccessMode": "Write"
 	} 
 #MetaEnd 
 */
@@ -29,6 +29,7 @@ BEGIN
 	WHERE	BatchId = @BatchId;
 
 END;
+
 
 
 

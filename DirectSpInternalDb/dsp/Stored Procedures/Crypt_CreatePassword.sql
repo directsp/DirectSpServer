@@ -18,8 +18,3 @@ BEGIN
 	   SET @PasswordString = @Algorithm + '$' + dsp.Convert_ToString(@Iteration) + '$' + @Salt + '$' + @PasswordHash;
     END;
 END;
-
-
-
-
-

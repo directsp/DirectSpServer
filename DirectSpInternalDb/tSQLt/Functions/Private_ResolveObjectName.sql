@@ -22,4 +22,3 @@ RETURN
                AND objectId = OBJECT_ID(quotedSchemaName + '.' + quotedObjectName,'P') 
               THEN 1 ELSE 0 END AS isTestCase
     FROM idsWithNames;
-    

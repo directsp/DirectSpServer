@@ -5,5 +5,3 @@ BEGIN
     SELECT  @CaptchaLifetime = S.CaptchaLifetime
       FROM  dbo.Setting AS S;
 END;
-
-

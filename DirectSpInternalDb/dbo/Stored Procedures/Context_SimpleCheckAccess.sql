@@ -16,10 +16,3 @@ BEGIN
 
     EXEC err.ThrowAccessDeniedOrObjectNotExists @ProcId = @@PROCID;
 END;
-
-
-
-
-
-
-

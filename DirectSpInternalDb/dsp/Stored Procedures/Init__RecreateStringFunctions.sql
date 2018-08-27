@@ -15,14 +15,3 @@ END';
 
 	EXEC dsp.Init_RecreateEnumFunctions @SchemaName = 'str', @TableSchemaName = 'dsp', @TableName = 'StringTable', @KeyColumnName = 'StringId', @TextColumnName = 'StringValue', @FunctionBody = @FunctionBody;
 END;
-
-
-
-
-
-
-
-
-
-
-

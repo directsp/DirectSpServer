@@ -22,5 +22,3 @@ FROM(
                T.is_table_type
           FROM tSQLt.Private_SysTypes AS T WHERE T.user_type_id = @TypeId
           )X;
-
-

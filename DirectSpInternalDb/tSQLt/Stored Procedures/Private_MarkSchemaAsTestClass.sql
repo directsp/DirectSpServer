@@ -26,5 +26,3 @@ BEGIN
                 WHERE NTC.ClassName = @UnquotedClassName
              );
 END;
-
-

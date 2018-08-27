@@ -29,5 +29,3 @@ BEGIN
 	-- Print not-find message
     PRINT 'LogSystem> Could not find the filter.';
 END;
-
-

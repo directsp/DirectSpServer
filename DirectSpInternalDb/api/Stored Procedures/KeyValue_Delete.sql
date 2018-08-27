@@ -30,10 +30,3 @@ BEGIN
 
     SET @AffectedCount = @@ROWCOUNT;
 END;
-
-
-
-
-
-
-

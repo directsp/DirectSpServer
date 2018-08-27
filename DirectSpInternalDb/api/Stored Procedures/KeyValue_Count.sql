@@ -1,7 +1,7 @@
 ﻿/*
 #MetaStart 
 	{
-		"DataAccessMode": "ReadSnapshot"
+		"DataAccessMode": "Read"
 	} 
 #MetaEnd 
 */
@@ -25,5 +25,6 @@ BEGIN
       FROM  dbo.KeyValue AS KV
      WHERE  KV.KeyName LIKE @KeyNamePattern AND (KV.ExpirationTime IS NULL OR   KV.ExpirationTime > GETDATE());
 END;
+
 
 

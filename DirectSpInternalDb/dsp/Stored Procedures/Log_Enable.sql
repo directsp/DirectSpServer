@@ -28,8 +28,3 @@ BEGIN
 
     PRINT 'LogSystem> LogSystem has been enabled.';
 END;
-
-
-
-
-

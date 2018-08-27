@@ -6,5 +6,3 @@ AS
 BEGIN
 	RETURN JSON_VALUE(JSON_VALUE(@ErrorMessage, '$.errorMessage'), '$.ArgumentName');
 END;
-
-

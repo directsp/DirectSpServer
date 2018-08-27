@@ -60,6 +60,3 @@ END
 	DROP TABLE #EnumIdName;
 
 END;
-
-
-

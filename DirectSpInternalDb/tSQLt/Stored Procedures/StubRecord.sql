@@ -93,5 +93,4 @@ BEGIN
   
     EXEC (@VcInsertStmt)    -- Execute the actual INSERT statement  
   
-END  
-
+END

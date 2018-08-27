@@ -12,4 +12,3 @@ BEGIN
 
 	-- Initialized startup data if they are not initialized yet
 END
-

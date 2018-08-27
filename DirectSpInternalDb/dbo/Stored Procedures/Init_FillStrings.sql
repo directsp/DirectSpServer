@@ -9,4 +9,3 @@ BEGIN
     VALUES (N'IsDirectSpInternal', N'1');
 
 END;
-

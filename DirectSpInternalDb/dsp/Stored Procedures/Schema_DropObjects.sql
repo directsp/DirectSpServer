@@ -43,9 +43,3 @@ BEGIN
 	DEALLOCATE DropCursor;
 
 END;
-
-
-
-
-
-

@@ -21,15 +21,3 @@ BEGIN
 	IF (@RecordCount > @PaginationMaxRecordCount) --
 		EXEC err.ThrowPageSizeTooLarge @ProcId = @@PROCID;
 END;
-
-
-
-
-
-
-
-
-
-
-
-

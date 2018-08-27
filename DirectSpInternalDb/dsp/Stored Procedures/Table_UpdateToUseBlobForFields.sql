@@ -27,5 +27,3 @@ BEGIN
 	CLOSE Cursor_TableName;
 	DEALLOCATE Cursor_TableName;
 END;
-
-

@@ -6,7 +6,3 @@ BEGIN
 
 	RETURN @PreviousDay;
 END;
-
-
-
-

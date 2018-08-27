@@ -4,5 +4,3 @@ AS
 BEGIN
 	RETURN IIF(@Time = CAST(@Time AS DATE), 0, 1);
 END;
-
-

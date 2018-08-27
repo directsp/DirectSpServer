@@ -15,6 +15,4 @@ RETURN SELECT
                   )cc
                ON cc.object_id = V.ObjectId
               AND cc.column_id = V.ColumnId
-              AND V.ReturnDetails = 1;               
-
-
+              AND V.ReturnDetails = 1;

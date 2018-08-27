@@ -43,5 +43,3 @@ BEGIN
       @ColumnList = @ColumnList,
       @FailMsg = @CombinedMessage;   
 END;
-
-

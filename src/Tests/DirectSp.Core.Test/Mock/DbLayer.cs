@@ -3,13 +3,14 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Threading;
 using System.Threading.Tasks;
+using DirectSp.Core.Entities;
+using DirectSp.Core.Exceptions;
 using DirectSp.Core.Infrastructure;
 
 namespace DirectSp.Core.Test.Mock
 {
     class DbLayer : IDbLayer
     {
-
         public int ExcuteNonQuery(SqlCommand command)
         {
             switch (command.CommandText)
@@ -33,7 +34,7 @@ namespace DirectSp.Core.Test.Mock
                     return Task.Factory.StartNew(() => Data.DataReaderForTestSp());
 
                 case "api.SignJwtToken":
-                    command.Parameters["@JwtToken"].Value = Data.JwtToken();
+                    command.Parameters["@JwtToken"].Value = Data.JwtToken;
                     return Task.Factory.StartNew(() => Data.EmptyDataReader());
 
                 case "api.SignJwtTokenChecking":
@@ -46,11 +47,12 @@ namespace DirectSp.Core.Test.Mock
                     return Task.Factory.StartNew(() => Data.EmptyDataReader());
 
                 default:
-                    throw new System.NotImplementedException($" test command for {command.CommandText}");
+                    throw new NotImplementedException($" test command for {command.CommandText}");
             }
         }
 
         public void OpenConnection(SqlConnection connection) { }
+
         public void CloseConnection(SqlConnection connection) { }
     }
 

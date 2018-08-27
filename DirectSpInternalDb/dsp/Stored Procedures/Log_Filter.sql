@@ -12,4 +12,3 @@ BEGIN
 	-- set new filter
 	EXEC dsp.Log_AddFilter @Filter = @Filter, @IsExclude = 0;
 END;
-

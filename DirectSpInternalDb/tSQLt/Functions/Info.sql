@@ -24,5 +24,3 @@ SELECT Version = '1.0.5873.27393',
           FROM tSQLt.Private_SqlVersion() AS PSV
       )VI
   )V;
-
-

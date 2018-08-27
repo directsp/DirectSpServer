@@ -63,10 +63,8 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-	DECLARE @IsProductionEnvironment BIT;
-	EXEC dsp.Setting_Props @IsProductionEnvironment = @IsProductionEnvironment OUTPUT;
-	IF (@IsProductionEnvironment = 1) --
-		EXEC err.ThrowAccessDeniedOrObjectNotExists @ProcId = @@PROCID, @Message = ''Init_Cleanup can not be executed while IsProductionEnvironment is set!'';
+	-- Protect production environment
+	EXEC dsp.Util_ProtectProductionEnvironment
 			
 	-- Delete Junction Tables 
 
@@ -228,7 +226,7 @@ END;
 /*
 #MetaStart
 {
-	"ExecuteMode": "ReadSnapshot"
+	"DataAccessMode": "ReadSnapshot"
 } 
 #MetaEnd
 */
@@ -288,7 +286,7 @@ END;
 /*
 #MetaStart
 {
-	"ExecuteMode": "Write"
+	"DataAccessMode": "Write"
 } 
 #MetaEnd
 */
@@ -381,6 +379,8 @@ END;
 
 
 END;
+
+
 
 
 

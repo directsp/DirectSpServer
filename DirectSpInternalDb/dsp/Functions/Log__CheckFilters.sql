@@ -20,5 +20,3 @@ BEGIN
 
 	RETURN 0;
 END;
-
- 

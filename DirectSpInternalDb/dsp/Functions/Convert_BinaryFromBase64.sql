@@ -11,5 +11,3 @@ BEGIN
     SET @Bin = CAST(N'' AS XML).value('xs:base64Binary(sql:variable("@Base64"))', 'VARBINARY(MAX)')
     RETURN @Bin
 END
-
-

@@ -10,6 +10,4 @@ RETURN SELECT
                   )dc
                ON dc.parent_object_id = @ObjectId
               AND dc.parent_column_id = @ColumnId
-              AND @ReturnDetails = 1;               
-
-
+              AND @ReturnDetails = 1;

@@ -30,5 +30,3 @@ BEGIN
   
   EXEC(@TriggerCode);
 END;
-
-

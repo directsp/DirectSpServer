@@ -13,7 +13,6 @@ using Microsoft.AspNetCore.Http;
 using DirectSp.Core.InternalDb;
 using System.IO;
 using DirectSp.Core.SpSchema;
-using DirectSp.Core.DI;
 using DirectSp.Core.Infrastructure;
 using DirectSp.Core.Helpers;
 
@@ -21,33 +20,35 @@ namespace DirectSp.Core
 {
     public class SpInvoker
     {
-        public SpInvokerOptions Options { get; private set; }
-        public string ConnectionString { get; private set; }
-        public string Schema { get; private set; }
-        public string ConnectionStringReadOnly { get { return new SqlConnectionStringBuilder(ConnectionString) { ApplicationIntent = ApplicationIntent.ReadOnly }.ToString(); } }
-        public string ConnectionStringReadWrite { get { return new SqlConnectionStringBuilder(ConnectionString) { ApplicationIntent = ApplicationIntent.ReadWrite }.ToString(); } }
-        public DspKeyValue KeyValue { get; private set; }
         private UserSessionManager SessionManager;
-        private readonly SpInvoker InternalSpInvoker;
-        public InvokerPath InvokerPath { get; private set; }
+        private JwtTokenSigner _tokenSigner;
+        private IDbLayer _dbLayer;
 
-        public SpInvoker(string connectionString, string schema, SpInvokerOptions options, SpInvoker spInvokerInternal = null)
+        public string ConnectionStringReadOnly { get; }
+        public string ConnectionStringReadWrite { get; }
+        public SpInvokerOptions Options { get; }
+        public string ConnectionString { get; }
+        public string Schema { get; }
+        public IDspKeyValue KeyValue { get; }
+        public InvokerPath InvokerPath { get; }
+        internal CaptchaHandler CaptchaHandler { get; }
+
+        public SpInvoker(SpInvokerConfig config)
         {
-            InvokerPath = new InvokerPath(options.WorkspaceFolderPath);
+            InvokerPath = new InvokerPath(config.Options.WorkspaceFolderPath);
 
             //validate ConnectionString
-            Schema = schema ?? throw new Exception("Schema is not set!");
-            ConnectionString = connectionString ?? throw new Exception("ConnectionString is not set!");
-            var connStringBuilder = new SqlConnectionStringBuilder(connectionString);
-
-            if (connectionString.IndexOf("ApplicationIntent", StringComparison.OrdinalIgnoreCase) != -1)
-                throw new Exception("ConnectionString should have a ApplicationIntent parameter!");
-
-            Options = options;
-            InternalSpInvoker = spInvokerInternal ?? this;
-            SessionManager = new UserSessionManager(options);
-            KeyValue = new DspKeyValue(spInvokerInternal);
-            SpException.UseCamelCase = options.UseCamelCase;
+            Schema = config.Schema ?? throw new Exception("Schema is not set!");
+            ConnectionString = config.ConnectionString ?? throw new Exception("ConnectionString is not set!");
+            Options = config.Options;
+            SessionManager = new UserSessionManager(Options);
+            KeyValue = config.KeyValue;
+            _tokenSigner = config.TokenSigner;
+            _dbLayer = config.DbLayer;
+            SpException.UseCamelCase = Options.UseCamelCase;
+            ConnectionStringReadOnly = new SqlConnectionStringBuilder(config.ConnectionString) { ApplicationIntent = ApplicationIntent.ReadOnly }.ToString();
+            ConnectionStringReadWrite = new SqlConnectionStringBuilder(config.ConnectionString) { ApplicationIntent = ApplicationIntent.ReadWrite }.ToString();
+            CaptchaHandler = new CaptchaHandler(KeyValue);
         }
 
         private DateTime? LastCleanTempFolderTime;
@@ -108,7 +109,7 @@ namespace DirectSp.Core
                 var spInfos = new Dictionary<string, SpInfo>();
                 using (var sqlConnection = new SqlConnection(ConnectionStringReadOnly))
                 {
-                    var spList = ResourceDb.System_Api(sqlConnection, out string appUserContext);
+                    var spList = ResourceDb.System_Api(_dbLayer, sqlConnection, out string appUserContext);
                     foreach (var item in spList)
                         spInfos.Add(item.SchemaName + "." + item.ProcedureName, item);
 
@@ -121,6 +122,17 @@ namespace DirectSp.Core
 
         public async Task<SpCallResult[]> Invoke(SpCall[] spCalls, SpInvokeParams spInvokeParams)
         {
+            //Check DuplicateRequest if spCalls contian at least one write
+            foreach (var spCall in spCalls)
+            {
+                var spInfo = FindSpInfo($"{Schema}.{spCall.Method}");
+                if (spInfo != null && spInfo.ExtendedProps.DataAccessMode == SpDataAccessMode.Write)
+                {
+                    await CheckDuplicateRequest(spInvokeParams.InvokeOptions.RequestId, 3600 * 2);
+                    break;
+                }
+            }
+
             var spi = new SpInvokeParamsInternal
             {
                 SpInvokeParams = spInvokeParams,
@@ -146,7 +158,7 @@ namespace DirectSp.Core
                 if (item.IsCompletedSuccessfully)
                     spCallResults.Add(item.Result);
                 else
-                    spCallResults.Add(new SpCallResult { { "error", SpExceptionAdapter.Convert(item.Exception.InnerException).SpCallError } });
+                    spCallResults.Add(new SpCallResult { { "error", SpExceptionAdapter.Convert(this, item.Exception.InnerException).SpCallError } });
             }
 
             return spCallResults.ToArray();
@@ -166,7 +178,7 @@ namespace DirectSp.Core
 
         public async Task<SpCallResult> Invoke(string method, object param, SpInvokeParams spInvokeParams, bool isSystem = false)
         {
-            // create spCall
+            // Create spCall
             var spCall = new SpCall
             {
                 Method = method
@@ -180,6 +192,12 @@ namespace DirectSp.Core
 
         public async Task<SpCallResult> Invoke(SpCall spCall, SpInvokeParams spInvokeParams, bool isSystem = false)
         {
+            // Check duplicate request
+            var spInfo = FindSpInfo($"{Schema}.{spCall.Method}");
+            if (spInfo != null && spInfo.ExtendedProps.DataAccessMode == SpDataAccessMode.Write)
+                await CheckDuplicateRequest(spInvokeParams.InvokeOptions.RequestId, spInfo.ExtendedProps.CommandTimeout);
+
+            // Call main invoke
             var spi = new SpInvokeParamsInternal { SpInvokeParams = spInvokeParams, IsSystem = isSystem };
             if (isSystem)
                 spi.SpInvokeParams.AuthUserId = AppUserContext.AuthUserId;
@@ -208,7 +226,7 @@ namespace DirectSp.Core
             try
             {
                 // Check captcha
-                await CheckCaptcha(spi);
+                await CheckCaptcha(spCall, spi);
 
                 // Call core
                 var result = await InvokeSp(spCall, spi);
@@ -221,7 +239,7 @@ namespace DirectSp.Core
             }
             catch (Exception ex)
             {
-                throw SpExceptionAdapter.Convert(ex, InternalSpInvoker);
+                throw SpExceptionAdapter.Convert(this, ex);
             }
         }
 
@@ -258,7 +276,7 @@ namespace DirectSp.Core
 
             //check IsCaptcha by meta-data
             if ((spInfo.ExtendedProps.CaptchaMode == SpCaptchaMode.Always || spInfo.ExtendedProps.CaptchaMode == SpCaptchaMode.Auto) && !spi.IsCaptcha)
-                throw new SpInvalidCaptchaException(InternalSpInvoker, spInfo.ProcedureName);
+                throw new SpInvalidCaptchaException(await CaptchaHandler.Create(), spInfo.ProcedureName);
 
             //check IsBatchAllowed by meta-data
             if (!spInfo.ExtendedProps.IsBatchAllowed && spi.IsBatch)
@@ -337,10 +355,9 @@ namespace DirectSp.Core
                 //create command and run it
                 sqlCommand.CommandType = CommandType.StoredProcedure;
                 sqlCommand.Parameters.AddRange(sqlParameters.ToArray());
-                var dbLayer = Resolver.Instance.Resolve<IDbLayer>();
-                dbLayer.OpenConnection(sqlConnection);
+                _dbLayer.OpenConnection(sqlConnection);
 
-                using (var dataReader = await dbLayer.ExecuteReaderAsync(sqlCommand))
+                using (var dataReader = await _dbLayer.ExecuteReaderAsync(sqlCommand))
                 {
                     //Fill Recordset and close dataReader BEFORE reading sqlParameters
                     ReadRecordset(spCallResults, dataReader, spInfo, invokeOptions);
@@ -384,31 +401,29 @@ namespace DirectSp.Core
                     }
                 }
 
-                dbLayer.CloseConnection(sqlConnection);
+                _dbLayer.CloseConnection(sqlConnection);
             }
 
             userSession.SetWriteMode(isWriteMode);
             return spCallResults;
         }
 
-        private static void SignJwt(SqlParameter sqlParam, SpParamEx spParamEx)
+        private void SignJwt(SqlParameter sqlParam, SpParamEx spParamEx)
         {
             if (spParamEx?.SignType == SpSignMode.JwtByCertThumb)
             {
-                var tokenSigner = Resolver.Instance.Resolve<JwtTokenSigner>();
-                sqlParam.Value = tokenSigner.Sign(sqlParam.Value.ToString());
+                sqlParam.Value = _tokenSigner.Sign(sqlParam.Value.ToString());
             }
         }
 
-        private static string CheckJwt(KeyValuePair<string, object> callerParam, SpParam spParam, SpParamEx spParamEx)
+        private string CheckJwt(KeyValuePair<string, object> callerParam, SpParam spParam, SpParamEx spParamEx)
         {
             // Sign text if need to sign
             if (spParamEx?.SignType == SpSignMode.JwtByCertThumb && !spParam.IsOutput)
             {
                 string token = callerParam.Value.ToString();
                 if (string.IsNullOrEmpty(token)) return string.Empty;
-                var tokenSigner = Resolver.Instance.Resolve<JwtTokenSigner>();
-                if (!tokenSigner.CheckSign(token))
+                if (!_tokenSigner.CheckSign(token))
                     throw new SpInvalidParamSignature(callerParam.Key);
                 // Set param value by token payload
                 return token.Split('.')[1].FromBase64();
@@ -608,21 +623,21 @@ namespace DirectSp.Core
             return stringBuilder.ToString();
         }
 
-        private async Task<bool> CheckCaptcha(SpInvokeParamsInternal spi)
+        private async Task<bool> CheckCaptcha(SpCall spCall, SpInvokeParamsInternal spi)
         {
             bool ret = false;
 
             //validate captcha
             if (spi.SpInvokeParams.InvokeOptions.CaptchaId != null || spi.SpInvokeParams.InvokeOptions.CaptchaCode != null)
             {
-                var captcha = new Captcha(InternalSpInvoker);
-                await captcha.Match(spi.SpInvokeParams.InvokeOptions.CaptchaId, spi.SpInvokeParams.InvokeOptions.CaptchaCode);
+                await CaptchaHandler.Verify(spi.SpInvokeParams.InvokeOptions.CaptchaId, spi.SpInvokeParams.InvokeOptions.CaptchaCode, spCall.Method);
                 spi.IsCaptcha = true;
                 ret = true;
             }
 
             return ret;
         }
+
         private Task<bool> UpdateRecodsetDownloadUri(SpCall spCall, SpInvokeParamsInternal spi, SpCallResult spCallResult)
         {
             bool result = false;
@@ -691,6 +706,27 @@ namespace DirectSp.Core
         private bool AlternativeIsDateTime(string typeName)
         {
             return typeName.ToLower().Substring(0, 4) == "date" && Options.AlternativeCalendar != null;
+        }
+
+        private async Task CheckDuplicateRequest(string requestId, int commandTimeout = 30)
+        {
+            if (string.IsNullOrEmpty(requestId))
+                return;
+
+            // 0 is treated as 2 hours
+            if (commandTimeout == 0) commandTimeout = 2 * 3600;
+
+            // Calculating time to life base on sp command time out
+            int timeToLife = Math.Max(commandTimeout * 2, 15 * 60); //the minimum value of timeToLife is 15 min
+
+            try
+            {
+                await KeyValue.SetValue($"RequestId/{requestId}", "", timeToLife, false);
+            }
+            catch (SpObjectAlreadyExists)
+            {
+                throw new DuplicateRequestException(requestId);
+            }
         }
     }
 }

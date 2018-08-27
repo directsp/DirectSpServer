@@ -4,7 +4,3 @@ AS
 BEGIN
     RETURN (SELECT  S.SystemUserId FROM dsp.Setting AS S);
 END;
-
-
-
-

@@ -19,6 +19,3 @@ BEGIN
 	EXEC dsp.Table_CompareData @DestinationTableName = @TableName;
 
 END
-		
-
-

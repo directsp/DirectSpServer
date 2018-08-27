@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DirectSp.Core.Database
 {
-    class DbLayer : IDbLayer
+    public class DbLayer : IDbLayer
     {
         public async Task<IDataReader> ExecuteReaderAsync(SqlCommand command)
         {

@@ -9,8 +9,3 @@ BEGIN
     IF (@IsProductionEnvironment = 1) --
         EXEC err.ThrowAccessDeniedOrObjectNotExists @ProcId = @@PROCID, @Message = 'This operation can not be executed in ProductionEnvironment!';
 END;
-
-
-
-
-

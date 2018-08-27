@@ -17,10 +17,3 @@ BEGIN
 
     RETURN @Log_IsEnabled;
 END;
-
-
-
-
-
-
-

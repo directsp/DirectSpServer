@@ -21,5 +21,3 @@ BEGIN
 	IF (@Position > LEN(@Expression))
 		SET @Position = 0;
 END;
-
-

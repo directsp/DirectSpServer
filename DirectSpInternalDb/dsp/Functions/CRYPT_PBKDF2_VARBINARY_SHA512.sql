@@ -257,6 +257,3 @@ PRINT 'Duration (ms): ' + CONVERT(NVARCHAR(23),DATEDIFF(ms,@start,SYSDATETIME())
   RETURN @output
 
 END
-
-
-

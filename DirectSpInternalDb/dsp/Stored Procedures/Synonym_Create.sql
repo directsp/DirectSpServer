@@ -12,10 +12,3 @@ BEGIN
 	SET @sql = 'CREATE SYNONYM ' + @SchemaName + '.' + @SynonymName + ' FOR ' + @ObjectName;
 	EXEC (@sql);
 END;
-
-
-
-
-
-
-

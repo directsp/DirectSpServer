@@ -4,17 +4,3 @@ AS
 BEGIN
 	RETURN	dsp.Param_IsSetBase(@Value, 0);
 END;
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -17,6 +17,3 @@ BEGIN
     DELETE  dbo.BatchItemResultType;
 
 END;
-
-
-

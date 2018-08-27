@@ -11,10 +11,10 @@ AS
 BEGIN
 
 	-- Validate Params
-	SET @Param0 = dsp.[String_$FormatParam](@Param0);
-	SET @Param1 = dsp.[String_$FormatParam](@Param1);
-	SET @Param2 = dsp.[String_$FormatParam](@Param2);
-	SET @Param3 = dsp.[String_$FormatParam](@Param3);
+	SET @Param0 = dsp.Formatter_FormatParam(@Param0);
+	SET @Param1 = dsp.Formatter_FormatParam(@Param1);
+	SET @Param2 = dsp.Formatter_FormatParam(@Param2);
+	SET @Param3 = dsp.Formatter_FormatParam(@Param3);
 
 	-- Replace Message
 	SET @Message = dsp.Formatter_FormatString(@Message);

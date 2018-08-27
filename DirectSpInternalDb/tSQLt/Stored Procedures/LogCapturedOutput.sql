@@ -4,5 +4,3 @@ AS
 BEGIN
   INSERT INTO tSQLt.CaptureOutputLog (OutputText) VALUES (@text);
 END;
-
-

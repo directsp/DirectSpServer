@@ -1,7 +1,7 @@
 ﻿CREATE PROCEDURE [dsp].[Context_Props]
     @Context TCONTEXT OUT, @AppName TSTRING = N'<notset>' OUT, @AuthUserId TSTRING = N'<notset>' OUT, @UserId TSTRING = N'<notset>' OUT,
     @Audience TSTRING = N'<notset>' OUT, @IsCaptcha INT = -1 OUT, @RecordCount INT = -1 OUT, @RecordIndex INT = -1 OUT,
-    @ClientVersion TSTRING = N'<notset>' OUT, @MoneyConversionRate FLOAT = -1 OUT, @InvokerAppVersion TSTRING = NULL OUT
+    @ClientVersion TSTRING = N'<notset>' OUT, @MoneyConversionRate FLOAT = -1 OUT, @InvokerAppVersion TSTRING = NULL OUT, @IsReadonlyIntent BIT = NULL OUT, @IsInvokedByMidware BIT = NULL OUT
 AS
 BEGIN
     -- General
@@ -29,6 +29,9 @@ BEGIN
     IF (@IsCaptcha IS NULL OR   @IsCaptcha <> -1)
         SET @IsCaptcha = ISNULL(CAST(JSON_VALUE(@InvokeOptions, '$.IsCaptcha') AS BIT), 0);
 
+    IF (@IsReadonlyIntent IS NULL OR   @IsReadonlyIntent <> -1)
+        SET @IsReadonlyIntent = ISNULL(CAST(JSON_VALUE(@InvokeOptions, '$.IsReadonlyIntent') AS BIT), 0);
+
     IF ((@RecordCount IS NULL OR @RecordCount <> -1) OR (@RecordIndex IS NULL OR @RecordIndex <> -1))
     BEGIN
         SET @RecordCount = JSON_VALUE(@InvokeOptions, N'$.RecordCount');
@@ -39,7 +42,11 @@ BEGIN
     IF (@InvokerAppVersion IS NULL OR   @InvokerAppVersion <> -1)
         SET @InvokerAppVersion = JSON_VALUE(@InvokeOptions, N'$.InvokerAppVersion');
 
+	SET @IsInvokedByMidware = IIF (@InvokerAppVersion IS NOT NULL, 1, 0);
+
 END;
+
+
 
 
 

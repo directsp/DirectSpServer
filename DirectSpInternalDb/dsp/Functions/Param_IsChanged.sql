@@ -10,6 +10,3 @@ AS
 BEGIN
 	RETURN IIF(dsp.Param_IsSetBase(@NewValue, @NullAsNotSet) = 1 AND dsp.Util_IsEqual(@OldValue, @NewValue) = 0, 1, 0);
 END;
-
-
-

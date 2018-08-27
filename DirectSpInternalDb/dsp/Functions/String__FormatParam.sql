@@ -9,7 +9,3 @@ BEGIN
 	-- set <null> string for NULL to indicate the value is null
 	RETURN ISNULL(@Param, '<null>');
 END;
-
-
-
-

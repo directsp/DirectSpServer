@@ -21,5 +21,3 @@ BEGIN
     RAISERROR(@ErrMsg, @ErrSvr, 10);
   END CATCH;
 END;
-
-

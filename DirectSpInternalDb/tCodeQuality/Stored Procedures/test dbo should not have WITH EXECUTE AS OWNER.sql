@@ -29,12 +29,3 @@ BEGIN
 		EXEC tSQLt.Fail @Message0 = @msg;
 	END;
 END;
-
-
-
-
-
-
-
-
-

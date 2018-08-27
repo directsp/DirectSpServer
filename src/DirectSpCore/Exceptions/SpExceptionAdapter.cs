@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DirectSp.Core.Entities;
+using System;
 
 namespace DirectSp.Core.Exceptions
 {
@@ -28,12 +29,7 @@ namespace DirectSp.Core.Exceptions
 
     internal static class SpExceptionAdapter
     {
-        public static SpException Convert(Exception ex)
-        {
-            return Convert(ex, null);
-        }
-
-        public static SpException Convert(Exception ex, SpInvoker spInvokerInternal)
+        public static SpException Convert(SpInvoker spInvoker, Exception ex)
         {
             if (ex is SpException)
                 return (SpException)ex;
@@ -48,7 +44,7 @@ namespace DirectSp.Core.Exceptions
                     return new SpAccessDeniedOrObjectNotExistsException(ret);
 
                 case (int)SpCommonExceptionId.InvalidCaptcha:
-                    return new SpInvalidCaptchaException(spInvokerInternal, ret);
+                    return new SpInvalidCaptchaException(spInvoker.CaptchaHandler.Create().Result, ret);
 
                 case (int)SpCommonExceptionId.InvokerAppVersion:
                     return new SpInvokerAppVersionException(ret);
@@ -61,6 +57,9 @@ namespace DirectSp.Core.Exceptions
 
                 case (int)SpCommonExceptionId.InvalidParamSignature:
                     return new SpInvalidParamSignature(ret);
+
+                case (int)SpCommonExceptionId.ObjectAlreadyExists:
+                    return new SpObjectAlreadyExists(ret);
 
                 default:
                     return ret;

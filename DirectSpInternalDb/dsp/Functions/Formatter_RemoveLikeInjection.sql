@@ -10,6 +10,3 @@ BEGIN
 
 	RETURN @Value;
 END;
-
-
-

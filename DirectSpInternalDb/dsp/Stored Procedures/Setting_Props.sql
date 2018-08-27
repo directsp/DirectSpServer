@@ -19,11 +19,3 @@ BEGIN
       FROM  dsp.Setting;
 
 END;
-
-
-
-
-
-
-
-

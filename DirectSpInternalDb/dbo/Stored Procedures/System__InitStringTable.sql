@@ -8,15 +8,3 @@ BEGIN
 	-- Recreating String Functions
 	EXEC dsp.RecreateStringFunctions;
 END;
-
-
-
-
-
-
-
-
-
-
-
-

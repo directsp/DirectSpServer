@@ -1,15 +1,21 @@
 ﻿CREATE PROCEDURE [dsp].[SetIfChanged_Int]
-	@IsUpdated BIT OUT, @OldValue BIGINT OUT, @NewValue BIGINT, @ExceptionId INT = NULL, @ExceptionMessage TSTRING = NULL, @NullAsNotSet BIT = 0
+    @ProcId INT, @PropName TSTRING, @NewValue BIGINT, @OldValue BIGINT OUT, @HasAccess BIT = NULL, @NullAsNotSet BIT = 0, @IsUpdated BIT = NULL OUT
 AS
 BEGIN
-	IF (dsp.Param_IsChanged(@OldValue, @NewValue, @NullAsNotSet) = 0)
-		RETURN;
+	SET @HasAccess = ISNULL(@HasAccess, 1);
+    IF (dsp.Param_IsChanged(@OldValue, @NewValue, @NullAsNotSet) = 0)
+        RETURN;
 
-	IF (@ExceptionId IS NOT NULL) --
-		EXEC dsp.ThrowAppException @ExceptionId = @ExceptionId, @Message = @ExceptionMessage;
+    IF (@HasAccess = 0) --
+        EXEC err.ThrowAccessDeniedOrObjectNotExists @ProcId = @ProcId, @Message = 'PropName: {0}', @Param0 = @PropName;
 
-	SET @IsUpdated = 1;
-	SET @OldValue = @NewValue;
+    SET @IsUpdated = 1;
+    SET @OldValue = @NewValue;
 END;
+
+
+
+
+
 
 

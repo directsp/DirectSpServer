@@ -1,10 +1,13 @@
-﻿CREATE PROCEDURE [dsp].[Exception_BuildMessage]
-	@ProcId INT = NULL, @ExceptionId INT, @Message TSTRING = NULL, @Param0 TSTRING = '<notset>', @Param1 TSTRING = '<notset>', @Param2 TSTRING = '<notset>',
-	@Param3 TSTRING = '<notset>', @Exception TJSON = NULL OUT
+﻿CREATE	FUNCTION [dsp].[Exception_BuildMessageParam4] (@ProcId INT,
+	@ExceptionId INT,
+	@Message TSTRING = NULL,
+	@Param0 TSTRING = '<notset>',
+	@Param1 TSTRING = '<notset>',
+	@Param2 TSTRING = '<notset>',
+	@Param3 TSTRING = '<notset>')
+RETURNS TJSON
 AS
 BEGIN
-	SET NOCOUNT ON;
-
 	-- get exception name and detail
 	DECLARE @Description TSTRING;
 	DECLARE @ExceptionName TSTRING;
@@ -25,7 +28,7 @@ BEGIN
 	EXEC @Message = dsp.Formatter_FormatMessage @Message = @Message, @Param0 = @Param0, @Param1 = @Param1, @Param2 = @Param2, @Param3 = @Param3;
 
 	-- generate exception
-	SET @Exception = '{}';
+	DECLARE @Exception TJSON = '{}';
 	SET @Exception = JSON_MODIFY(@Exception, '$.errorId', @ExceptionId);
 	SET @Exception = JSON_MODIFY(@Exception, '$.errorName', @ExceptionName);
 	IF (@Description IS NOT NULL)
@@ -45,11 +48,7 @@ BEGIN
 		SET @Exception = JSON_MODIFY(@Exception, '$.errorProcName', @ProcName);
 	END;
 
+	RETURN @Exception;
 END;
-
-
-
-
-
 
 

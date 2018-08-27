@@ -39,14 +39,3 @@ END'    ;
     DEALLOCATE CreateFunctionCursor;
 
 END;
-
-
-
-
-
-
-
-
-
-
-

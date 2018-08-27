@@ -13,5 +13,3 @@ BEGIN
                    16, 10, @FullName);
    END;
 END;
-
-

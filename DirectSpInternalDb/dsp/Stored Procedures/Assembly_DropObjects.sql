@@ -17,5 +17,3 @@ BEGIN
 	EXEC sys.sp_executesql @sql;
 
 END;
-
-

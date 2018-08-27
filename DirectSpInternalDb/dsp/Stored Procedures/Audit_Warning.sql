@@ -9,6 +9,3 @@ BEGIN
 	-- Format Message
 	EXEC dsp.Log_Warn @ProcId = @ProcId, @Message = @Message, @Param0 = @Param0, @Param1 = @Param1, @Param2 = @Param2;
 END;
-
-
-

@@ -6,5 +6,3 @@ AS
 BEGIN
 	RETURN REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@NumberStr, '*', ''), '-', ''), '_', ''), '/', ''), ' ', ''), '#', '');
 END;
-
-

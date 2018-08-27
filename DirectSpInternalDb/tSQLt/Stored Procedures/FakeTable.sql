@@ -49,5 +49,3 @@ BEGIN
 
    EXEC tSQLt.Private_MarkFakeTable @SchemaName, @TableName, @NewNameOfOriginalTable;
 END
-
-

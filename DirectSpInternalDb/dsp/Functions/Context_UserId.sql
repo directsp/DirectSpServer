@@ -5,6 +5,3 @@ AS
 BEGIN
     RETURN JSON_VALUE(@Context, '$.UserId');
 END;
-
-
-

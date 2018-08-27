@@ -49,6 +49,3 @@ BEGIN
             EXEC err.ThrowObjectAlreadyExists @ProcId = @@PROCID, @Message = 'Object already exist!';
     END CATCH;
 END;
-
-
-

@@ -14,6 +14,4 @@ RETURN SELECT
                   ) AS id
                ON id.object_id = @ObjectId
               AND id.column_id = @ColumnId
-              AND @ReturnDetails = 1;               
-
-
+              AND @ReturnDetails = 1;

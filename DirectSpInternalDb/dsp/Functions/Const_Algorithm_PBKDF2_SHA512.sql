@@ -4,5 +4,3 @@ AS
 BEGIN
     RETURN 'PBKDF2_SHA512';
 END;
-
-

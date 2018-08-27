@@ -1,6 +1,6 @@
 ﻿CREATE PROC [dsp].[Context_PropsSet]
     @Context TCONTEXT OUT, @AppName TSTRING = N'<notset>', @AppVersion TSTRING = N'<notset>', @AuthUserId TSTRING = N'<notset>', @UserId TSTRING = N'<notset>',
-    @Audience TSTRING = N'<notset>', @IsCaptcha BIT = NULL, @RecordCount INT = -1 OUT, @RecordIndex INT = -1 OUT, @ClientVersion TSTRING = N'<notset>' OUT
+    @Audience TSTRING = N'<notset>', @IsCaptcha BIT = NULL, @RecordCount INT = -1, @RecordIndex INT = -1, @ClientVersion TSTRING = N'<notset>'
 AS
 BEGIN
     IF (@Context IS NULL OR @Context = '')
@@ -51,6 +51,7 @@ BEGIN
     IF (@ClientVersion IS NULL OR   @ClientVersion <> N'<notset>')
         SET @Context = JSON_MODIFY(@Context, N'$.InvokeOptions.ClientVersion', @ClientVersion);
 END;
+
 
 
 

@@ -18,5 +18,3 @@ BEGIN
 		EXEC tSQLt.Fail @Message0 = @Msg;
 	END;
 END;
-
-

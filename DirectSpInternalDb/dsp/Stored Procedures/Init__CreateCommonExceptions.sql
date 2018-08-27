@@ -26,8 +26,10 @@ BEGIN
 	INSERT dsp.Exception (ExceptionId, ExceptionName) VALUES (55026, N'InvokerAppVersion');
 	INSERT dsp.Exception (ExceptionId, ExceptionName) VALUES (55027, N'Maintenance');
 	INSERT dsp.Exception (ExceptionId, ExceptionName) VALUES (55028, N'MaintenanceReadOnly');
+	INSERT dsp.Exception (ExceptionId, ExceptionName) VALUES (55029, N'InvalidParamSignature');
 
 END
+
 
 
 
