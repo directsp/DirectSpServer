@@ -124,7 +124,6 @@ directSp.DirectSpClient = function (options) {
     this._onAuthorized = null;
     this._onError = null;
 
-    this._load();
 };
 
 directSp.DirectSpClient.prototype = {
