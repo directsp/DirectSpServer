@@ -1,44 +1,84 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
+﻿using DirectSp.Core;
 using DirectSp.Core.Entities;
+using log4net;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Diagnostics;
+using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
-using DirectSp.Core;
-using System.Text.Encodings.Web;
-using System.Collections.Generic;
 
 namespace DirectSp.Host.Controllers
 {
     public class ApiController : DirectSp.Core.Controllers.ApiController
     {
         protected override SpInvoker SpInvoker { get { return App.SpInvoker; } }
+        private ILog _logger;
 
+        public ApiController()
+        {
+            _logger = Logger.Log4Net;
+        }
 
         [HttpPost, Authorize]
         [Route("[controller]/{method}")]
         public new async Task<IActionResult> Invoke(string method, [FromBody] InvokeParams invokeParams)
         {
-            return await base.Invoke(method, invokeParams);
+            var userIdentifier = User.Identity.IsAuthenticated ? User.Claims.First(x => x.Type == ClaimTypes.NameIdentifier).Value : null;
+            var reqId = Guid.NewGuid();
+            Stopwatch watch = new Stopwatch();
+            watch.Start();
+            _logger.Info($"{reqId}\t{method}\t\t{string.Join(',', invokeParams.SpCall.Params.Select(p => $"{p.Key}:{p.Value?.ToString().Replace("\n", "").Replace("\r", "")}"))}\t{userIdentifier}");
+            var result = await base.Invoke(method, invokeParams);
+            watch.Stop();
+            _logger.Info($"{reqId}\t\t{watch.ElapsedMilliseconds}");
+            return result;
         }
 
         [HttpPost, Authorize]
         [Route("[controller]")]
         public async Task<IActionResult> Invoke([FromBody] InvokeParams invokeParams)
         {
-            return await base.Invoke(invokeParams);
+            var userIdentifier = User.Identity.IsAuthenticated ? User.Claims.First(x => x.Type == ClaimTypes.NameIdentifier).Value : null;
+            var reqId = Guid.NewGuid();
+            Stopwatch watch = new Stopwatch();
+            watch.Start();
+            _logger.Info($"{reqId}\t{invokeParams.SpCall.Method}\t\t{string.Join(',', invokeParams.SpCall.Params.Select(p => $"{p.Key}:{p.Value?.ToString().Replace("\n", "").Replace("\r", "")}"))}\t{userIdentifier}");
+            var result = await base.Invoke(invokeParams);
+            watch.Stop();
+            _logger.Info($"{reqId}\t\t{watch.ElapsedMilliseconds}");
+            return result;
         }
 
         [HttpPost, Authorize]
         [Route("[controller]/invokebatch")]
         public new async Task<IActionResult> InvokeBatch([FromBody] InvokeParamsBatch invokeParamsBatch)
         {
-            return await base.InvokeBatch(invokeParamsBatch);
+            var userIdentifier = User.Identity.IsAuthenticated ? User.Claims.First(x => x.Type == ClaimTypes.NameIdentifier).Value : null;
+            var reqId = Guid.NewGuid();
+            Stopwatch watch = new Stopwatch();
+            watch.Start();
+            _logger.Info($"{reqId}\t{nameof(InvokeBatch)}\t\t\t\t{userIdentifier}");
+            var result = await base.InvokeBatch(invokeParamsBatch);
+            watch.Stop();
+            _logger.Info($"{reqId}\t\t{watch.ElapsedMilliseconds}");
+            return result;
         }
 
         [HttpGet]
         [Route("[controller]/download/recordset")]
         public new async Task<IActionResult> DownloadRecordset(string id, string fileName)
         {
-            return await base.DownloadRecordset(id, fileName);
+            var userIdentifier = User.Identity.IsAuthenticated ? User.Claims.First(x => x.Type == ClaimTypes.NameIdentifier).Value : null;
+            var reqId = Guid.NewGuid();
+            Stopwatch watch = new Stopwatch();
+            watch.Start();
+            _logger.Info($"{reqId}\t{nameof(DownloadRecordset)}\t\t{nameof(id)}:{id},{nameof(fileName)}:{fileName}\t{userIdentifier}");
+            var result = await base.DownloadRecordset(id, fileName);
+            watch.Stop();
+            _logger.Info($"{reqId}\t\t{watch.ElapsedMilliseconds}");
+            return result;
         }
     }
 }

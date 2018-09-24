@@ -9,3 +9,4 @@ DirectSpClientNetTest
 /src/DirectSpHost/Properties/PublishProfiles
 /src/DirectSpHost/log4net.config
 /DirectSpInternalDb
+/src/DirectSpHost/Log

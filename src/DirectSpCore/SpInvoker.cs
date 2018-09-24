@@ -1,20 +1,20 @@
 ﻿using DirectSp.Core.Entities;
 using DirectSp.Core.Exceptions;
+using DirectSp.Core.Helpers;
+using DirectSp.Core.Infrastructure;
+using DirectSp.Core.InternalDb;
+using DirectSp.Core.SpSchema;
+using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
-using System.Linq;
-using Newtonsoft.Json.Linq;
-using System.Threading.Tasks;
-using System.Text;
-using Microsoft.AspNetCore.Http;
-using DirectSp.Core.InternalDb;
 using System.IO;
-using DirectSp.Core.SpSchema;
-using DirectSp.Core.Infrastructure;
-using DirectSp.Core.Helpers;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace DirectSp.Core
 {
@@ -23,6 +23,7 @@ namespace DirectSp.Core
         private UserSessionManager SessionManager;
         private JwtTokenSigner _tokenSigner;
         private IDbLayer _dbLayer;
+        private bool _downloadEnable;
 
         public string ConnectionStringReadOnly { get; }
         public string ConnectionStringReadWrite { get; }
@@ -45,6 +46,7 @@ namespace DirectSp.Core
             KeyValue = config.KeyValue;
             _tokenSigner = config.TokenSigner;
             _dbLayer = config.DbLayer;
+            _downloadEnable = config.DownloadEnable;
             SpException.UseCamelCase = Options.UseCamelCase;
             ConnectionStringReadOnly = new SqlConnectionStringBuilder(config.ConnectionString) { ApplicationIntent = ApplicationIntent.ReadOnly }.ToString();
             ConnectionStringReadWrite = new SqlConnectionStringBuilder(config.ConnectionString) { ApplicationIntent = ApplicationIntent.ReadWrite }.ToString();
@@ -61,7 +63,10 @@ namespace DirectSp.Core
                 lock (LockObject)
                 {
                     if (_AppUserContext == null)
+                    {
                         RefreshApi();
+                    }
+
                     return _AppUserContext;
                 }
             }
@@ -75,7 +80,10 @@ namespace DirectSp.Core
                 lock (LockObject)
                 {
                     if (_SpInfos == null)
+                    {
                         RefreshApi();
+                    }
+
                     return _SpInfos;
                 }
             }
@@ -89,15 +97,21 @@ namespace DirectSp.Core
         {
             //AppUserId does not have request limit
             if (userSession.SpContext.AuthUserId == AppUserContext.AuthUserId)
+            {
                 return;
+            }
 
             //Reset ResetRequestCount
             if (userSession.RequestIntervalStartTime.AddSeconds(Options.SessionMaxRequestCycleInterval) < DateTime.Now)
+            {
                 userSession.ResetRequestCount();
+            }
 
             //Reject Request
             if (userSession.RequestCount > Options.SessionMaxRequestCount)
+            {
                 throw new SpException("Too many request! Please try a few minutes later!", StatusCodes.Status429TooManyRequests);
+            }
         }
 
         private readonly object LockObject = new object();
@@ -111,7 +125,9 @@ namespace DirectSp.Core
                 {
                     var spList = ResourceDb.System_Api(_dbLayer, sqlConnection, out string appUserContext);
                     foreach (var item in spList)
+                    {
                         spInfos.Add(item.SchemaName + "." + item.ProcedureName, item);
+                    }
 
                     _SpInfos = spInfos;
                     _AppUserContext = new SpContext(appUserContext, "$$");
@@ -142,7 +158,9 @@ namespace DirectSp.Core
             var spCallResults = new List<SpCallResult>();
             var tasks = new List<Task<SpCallResult>>();
             foreach (var spCall in spCalls)
+            {
                 tasks.Add(Invoke(spCall, spi));
+            }
 
             try
             {
@@ -156,7 +174,10 @@ namespace DirectSp.Core
             foreach (var item in tasks)
             {
                 if (item.IsCompletedSuccessfully)
+                {
+                    ((SpCallResult)item.Result).Add("error", null);
                     spCallResults.Add(item.Result);
+                }
                 else
                     spCallResults.Add(new SpCallResult { { "error", SpExceptionAdapter.Convert(this, item.Exception.InnerException).SpCallError } });
             }
@@ -201,6 +222,7 @@ namespace DirectSp.Core
             var spi = new SpInvokeParamsInternal { SpInvokeParams = spInvokeParams, IsSystem = isSystem };
             if (isSystem)
                 spi.SpInvokeParams.AuthUserId = AppUserContext.AuthUserId;
+
             return await Invoke(spCall, spi);
         }
 
@@ -225,6 +247,10 @@ namespace DirectSp.Core
         {
             try
             {
+                //Temporary
+                if (spi.SpInvokeParams.InvokeOptions.RecordsetFormat == RecordsetFormat.TabSeparatedValues && !_downloadEnable)
+                    throw new SpException(new Exception("امکان دانلود در حال حاضر غیر فعال می باشد"));
+
                 // Check captcha
                 await CheckCaptcha(spCall, spi);
 
@@ -269,10 +295,6 @@ namespace DirectSp.Core
                 Logger.Log4Net.Error(ex.Message, ex);//Log exception
                 throw ex;
             }
-
-            //Log invoke
-            var log = JsonConvert.SerializeObject(new { AppUserContext.AuthUserId, SpCall = spCall, SpInvokeParamsInternal = spi });
-            Logger.Log4Net.Info(log);
 
             //check IsCaptcha by meta-data
             if ((spInfo.ExtendedProps.CaptchaMode == SpCaptchaMode.Always || spInfo.ExtendedProps.CaptchaMode == SpCaptchaMode.Auto) && !spi.IsCaptcha)
@@ -320,6 +342,7 @@ namespace DirectSp.Core
                     var spParam = spInfo.Params.FirstOrDefault(x => x.ParamName.Equals($"@{param.Key}", StringComparison.OrdinalIgnoreCase));
                     if (spParam == null)
                         throw new ArgumentException($"parameter '{param.Key}' does not exists!");
+
                     spInfo.ExtendedProps.Params.TryGetValue(spParam.ParamName, out SpParamEx spParamEx);
 
                     //make sure Context has not been set be the caller
@@ -346,7 +369,9 @@ namespace DirectSp.Core
                 {
                     if (spParam.IsOutput)
                     {
-                        if (string.Equals(spParam.ParamName, "@Recordset", StringComparison.OrdinalIgnoreCase) || string.Equals(spParam.ParamName, "@ReturnValue", StringComparison.OrdinalIgnoreCase)) throw new SpException($"{spInfo.ProcedureName} contains {spParam.ParamName} as a output parameter which is not supported!");
+                        if (string.Equals(spParam.ParamName, "@Recordset", StringComparison.OrdinalIgnoreCase) || string.Equals(spParam.ParamName, "@ReturnValue", StringComparison.OrdinalIgnoreCase))
+                            throw new SpException($"{spInfo.ProcedureName} contains {spParam.ParamName} as a output parameter which is not supported!");
+
                         if (sqlParameters.FirstOrDefault(x => string.Equals(x.ParameterName, spParam.ParamName, StringComparison.OrdinalIgnoreCase)) == null)
                             sqlParameters.Add(new SqlParameter(spParam.ParamName, spParam.SystemTypeName, spParam.Length) { Direction = ParameterDirection.Output });
                     }
@@ -359,6 +384,7 @@ namespace DirectSp.Core
 
                 using (var dataReader = await _dbLayer.ExecuteReaderAsync(sqlCommand))
                 {
+
                     //Fill Recordset and close dataReader BEFORE reading sqlParameters
                     ReadRecordset(spCallResults, dataReader, spInfo, invokeOptions);
                     dataReader.Close();
@@ -374,6 +400,7 @@ namespace DirectSp.Core
                         //ignore input parameter
                         if (sqlParam.Direction == ParameterDirection.Input)
                             continue;
+
                         spInfo.ExtendedProps.Params.TryGetValue(sqlParam.ParameterName, out SpParamEx spParamEx);
 
                         //process @Context
@@ -411,9 +438,7 @@ namespace DirectSp.Core
         private void SignJwt(SqlParameter sqlParam, SpParamEx spParamEx)
         {
             if (spParamEx?.SignType == SpSignMode.JwtByCertThumb)
-            {
                 sqlParam.Value = _tokenSigner.Sign(sqlParam.Value.ToString());
-            }
         }
 
         private string CheckJwt(KeyValuePair<string, object> callerParam, SpParam spParam, SpParamEx spParamEx)
@@ -422,9 +447,12 @@ namespace DirectSp.Core
             if (spParamEx?.SignType == SpSignMode.JwtByCertThumb && !spParam.IsOutput)
             {
                 string token = callerParam.Value.ToString();
-                if (string.IsNullOrEmpty(token)) return string.Empty;
+                if (string.IsNullOrEmpty(token))
+                    return string.Empty;
+
                 if (!_tokenSigner.CheckSign(token))
                     throw new SpInvalidParamSignature(callerParam.Key);
+                
                 // Set param value by token payload
                 return token.Split('.')[1].FromBase64();
             }
@@ -454,6 +482,7 @@ namespace DirectSp.Core
         {
             if (SpInfos.TryGetValue(spName, out SpInfo sqlSp))
                 return sqlSp;
+
             return null;
         }
 
@@ -488,7 +517,9 @@ namespace DirectSp.Core
         {
             // fix null
             if (value == DBNull.Value)
+            {
                 return null;
+            }
 
             // try convert json
             if (Util.IsJsonString(value as string))
@@ -531,6 +562,7 @@ namespace DirectSp.Core
                 var recordsetFields = new Dictionary<string, string>();
                 for (int i = 0; i < dataReader.FieldCount; i++)
                     recordsetFields[dataReader.GetName(i)] = fieldInfos[i].TypeName;
+
                 spCallResult.Add("RecordsetFields", recordsetFields);
             }
 
@@ -556,7 +588,20 @@ namespace DirectSp.Core
 
                     // Add Alternative Calendar
                     if (AlternativeIsDateTime(fieldInfos[i].TypeName))
+                    {
                         row.Add(AlternativeGetFieldName(dataReader.GetName(i)), AlternativeFormatDateTime(itemValue, fieldInfos[i].TypeName));
+                    }
+                }
+                if (!string.IsNullOrEmpty(spInfo.ExtendedProps.ErrorColumn) && row[spInfo.ExtendedProps.ErrorColumn] != null)
+                {
+                    dynamic errorJson = JsonConvert.DeserializeObject(row[spInfo.ExtendedProps.ErrorColumn].ToString());
+                    row[spInfo.ExtendedProps.ErrorColumn] = new SpCallError
+                    {
+                        ErrorNumber = errorJson.errorId,
+                        ErrorProcName = errorJson.errorProcName,
+                        ErrorMessage = errorJson.errorMessage,
+                        ErrorName = errorJson.errorName
+                    };
                 }
                 recordset.Add(row);
             }
@@ -572,6 +617,7 @@ namespace DirectSp.Core
             {
                 if (i > 0)
                     stringBuilder.Append("\t");
+
                 var fieldName = Options.UseCamelCase ? Util.ToCamelCase(dataReader.GetName(i)) : dataReader.GetName(i);
                 stringBuilder.Append(fieldName);
 
@@ -587,7 +633,10 @@ namespace DirectSp.Core
                 for (int i = 0; i < dataReader.FieldCount; i++)
                 {
                     if (i > 0)
+                    {
                         stringBuilder.Append("\t");
+                    }
+
                     var itemValue = ConvertDataFromDb(invokeOptions, dataReader.GetDataTypeName(i), dataReader.GetValue(i), fieldInfos[i].IsUseMoneyConversionRate);
                     string itemValueString = itemValue?.ToString().Trim();
 
@@ -682,7 +731,9 @@ namespace DirectSp.Core
             // Check interval time
             var lifeTime = DateTime.Now.AddSeconds(-Options.DownloadedRecordsetFileLifetime);
             if (LastCleanTempFolderTime != null && LastCleanTempFolderTime > lifeTime)
+            {
                 return; // Last cleaning was not far
+            }
 
             //clean recordets folder
             var files = Directory.GetFiles(InvokerPath.RecordsetsFolder);
@@ -690,7 +741,9 @@ namespace DirectSp.Core
             {
                 FileInfo fi = new FileInfo(file);
                 if (fi.LastAccessTime < lifeTime)
+                {
                     fi.Delete();
+                }
             }
 
             LastCleanTempFolderTime = DateTime.Now;
@@ -711,10 +764,15 @@ namespace DirectSp.Core
         private async Task CheckDuplicateRequest(string requestId, int commandTimeout = 30)
         {
             if (string.IsNullOrEmpty(requestId))
+            {
                 return;
+            }
 
             // 0 is treated as 2 hours
-            if (commandTimeout == 0) commandTimeout = 2 * 3600;
+            if (commandTimeout == 0)
+            {
+                commandTimeout = 2 * 3600;
+            }
 
             // Calculating time to life base on sp command time out
             int timeToLife = Math.Max(commandTimeout * 2, 15 * 60); //the minimum value of timeToLife is 15 min

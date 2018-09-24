@@ -5,6 +5,7 @@ namespace DirectSp.Core
 {
     public class SpInvokerConfig
     {
+        public bool DownloadEnable { get; set; }
         public string ConnectionString { get; set; }
         public string Schema { get; set; }
         public SpInvokerOptions Options { get; set; }

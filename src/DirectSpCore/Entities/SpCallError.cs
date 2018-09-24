@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace DirectSp.Core.Entities
+﻿namespace DirectSp.Core.Entities
 {
     public class SpCallError
     {

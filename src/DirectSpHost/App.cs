@@ -1,12 +1,12 @@
 ﻿using DirectSp.Core;
-using Microsoft.Extensions.Configuration;
-using System.Security.Cryptography.X509Certificates;
-using DirectSp.Core.Entities;
-using System.IO;
-using DirectSp.Host.Settings;
-using DirectSp.Core.InternalDb;
 using DirectSp.Core.Database;
+using DirectSp.Core.Entities;
+using DirectSp.Core.InternalDb;
+using DirectSp.Host.Settings;
+using Microsoft.Extensions.Configuration;
 using System;
+using System.IO;
+using System.Security.Cryptography.X509Certificates;
 
 namespace DirectSp.Host
 {
@@ -30,6 +30,7 @@ namespace DirectSp.Host
             // Resolve SpInvoker internal dependencies
             var spInvokerConfig = new SpInvokerConfig
             {
+                DownloadEnable = AppSettings.DownloadEnable,
                 ConnectionString = AppSettings.ResourceDbConnectionString,
                 Options = spInvokerOptions,
                 Schema = AppSettings.ResourceDbSchema,
@@ -57,7 +58,7 @@ namespace DirectSp.Host
             var certStore = new X509Store(StoreName.My, StoreLocation.LocalMachine, OpenFlags.OpenExistingOnly);
             if (!string.IsNullOrEmpty(KestlerSettings.ListenIp) && !string.IsNullOrEmpty(KestlerSettings.SslCertificateThumb))
             {
-                var certList = certStore.Certificates.Find(X509FindType.FindByThumbprint, KestlerSettings.SslCertificateThumb, false);
+                var certList = certStore.Certificates.Find(X509FindType.FindByThumbprint, KestlerSettings.SslCertificateThumb, true);
                 KestrelSslCertificate = certList.Count > 0 ? certList[0] : null;
             }
         }

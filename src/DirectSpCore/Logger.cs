@@ -18,6 +18,7 @@ namespace DirectSp.Core
         {
             var logRepository = LogManager.GetRepository(Assembly.GetEntryAssembly());
             XmlConfigurator.Configure(logRepository, new FileInfo("log4net.config"));
+            log4net.GlobalContext.Properties["tab"] = "\t";
 
             return LogManager.GetLogger(
                 MethodBase.GetCurrentMethod().DeclaringType

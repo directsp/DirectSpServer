@@ -20,6 +20,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="log4net" Version="2.0.8" />
+    <PackageReference Include="log4net.AspNetCore" Version="1.0.0" />
+    <PackageReference Include="log4net.Extensions.AspNetCore" Version="1.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.All" Version="2.1.2" />
   </ItemGroup>
 
@@ -35,9 +38,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Certificates\IrancardAuth.cer">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <Folder Include="Certificates\" />
+    <Folder Include="Log\" />
   </ItemGroup>
 
 </Project>

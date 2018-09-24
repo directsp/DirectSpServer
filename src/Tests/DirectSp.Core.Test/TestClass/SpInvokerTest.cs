@@ -137,5 +137,11 @@ namespace DirectSp.Core.Test.TestClass
             }
         }
 
+        [TestMethod]
+        public async Task TestBulkErrorWrapper()
+        {
+            throw new NotImplementedException();
+        }
+
     }
 }

@@ -4,12 +4,12 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>DirectSpClient</AssemblyName>
     <RootNamespace>DirectSp.DirectSpClient</RootNamespace>
-    <Authors>Mohammad Nikravan</Authors>
+    <Authors>Mohammad Nikravan,Behnam eyvazpoor</Authors>
     <PackageId>DirectSpClient</PackageId>
     <PackageTags>DirectSp Client .NET</PackageTags>
     <Company>directsp.net</Company>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>1.0.7</Version>
+    <Version>1.0.9</Version>
     <FileVersion>1.0.0.0</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
