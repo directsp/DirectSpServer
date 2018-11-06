@@ -138,17 +138,19 @@ namespace DirectSp.Core
 
         public async Task<SpCallResult[]> Invoke(SpCall[] spCalls, SpInvokeParams spInvokeParams)
         {
-            //Check DuplicateRequest if spCalls contian at least one write
-            foreach (var spCall in spCalls)
-            {
-                var spInfo = FindSpInfo($"{Schema}.{spCall.Method}");
-                if (spInfo != null && spInfo.ExtendedProps.DataAccessMode == SpDataAccessMode.Write)
-                {
-                    await CheckDuplicateRequest(spInvokeParams.InvokeOptions.RequestId, 3600 * 2);
-                    break;
-                }
-            }
 
+            //Check DuplicateRequest if spCalls contian at least one write
+            var spInfo = FindSpInfo($"{Schema}.{spCalls.FirstOrDefault().Method}");
+            if (spInfo != null && spInfo.ExtendedProps.DataAccessMode == SpDataAccessMode.Write)
+                await CheckDuplicateRequest(spInvokeParams.InvokeOptions.RequestId, 3600 * 2);
+
+            if (spInfo != null && spInfo.ExtendedProps.Async)
+                return await InvokeBatchAsync(spCalls, spInvokeParams);
+            else return InvokeBatch(spCalls, spInvokeParams);
+        }
+
+        private async Task<SpCallResult[]> InvokeBatchAsync(SpCall[] spCalls, SpInvokeParams spInvokeParams)
+        {
             var spi = new SpInvokeParamsInternal
             {
                 SpInvokeParams = spInvokeParams,
@@ -158,9 +160,7 @@ namespace DirectSp.Core
             var spCallResults = new List<SpCallResult>();
             var tasks = new List<Task<SpCallResult>>();
             foreach (var spCall in spCalls)
-            {
                 tasks.Add(Invoke(spCall, spi));
-            }
 
             try
             {
@@ -172,18 +172,38 @@ namespace DirectSp.Core
             }
 
             foreach (var item in tasks)
-            {
                 if (item.IsCompletedSuccessfully)
                 {
-                    ((SpCallResult)item.Result).Add("error", null);
+                    item.Result.Add("error", null);
                     spCallResults.Add(item.Result);
                 }
                 else
                     spCallResults.Add(new SpCallResult { { "error", SpExceptionAdapter.Convert(this, item.Exception.InnerException).SpCallError } });
-            }
 
             return spCallResults.ToArray();
         }
+
+        private SpCallResult[] InvokeBatch(SpCall[] spCalls, SpInvokeParams spInvokeParams)
+        {
+            var spi = new SpInvokeParamsInternal
+            {
+                SpInvokeParams = spInvokeParams,
+                IsBatch = true
+            };
+
+            var spCallResults = new List<SpCallResult>();
+            foreach (var spCall in spCalls)
+                try
+                {
+                    spCallResults.Add(Invoke(spCall, spi).Result);
+                }
+                catch (Exception ex) {
+                    spCallResults.Add(new SpCallResult { { "error", SpExceptionAdapter.Convert(this, ex.InnerException).SpCallError } });
+                }
+
+            return spCallResults.ToArray();
+        }
+
 
         public async Task<SpCallResult> Invoke(SpCall spCall)
         {
@@ -452,7 +472,7 @@ namespace DirectSp.Core
 
                 if (!_tokenSigner.CheckSign(token))
                     throw new SpInvalidParamSignature(callerParam.Key);
-                
+
                 // Set param value by token payload
                 return token.Split('.')[1].FromBase64();
             }

@@ -142,13 +142,9 @@ namespace DirectSp.AuthServer
                 {
                 }
                 else if (context.Request.IsRefreshTokenGrantType())
-                {
                     await AuthDB.User_OnRefreshingToken(GetUserId(context.Ticket), context.Request.ClientId, context.Request.GetScopes());
-                }
                 else
-                {
                     throw new OpenIdConnectException(OpenIdConnectConstants.Errors.UnsupportedGrantType, "the grant type is not supported");
-                }
             }
             catch (Exception ex)
             {
@@ -216,9 +212,7 @@ namespace DirectSp.AuthServer
                 }
 
                 if (context.Ticket.HasScope("national_number"))
-                {
                     if (!String.IsNullOrWhiteSpace(user.NationalNumber)) context.Claims["national_number"] = user.NationalNumber;
-                }
 
                 if (context.Ticket.HasScope(OpenIdConnectConstants.Scopes.Address))
                 {
