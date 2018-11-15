@@ -1,0 +1,23 @@
+{
+  "name": "ts",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/dspClient.ts",
+  "typings": "",
+  "scripts": {
+    "prepare": "npm run build",
+    "build": "tsc"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "typescript": "^3.1.6"
+  },
+  "files": [
+    "lib"
+  ],
+  "dependencies": {
+    "requirejs": "^2.3.6"
+  }
+}
