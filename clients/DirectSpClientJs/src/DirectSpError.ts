@@ -1,6 +1,6 @@
-import Utility from "./util/Utility";
+import { Utility } from "./DirectSpUtil";
 
-export default class DirectSpError extends Error {
+export class DirectSpError extends Error {
     public errorType: string | null = null;
     public errorName: string | null = null;
     public errorNumber: number | null = null;
@@ -10,12 +10,14 @@ export default class DirectSpError extends Error {
     public status: number | null = null;
     public statusText: string | null = null;
     public innerError: Error | null = null;
+    public errorData:any = null;
 
     constructor(message: string) {
         super(message);
+        this.errorMessage = message;
     }
 
-    static convert(data: any): DirectSpError {
+    static create(data: any): DirectSpError {
         // already converted
         if (data instanceof DirectSpError) return data;
 
@@ -72,7 +74,7 @@ export default class DirectSpError extends Error {
             try {
                 let obj = JSON.parse(error.errorDescription);
                 if (obj.errorName || obj.errorNumber)
-                    return DirectSpError.convert(obj);
+                    return DirectSpError.create(obj);
             } catch (e) { }
         }
 
@@ -86,3 +88,21 @@ export default class DirectSpError extends Error {
     }
 }
 
+
+export namespace exceptions {
+    export class NotSupportedException extends DirectSpError {
+        constructor(message?:string) {
+            super("The operation is not supported!" + message ? " " + message : "");
+            this.errorType = "Client";
+            this.errorName = "NotSupportedException";
+        }
+    }
+
+    export class NotImplementedException extends DirectSpError {
+        constructor(message?:string) {
+            super("The method is not implemeneted!" + message ? " " + message : "");
+            this.errorType = "Client";
+            this.errorName = "NotImplementedException";
+        }
+    }
+}
