@@ -1,3 +1,5 @@
+import { IDirectSpKeyToAny } from "./DirectSpUtil";
+
 export interface IDirectSpStorage {
     getItem(key: string): Promise<string | null>;
     setItem(key: string, value: string): Promise<void>;
@@ -29,5 +31,23 @@ export class DirectSpHtmlStorage implements IDirectSpStorage {
             this._storage.removeItem(key);
             resolve();
         });
+    }
+}
+
+export class DirectSpMemStorage implements IDirectSpStorage {
+    private _data: IDirectSpKeyToAny = {};
+    
+    public getItem(key: string): Promise<string> {
+        return Promise.resolve(this._data[key]);
+    }
+    
+    public setItem(key: string, value: string): Promise<void> {
+        this._data[key] = value;
+        return Promise.resolve();
+    }
+    
+    public removeItem(key: string): Promise<void> {
+        delete this._data[key];
+        return Promise.resolve();
     }
 }

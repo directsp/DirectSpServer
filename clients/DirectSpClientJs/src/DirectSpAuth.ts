@@ -287,7 +287,7 @@ export class DirectSpAuth {
             try {
                 const response = await this.dspClient._fetch({
                     url: this.tokenEndpointUri,
-                    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+                    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=utf-8" },
                     data: data,
                     method: "POST"
                 });
@@ -446,7 +446,7 @@ export class DirectSpAuth {
             url: this.tokenEndpointUri,
             method: "POST",
             headers: {
-                "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+                "Content-Type": "application/x-www-form-urlencoded;charset=utf-8",
                 authorization: this.authorizationHeader
             },
             data: {
@@ -525,7 +525,7 @@ export class DirectSpAuth {
                 url: this.tokenEndpointUri,
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
+                    "Content-Type": "application/x-www-form-urlencoded;charset=utf-8"
                 },
                 data: requestParam,
             });

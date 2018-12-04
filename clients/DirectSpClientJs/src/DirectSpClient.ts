@@ -9,7 +9,7 @@ import { DirectSpHelp } from "./DirectSpHelp";
 
 export interface IDirectSpOptions {
     homePageUri?: string;
-    resourceApiUri?: string;
+    resourceApiUri: string;
     isAutoReload?: boolean;
     isLogEnabled?: boolean;
     isUseAppErrorHandler?: boolean;
@@ -52,9 +52,9 @@ export interface IDirectSpInvokeResult extends IDirectSpKeyToAny {
 
 
 export interface IDirectSpHookParams {
-    isHandled: boolean;
     invokeParams: IDirectSpInvokeParams;
     delay: number
+    isRandomDelay: boolean;
 }
 
 /**
@@ -86,7 +86,7 @@ export class DirectSpClient {
     public onError: ((error: DirectSpErrorController) => void) | null = null;
     public onAuthorized: ((data: IDirectSpAuthorizedData) => void) | null = null;
     public onNewVersion: (() => void) | null = null;
-    public onBeforeInvoke: ((hookParams: IDirectSpHookParams) => Promise<IDirectSpRequest>) | null = null;
+    public onBeforeInvoke: ((hookParams: IDirectSpHookParams) => Promise<IDirectSpRequest | void>) | null = null;
 
     public constructor(options: IDirectSpOptions) {
 
@@ -131,15 +131,13 @@ export class DirectSpClient {
     public get sessionState(): string { return this._sessionState; }
 
     //navigate to directSp auth server
-    public init(): Promise<boolean> {
+    public async init(): Promise<boolean> {
         console.log("DirectSp: initializing ...");
-        return this._load().then(() => {
-            return this._auth ? this._auth.init() : true;
-
-        });
+        await this._load();
+        return this._auth ? this._auth.init() : true;
     }
 
-    private _load(): Promise<void> {
+    private async _load(): Promise<void> {
         let promises = [];
         let prefix: string = this._storageNamePrefix;
 
@@ -164,8 +162,7 @@ export class DirectSpClient {
 
         } catch (err) { }
 
-        return Promise.all(promises)
-            .then(() => { });
+        await Promise.all(promises);
     };
 
     /**
@@ -211,28 +208,27 @@ export class DirectSpClient {
         return this.invoke2(invokeParams);
     };
 
-    public invoke2(invokeParams: IDirectSpInvokeParams): Promise<IDirectSpInvokeResult> {
+    public async invoke2(invokeParams: IDirectSpInvokeParams): Promise<IDirectSpInvokeResult> {
         //validate
         if (!invokeParams.spCall) throw new DirectSpError("spCall is expected");
         if (!invokeParams.spCall.method) throw new DirectSpError("spCall.method is expected");
         if (!this.resourceApiUri) throw new DirectSpError("resourceApiUri has not been set!");
 
         //call api
-        return this._invokeCore(invokeParams).then(result => {
-            // manage auto download
-            if (invokeParams.invokeOptions && invokeParams.invokeOptions.autoDownload) {
-                if (!Utility.isHtmlHost)
-                    throw new exceptions.NotSupportedException("autoDownload");
-                window.location = result.recordsetUri;
-            }
-            return result;
-        });
+        const result = await this._invokeCore(invokeParams);
+        // manage auto download
+        if (invokeParams.invokeOptions && invokeParams.invokeOptions.autoDownload) {
+            if (!Utility.isHtmlHost)
+                throw new exceptions.NotSupportedException("autoDownload");
+            window.location = result.recordsetUri;
+        }
+        return result;
     };
 
 
     // Invoke Preperation
     // manage seqGroup, write log and append requestId
-    private _invokeCore(invokeParams: IDirectSpInvokeParams): Promise<any> {
+    private async _invokeCore(invokeParams: IDirectSpInvokeParams): Promise<any> {
 
         //set default options
         if (!invokeParams.invokeOptions) invokeParams.invokeOptions = {};
@@ -266,25 +262,22 @@ export class DirectSpClient {
         invokeParams.invokeOptions.requestId = Utility.generateGuid();
 
         //invoke
-        return this._invokeCore2(invokeParams)
-            .then(result => {
-                if (seqGroup && seqGroupValue && seqGroupValue != this._seqGroups[seqGroup])
-                    throw new DirectSpError("request has been suppressed by seqGroup!");
-
-                //log response
-                if (this.isLogEnabled)
-                    console.log("DirectSp: invoke (Response)", method, invokeParams, result);
-
-                return result;
-            })
-            .catch(error => {
-                if (seqGroup && seqGroupValue && seqGroupValue != this._seqGroups[seqGroup])
-                    throw new DirectSpError("request has been suppressed by seqGroup!");
-
-                if (this.isLogEnabled)
-                    console.warn("DirectSp: invoke (Response)", method, invokeParams, error);
-                throw error;
-            });
+        try {
+            const result = await this._invokeCore2(invokeParams);
+            if (seqGroup && seqGroupValue && seqGroupValue != this._seqGroups[seqGroup])
+                throw new DirectSpError("request has been suppressed by seqGroup!");
+            //log response
+            if (this.isLogEnabled)
+                console.log("DirectSp: invoke (Response)", method, invokeParams, result);
+            return result;
+        }
+        catch (error) {
+            if (seqGroup && seqGroupValue && seqGroupValue != this._seqGroups[seqGroup])
+                throw new DirectSpError("request has been suppressed by seqGroup!");
+            if (this.isLogEnabled)
+                console.warn("DirectSp: invoke (Response)", method, invokeParams, error);
+            throw error;
+        }
     };
 
     //Handle Hook and delay
@@ -293,11 +286,11 @@ export class DirectSpClient {
         let hookParams: IDirectSpHookParams = {
             invokeParams: invokeParams,
             delay: 0,
-            isHandled: false
+            isRandomDelay: false
         };
 
         let result = await this._processInvokeHook(hookParams);
-        if (!hookParams.isHandled)
+        if (!result)
             result = this._invokeCore3(hookParams.invokeParams);
 
         //return the promise if there is no api delay
@@ -307,9 +300,10 @@ export class DirectSpClient {
         //proces delay
         return new Promise((resolve) => {
             let interval = hookParams.delay;
-            let delay = Utility.getRandomInt(interval / 2, interval + interval / 2);
-            console.warn(`DirectSp: Warning! {method} is delayed by {delay} milliseconds`);
-            setTimeout(() => resolve(), delay);
+            let delay = hookParams.isRandomDelay ? Utility.getRandomInt(interval / 2, interval + interval / 2) : interval;
+            if (invokeParams.spCall && invokeParams.spCall.method)
+                console.warn(`DirectSp: Warning! ${invokeParams.spCall.method} is delayed by ${hookParams.delay} milliseconds`);
+            setTimeout(() => result ? resolve(result) : resolve(), delay);
         });
     };
 
@@ -323,12 +317,13 @@ export class DirectSpClient {
             method: "POST",
             headers: {
                 authorization: this.auth ? this.auth.authorizationHeader : null,
-                "Content-Type": "application/json;charset=UTF-8"
+                "Content-Type": "application/json;charset=utf-8"
             },
             cache: invokeParams.invokeOptions ? invokeParams.invokeOptions.cache : false
         });
 
-        this._checkNewVersion(result.headers["DSP-AppVersion"]);
+        if (result.headers)
+            this._checkNewVersion(result.headers["DSP-AppVersion"]);
         return JSON.parse(result.data);
     };
 
@@ -414,24 +409,26 @@ export class DirectSpClient {
         return isReloadNeeded;
     };
 
-    private async _processInvokeHook(hookParams: IDirectSpHookParams): Promise<IDirectSpInvokeResult> {
+    private async _processInvokeHook(hookParams: IDirectSpHookParams): Promise<IDirectSpInvokeResult | void> {
         //return quickly if there is no hook
         if (!this.onBeforeInvoke)
-            return {};
+            return;
 
         // batch does not supported
         if (!hookParams.invokeParams.spCall || hookParams.invokeParams.spCall.method == 'invokeBatch')
-            return {};
+            return;
 
         //run hook
         try {
 
+            //log hook if there is a result
             let result = await this.onBeforeInvoke(hookParams);
-            if (hookParams.isHandled)
-                //log hook
+            if (result) {
                 if (this.isLogEnabled)
                     console.warn("DirectSp: Hooking > ", hookParams.invokeParams.spCall.method, hookParams, result);
-            return Utility.clone(result);
+                return Utility.clone(result)
+            }
+            return result;
 
         } catch (e) {
             // convert user errors to DirectSpError

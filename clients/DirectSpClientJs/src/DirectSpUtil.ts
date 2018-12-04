@@ -210,6 +210,6 @@ export class Utility {
     };
 
     public static get isHtmlHost(): boolean {
-        return window && window.localStorage != null;
+        return false;//window && window.localStorage != null;
     }
 }

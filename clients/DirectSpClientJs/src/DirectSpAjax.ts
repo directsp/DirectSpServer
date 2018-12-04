@@ -12,7 +12,7 @@ export interface IDirectSpRequest {
 
 export interface IDirectSpResponse {
     data: any;
-    headers: any;
+    headers?: any;
 }
 
 export interface IDirectSpAjaxProvider {
@@ -70,7 +70,7 @@ export class DirectSpXmlHttpAjaxProvider implements IDirectSpAjaxProvider {
                 ? request.headers["Content-Type"]
                 : null;
             if (!contentType)
-                contentType = "application/x-www-form-urlencoded;charset=UTF-8"; //default
+                contentType = "application/x-www-form-urlencoded;charset=Utf-8"; //default
             contentType = contentType.toLowerCase();
 
             //convert data based on contentType
