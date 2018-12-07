@@ -1,15 +1,91 @@
 <!DOCTYPE html>
 
 <html lang="en">
+
 <head>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js"></script>
-    <script src="out.js"></script>
-    <script >
-        require(["directSp"], ()=>{
+    <script src="directSp.js"></script>
+    <script>
+        require(["src/directSp"], () => {
+
             console.log(directSp);
+
+            const options = {
+                auth: {
+                    baseEndpointUri: "https://fake_auth_server.local/",
+                    isAutoSignIn: true,
+                    clientId: "1234567",
+                    scope: "offline_access profile",
+                    type: "token",
+                    redirectUri: "https://fakeclient.local/temp/callback",
+                },
+                sessionState: "fake_state",
+                isLogEnabled: true
+            }
+
+            // null protection
+            if (!options.auth) throw new directSp.DirectSpError("options.auth is not initialized!");
+
+
+            //simulate result
+            const client = directSp.TestUtil.CreateDspClient((request) => {
+                const refresh_token1 = "fake_refresh_token1";
+                //login
+                if (request.data && request.data.grant_type == "authorization_code") {
+                    if (!request.data) throw new directSp.DirectSpError("request does not contain data!");
+                    if (!request.headers) throw new directSp.DirectSpError("headers does not contain data!");
+
+                    const tokens = {
+                        access_token: "eyJhbGciOiJSUzI1NiIsImtpZCI6Ijc3NUE5MjkyRjE5RjE0RkMyQjlCODBBQjA2MkEwNkJFODYyMzYxOUMiLCJ0eXAiOiJKV1QifQ.eyJzdWIiOiIxMDAwMTIxNSIsInVzZXJuYW1lIjoiTG95YWx0eV9BZG1pbiIsInRva2VuX3VzYWdlIjoiYWNjZXNzX3Rva2VuIiwianRpIjoiNDZjNzhkMzUtNDQ0OC00NTM4LTlmNGEtZjY4ZGYzZDhjNmM5IiwiY2ZkX2x2bCI6InByaXZhdGUiLCJzY29wZSI6WyJwcm9maWxlIiwib2ZmbGluZV9hY2Nlc3MiLCIyOSJdLCJhdWQiOiJhZG1pbmxveWFsdHlfYTUwMjI1ZjAxN2ZiNDYxMzliOTc4MGU5ODdmMGJhZWEiLCJhenAiOiJhZG1pbmxveWFsdHlfYTUwMjI1ZjAxN2ZiNDYxMzliOTc4MGU5ODdmMGJhZWEiLCJuYmYiOjE1NDQxMzIxMTksImV4cCI6MTU0NDEzMzkxOSwiaWF0IjoxNTQ0MTMyMTE5LCJpc3MiOiJodHRwczovL2F1dGguaXJhbmlhbi5jYXJkcy8iLCJhY3RvcnQiOiJleUpoYkdjaU9pSnViMjVsSWl3aWRIbHdJam9pU2xkVUluMC5leUp6ZFdJaU9pSmhaRzFwYm14dmVXRnNkSGxmWVRVd01qSTFaakF4TjJaaU5EWXhNemxpT1RjNE1HVTVPRGRtTUdKaFpXRWlmUS4ifQ.fakesign",
+                        expires_in: 1800,
+                        refresh_token: refresh_token1,
+                        token_type: "Bearer"
+                    };
+                    return { data: tokens };
+                }
+                else if (request.data && request.data.grant_type == "refresh_token") {
+                    if (!request.data) throw new directSp.DirectSpError("request does not contain data!");
+                    if (!request.headers) throw new directSp.DirectSpError("headers does not contain data!");
+                    expect(request.url).toBe('https://fake_auth_server.local/connect/token');
+                    expect(request.headers["Content-Type"].toLowerCase()).toBe('application/x-www-form-urlencoded;charset=utf-8');
+                    expect(request.data.client_id).toBe('1234567');
+                    expect(request.data.refresh_token).toBe(refresh_token1);
+
+                    const tokens = {
+                        access_token: "eyJhbGciOiJSUzUxMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2p3dC1pZHAuZXhhbXBsZS5jb20iLCJzdWIiOiJtYWlsdG86bWlrZUBleGFtcGxlLmNvbSIsIm5iZiI6MTU0NDE0NTQ3NywiZXhwIjoxOTE0MTkxOTk5LCJpYXQiOjE5MTQxOTE5OTksImp0aSI6ImlkMTIzNDU2IiwidHlwIjoiaHR0cHM6Ly9leGFtcGxlLmNvbS9yZWdpc3RlciJ9.fakesign",
+                        expires_in: 1800,
+                        refresh_token: "fake_refresh_token2",
+                        token_type: "Bearer"
+                    };
+                    return { data: tokens };
+                }
+                else {
+                    throw "Unexpected request!";
+                }
+
+            }, options, { originalUri: new URL(`https://fakeclient.local/temp/callback?response_type=code&code=fake_code&client_id=${options.auth.clientId}&redirect_uri=${options.auth.redirectUri}&state=${options.sessionState}&scope=${options.auth.scope}`) });
+
+            //null protection
+            if (!client.auth) throw new DirectSpError("client.auth is not initialized!");
+            if (!client.auth.authRequest) throw new DirectSpError("client.auth.authRequest is not initialized!");
+
+            //init
+            debugger;
+            client.init();
+            // expect(client.auth.authRequest.client_id).toBe(options.auth.clientId);
+            // expect(client.auth.authRequest.redirect_uri).toBe(options.auth.redirectUri);
+            // expect(client.auth.authRequest.response_type).toBe("code");
+            // expect(client.auth.authRequest.scope).toBe(options.auth.scope);
+            // expect(client.auth.authRequest.state).toBe(options.sessionState);
+            // expect(client.auth.isAuthRequest).toBe(true);
+            // expect(client.auth.isAuthorized).toBe(true);
+
+
         });
     </script>
 </head>
 <html>
-    <body>ssszz</body>
+
+<body>ssszz</body>
+
 </html>

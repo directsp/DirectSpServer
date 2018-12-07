@@ -10,7 +10,7 @@ test('invoke and its options', async () => {
     if (!request.data) throw new DirectSpError("request does not contain data!");
     if (!request.headers) throw new DirectSpError("request does not contain headers!");
 
-    expect(request.url).toBe("https://fakeserver.local/test1");
+    expect(request.url).toBe("https://fake_server.local/test1");
     expect(request.headers["Content-Type"].toLowerCase()).toBe("application/json;charset=utf-8");
     expect(request.data.spCall.method).toBe("test1");
     expect(request.data.spCall.params.param1).toBe(1);

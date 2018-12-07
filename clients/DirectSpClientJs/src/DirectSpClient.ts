@@ -6,10 +6,11 @@ import { DirectSpHtmlStorage, IDirectSpStorage } from "./DirectSpStorage";
 import { Utility, Convert, Uri, IDirectSpKeyToAny } from "./DirectSpUtil";
 import { DirectSpErrorController } from "./DirectSpErrorController";
 import { DirectSpHelp } from "./DirectSpHelp";
+import { IDirectSpControl, DirectSpControlHtml, DirectSpControlNotImplemented } from "./DirectSpControl";
 
 export interface IDirectSpOptions {
     homePageUri?: string;
-    resourceApiUri: string;
+    resourceApiUri?: string;
     isAutoReload?: boolean;
     isLogEnabled?: boolean;
     isUseAppErrorHandler?: boolean;
@@ -17,6 +18,8 @@ export interface IDirectSpOptions {
     dspSessionStorage?: IDirectSpStorage;
     auth?: IDirectSpAuthOptions;
     ajaxProvider?: IDirectSpAjaxProvider;
+    control?: IDirectSpControl;
+    sessionState?: string;
 }
 
 export interface IDirectSpInvokeOptions {
@@ -73,14 +76,14 @@ export class DirectSpClient {
     private readonly _resourceApiUri: string;
     private readonly _ajaxProvider: IDirectSpAjaxProvider;
     private readonly _auth: DirectSpAuth | null;
-    private readonly _originalUri: string | null = null;
-    private readonly _originalQueryString: string | null = null;
+    private readonly _originalUri: URL | null = null;
     private readonly _dspSessionStorage: IDirectSpStorage;
     private readonly _dspLocalStorage: IDirectSpStorage;
     private readonly _seqGroups: { [key: string]: number } = {};
-    private _sessionState: string = Math.floor(Math.random() * 10000000000000).toString();
+    private _sessionState: string;
     private _resourceAppVersion: string | null = null;
     private _systemApi: any = null;
+    private _control: IDirectSpControl;
 
     //Events
     public onError: ((error: DirectSpErrorController) => void) | null = null;
@@ -89,7 +92,7 @@ export class DirectSpClient {
     public onBeforeInvoke: ((hookParams: IDirectSpHookParams) => Promise<IDirectSpRequest | void>) | null = null;
 
     public constructor(options: IDirectSpOptions) {
-
+        
         if (!options.dspLocalStorage) {
             if (!Utility.isHtmlHost)
                 throw new DirectSpError("dspLocalStorage has not been set!");
@@ -102,29 +105,36 @@ export class DirectSpClient {
             options.dspSessionStorage = new DirectSpHtmlStorage(window.sessionStorage);
         }
 
+        if (!options.control && Utility.isHtmlHost) {
+            options.control = new DirectSpControlHtml();
+        }
+
         if (!options.resourceApiUri)
             throw new DirectSpError("resourceApiUri has not been set!");
+            
+        const url:URL | null = options.control && options.control.location ? options.control.location : null;
 
-        this._resourceApiUri = options.resourceApiUri;
-        this._auth = options.auth && options.auth.clientId && options.auth.clientId != "" ? new DirectSpAuth(this, options.auth) : null;
-        this._dspLocalStorage = options.dspLocalStorage;
-        this._dspSessionStorage = options.dspSessionStorage;
-        this._homePageUri = Utility.checkUndefined(options.homePageUri, Utility.isHtmlHost ? window.location.origin : null);
         this.isAutoReload = Utility.checkUndefined<boolean>(options.isAutoReload, true);
         this.isLogEnabled = Utility.checkUndefined<boolean>(options.isLogEnabled, true);
         this.isUseAppErrorHandler = Utility.checkUndefined<boolean>(options.isUseAppErrorHandler, true);
-        this._originalUri = Utility.isHtmlHost ? window.location.href : null;
-        this._originalQueryString = Utility.isHtmlHost ? window.location.search : null;
+        this._control = Utility.checkUndefined(options.control, new DirectSpControlNotImplemented());
+        this._sessionState = options.sessionState ?  options.sessionState : Math.floor(Math.random() * 10000000000000).toString();
+        this._resourceApiUri = options.resourceApiUri;
+        this._dspLocalStorage = options.dspLocalStorage;
+        this._dspSessionStorage = options.dspSessionStorage;
+        this._homePageUri = Utility.checkUndefined(options.homePageUri, url ? url.origin : null);
+        this._originalUri = url ;
         this._ajaxProvider = options.ajaxProvider ? options.ajaxProvider : new DirectSpXmlHttpAjaxProvider();
+        this._auth = options.auth ? new DirectSpAuth(this, options.auth) : null; //must be the last one
     }
 
+    public get control(): IDirectSpControl { return this._control; }
     public get homePageUri(): string | null { return this._homePageUri; }
     public get storageNamePrefix(): string { return this._storageNamePrefix; }
     public get ajaxProvider(): IDirectSpAjaxProvider { return this._ajaxProvider };
     public get resourceApiUri(): string { return this._resourceApiUri; }
     public get auth(): DirectSpAuth | null { return this._auth; }
-    public get originalQueryString(): string | null { return this._originalQueryString; }
-    public get originalUri(): string | null { return this._originalUri; }
+    public get originalUri(): URL | null { return this._originalUri; }
     public get resourceAppVersion(): string | null { return this._resourceAppVersion; }
     public get dspLocalStorage(): IDirectSpStorage { return this._dspLocalStorage; }
     public get dspSessionStorage(): IDirectSpStorage { return this._dspSessionStorage; }
@@ -132,7 +142,8 @@ export class DirectSpClient {
 
     //navigate to directSp auth server
     public async init(): Promise<boolean> {
-        console.log("DirectSp: initializing ...");
+        if (this.isLogEnabled)
+            console.log("DirectSp: initializing ...");
         await this._load();
         return this._auth ? this._auth.init() : true;
     }
@@ -218,9 +229,7 @@ export class DirectSpClient {
         const result = await this._invokeCore(invokeParams);
         // manage auto download
         if (invokeParams.invokeOptions && invokeParams.invokeOptions.autoDownload) {
-            if (!Utility.isHtmlHost)
-                throw new exceptions.NotSupportedException("autoDownload");
-            window.location = result.recordsetUri;
+            this.control.download(result.recordsetUri);
         }
         return result;
     };
@@ -301,7 +310,7 @@ export class DirectSpClient {
         return new Promise((resolve) => {
             let interval = hookParams.delay;
             let delay = hookParams.isRandomDelay ? Utility.getRandomInt(interval / 2, interval + interval / 2) : interval;
-            if (invokeParams.spCall && invokeParams.spCall.method)
+            if (this.isLogEnabled && invokeParams.spCall && invokeParams.spCall.method)
                 console.warn(`DirectSp: Warning! ${invokeParams.spCall.method} is delayed by ${hookParams.delay} milliseconds`);
             setTimeout(() => result ? resolve(result) : resolve(), delay);
         });
@@ -330,7 +339,7 @@ export class DirectSpClient {
     //manage onError
     public async _fetch(request: IDirectSpRequest): Promise<IDirectSpResponse> {
         try {
-            return this._fetch2(request);
+            return await this._fetch2(request);
         }
         catch (error) {
             // create error controller
@@ -349,22 +358,20 @@ export class DirectSpClient {
         }
     }
 
-    //manage RefreshToken
+    //manage auth and RefreshToken
     private async _fetch2(request: IDirectSpRequest): Promise<IDirectSpResponse> {
+        if (this.auth && request.data && request.data.grant_type != 'refresh_token')
+        {
+            //refreshing token
+            await this.auth.refreshToken();
 
-        //check if request require authentication
-        if (!this.auth || !request.headers || !request.headers.authorization)
-            return this._fetchProvider(request); //there is no token
-
-        //refreshing token
-        if (request.data && request.data.grant_type == 'refresh_token')
-            return this._fetchProvider(request); //prevent loop
-
-        await this.auth.refreshToken();
-        request.headers.authorization = this.auth.authorizationHeader; //update request token
+            //update authorization header
+            if (request.headers)
+                request.headers.authorization = this.auth.authorizationHeader; //update request token
+        }
 
         // fetch again with valid token
-        return this._fetch(request);
+        return this._fetchProvider(request);
     }
 
     private _fetchProvider(request: IDirectSpRequest): Promise<IDirectSpResponse> {
@@ -402,7 +409,7 @@ export class DirectSpClient {
             // auto reload page
             if (this.isAutoReload && Utility.isHtmlHost) {
                 console.log("DirectSp: New version detected! Reloading ...");
-                window.location.reload(true);
+                this.control.reload();
             }
         }
 

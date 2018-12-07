@@ -74,7 +74,7 @@ export class DirectSpAuth {
 
         this._lastPageUri = dspClient.homePageUri;
         this._clientId = Utility.checkUndefined(options.clientId, "");
-        this._redirectUri = Utility.checkUndefined(options.redirectUri, Utility.isHtmlHost ? window.location.origin + "/oauth2/callback" : null);
+        this._redirectUri = Utility.checkUndefined(options.redirectUri, dspClient.originalUri ? dspClient.originalUri.origin + "/oauth2/callback" : null);
         this._scope = Utility.checkUndefined(options.scope, this._scope); //openid offline_access profile phone email address
         this._type = Utility.checkUndefined(options.type, this._type); //token, code
         this._isPersistent = Utility.checkUndefined(options.isPersistent, this._isPersistent);
@@ -94,15 +94,15 @@ export class DirectSpAuth {
         if (options.userinfoEndpointUri) this._userinfoEndpointUri = options.userinfoEndpointUri;
         if (options.logoutEndpointUri) this._logoutEndpointUri = options.logoutEndpointUri;
 
-        const requestClientId: string | null = Uri.getParameterByName("client_id");
+        const requestClientId: string | null = this._getParameterByName("client_id");
         if (requestClientId) {
             this._authRequest =
                 {
                     client_id: requestClientId,
-                    redirect_uri: Uri.getParameterByName("redirect_uri"),
-                    scope: Uri.getParameterByName("scope"),
-                    response_type: Uri.getParameterByName("response_type"),
-                    state: Uri.getParameterByName("state")
+                    redirect_uri: this._getParameterByName("redirect_uri"),
+                    scope: this._getParameterByName("scope"),
+                    response_type: this._getParameterByName("response_type"),
+                    state: this._getParameterByName("state")
                 };
         }
 
@@ -131,6 +131,12 @@ export class DirectSpAuth {
     public set isPersistent(value: boolean) {
         this._isPersistent = value;
         this.dspClient.dspLocalStorage.setItem(this.storageNamePrefix + "isPersistent", value.toString());
+    }
+
+    private _getParameterByName(paramName: string): string | null {
+        if (!this.dspClient.originalUri)
+            return null;
+        return Uri.getParameterByName(paramName, this.dspClient.originalUri.href);
     }
 
     private _setUserInfo(value: IUserInfo | null) {
@@ -163,26 +169,26 @@ export class DirectSpAuth {
 
     public get authRequest(): IAuthRequest | null { return this._authRequest; }
     public get authRequestUri(): string | null {
-        if (!Utility.isHtmlHost)
-            throw new exceptions.NotSupportedException();
-        return (window.location.origin + "?" + Convert.toQueryString(this._authRequest));
+        if (!this.dspClient.originalUri)
+            return null;
+        return this.dspClient.originalUri.origin + "?" + Convert.toQueryString(this._authRequest);
     }
 
-    public get isAuthRequest() {
-        return this.authRequest && this.authRequest.client_id && this.authRequest.state;
+    public get isAuthRequest(): boolean {
+        return this.authRequest != null && this.authRequest.client_id != null && this.authRequest.state != null;
     }
 
-    public get isAuthCallback() {
-        let callbackPattern = this.authorizeEndpointUri;
-        return callbackPattern && location && location.href && location.href.indexOf(callbackPattern) != -1;
+    public get isAuthCallback(): boolean {
+        let callbackPattern = this.redirectUri;
+        return callbackPattern != null && this.dspClient.originalUri != null && this.dspClient.originalUri.href.indexOf(callbackPattern) != -1;
     }
 
     public async init(): Promise<boolean> {
         //process error
-        if (Uri.getParameterByName("error") != null) {
+        if (this._getParameterByName("error") != null) {
             this._authError = DirectSpError.create({
-                error: Uri.getParameterByName("error"),
-                error_description: Uri.getParameterByName("error_description")
+                error: this._getParameterByName("error"),
+                error_description: this._getParameterByName("error_description")
             });
 
             console.error("DirectSp: Auth Error!", this._authError);
@@ -195,9 +201,9 @@ export class DirectSpAuth {
         try {
             await this._load();
             await this.refreshToken();
-            const result: boolean = await this._processAuthCallback();
+            await this._processAuthCallback();
             this._fireAuthorizedEvent();
-            return result;
+            return true;
         }
         catch (error) {
             this._fireAuthorizedEvent();
@@ -259,17 +265,17 @@ export class DirectSpAuth {
 
         //check is oauth2callback
         if (!this.isAuthCallback)
-            return Promise.resolve(false);
+            return false;
 
         //check state and do nothing if it is not matched
-        let state = Uri.getParameterByName("state");
+        let state = this._getParameterByName("state");
         if (this.dspClient.sessionState != state) {
             this.setTokens(null);
             throw new DirectSpError("Invalid sessionState!");
         }
 
         //process authorization_code flow
-        const code = Uri.getParameterByName("code");
+        const code = this._getParameterByName("code");
         if (code != null) {
 
             //validating configuration
@@ -292,7 +298,7 @@ export class DirectSpAuth {
                     method: "POST"
                 });
                 const tokens: IToken = JSON.parse(response.data);
-                return this.setTokens(tokens);
+                return await this.setTokens(tokens);
             }
             catch (error) {
                 this.setTokens(null);
@@ -301,11 +307,11 @@ export class DirectSpAuth {
         }
 
         //process implicit flow
-        const access_token: string | null = Uri.getParameterByName("access_token");
+        const access_token: string | null = this._getParameterByName("access_token");
         if (access_token) {
 
             //make sure token_type exists
-            const token_type: string | null = Uri.getParameterByName("token_type");
+            const token_type: string | null = this._getParameterByName("token_type");
             if (!token_type)
                 throw new DirectSpError("access_Token returned without token_type!");
 
@@ -313,8 +319,8 @@ export class DirectSpAuth {
             await this.setTokens({
                 access_token: access_token,
                 token_type: token_type,
-                expires_in: Convert.toInteger(Uri.getParameterByName("expires_in"), 0),
-                refresh_token: null
+                expires_in: Convert.toInteger(this._getParameterByName("expires_in"), 0),
+                refresh_token: null,
             });
         }
 
@@ -326,7 +332,7 @@ export class DirectSpAuth {
 
         // check is token changed
         if (value == this._tokens)
-            return Promise.resolve(true); //no change
+            return true; //no change
 
         //set token
         this._tokens = value;
@@ -367,6 +373,7 @@ export class DirectSpAuth {
             return true;
         }
         catch (e) {
+            console.error("Failed to retrieve user info!", e);
             return false;
         }
     };
@@ -390,12 +397,9 @@ export class DirectSpAuth {
             headers: { authorization: this.authorizationHeader }
         };
 
-        // refresh token
-        await this.refreshToken();
-
         // fetch data
-        const result: any = await this.dspClient._fetch(request);
-        const userInfo: IUserInfo = JSON.parse(result);
+        const result = await this.dspClient._fetch(request);
+        const userInfo: IUserInfo = JSON.parse(result.data);
         if (this.dspClient.isLogEnabled)
             console.log("DirectSp: userInfo", userInfo);
         return userInfo;
@@ -459,7 +463,7 @@ export class DirectSpAuth {
         try {
             //current token has been refreshed and valid
             const result = await this.dspClient._fetch(request);
-            this.setTokens(JSON.parse(result.data), false);
+            await this.setTokens(JSON.parse(result.data), false);
         }
         catch (error) {
             if (this.isAuthorized && this._isTokenExpiredError(error))
@@ -476,11 +480,16 @@ export class DirectSpAuth {
 
     private _fireAuthorizedEvent(): void {
         setTimeout(() => {
-            //fire the event
-            if (this.isAuthorized)
-                console.log("DirectSp: User has been authorized", this.userInfo);
-            else console.log("DirectSp: User has not been authorized!");
 
+            //fire the event
+            if (this.dspClient.isLogEnabled) {
+                if (this.isAuthorized)
+                    console.log("DirectSp: User has been authorized", this.userInfo);
+                else
+                    console.log("DirectSp: User has not been authorized!");
+            }
+
+            //auto signin
             if (!this.isAuthorized && this.isAutoSignIn) {
                 this.signIn();
                 return;
@@ -560,8 +569,10 @@ export class DirectSpAuth {
             };
 
             this.isAutoSignIn = false; //let leave the page
-            window.location.href =
-                this.logoutEndpointUri + "?" + Convert.toQueryString(params);
+            if (this.logoutEndpointUri) {
+                const uri: string = this.logoutEndpointUri + "?" + Convert.toQueryString(params);
+                this.dspClient.control.navigate(uri);
+            }
         }
 
         // always fire AuthorizedEvent
@@ -579,8 +590,8 @@ export class DirectSpAuth {
 
         //submit
         let url: string = this.authorizeEndpointUri;
-        if (this.dspClient.originalQueryString)
-            url = url + this.dspClient.originalQueryString;
+        if (this.dspClient.originalUri)
+            url = url + this.dspClient.originalUri.search;
         Html.submit(url, requestParam);
     };
 
@@ -595,18 +606,16 @@ export class DirectSpAuth {
 
         //submit
         let url: string = this.authorizeEndpointUri;
-        if (this.dspClient.originalQueryString)
-            url = url + this.dspClient.originalQueryString;
+        if (this.dspClient.originalUri)
+            url = url + this.dspClient.originalUri.search;
         Html.submit(url, requestParam);
     };
 
     //navigate to directSp auth server
     public signIn(): void {
-        if (!Utility.isHtmlHost)
-            throw new exceptions.NotSupportedException();
-
         //save current location
-        this.dspClient.dspSessionStorage.setItem(this.storageNamePrefix + "lastPageUri", window.location.href);
+        if (this.dspClient.control.location)
+            this.dspClient.dspSessionStorage.setItem(this.storageNamePrefix + "lastPageUri", this.dspClient.control.location.href);
 
         //redirect to sign in
         let params = {
@@ -616,6 +625,7 @@ export class DirectSpAuth {
             response_type: this.type,
             state: this.dspClient.sessionState
         };
-        window.location.href = this.authorizeEndpointUri + "?" + Convert.toQueryString(params);
+        const url: string = this.authorizeEndpointUri + "?" + Convert.toQueryString(params);
+        this.dspClient.control.navigate(url);
     };
 }

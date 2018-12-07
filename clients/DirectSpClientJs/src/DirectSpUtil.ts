@@ -46,7 +46,7 @@ export class Convert {
     public static toQueryString(obj: any): string {
         let parts = [];
         for (let key in obj) {
-            if (obj.hasOwnProperty(key)) {
+            if (obj.hasOwnProperty(key) && obj[key]!=null) {
                 parts.push(encodeURIComponent(key) + "=" + encodeURIComponent(obj[key]));
             }
         }
@@ -54,7 +54,7 @@ export class Convert {
     };
 
     public static buffer_fromBase64(base64String: string): string {
-        if (window.atob)
+        if (Utility.isHtmlHost && window.atob)
             return window.atob(base64String);
 
         var e: any = {},
@@ -111,8 +111,7 @@ export class Html {
 
 export class Uri {
 
-    public static getParameterByName = function (name: string, url?: string ): string | null {
-        if (!url && window && window.location && window.location.href) url = window.location.href;
+    public static getParameterByName = function (name: string, url: string | null ): string | null {
         if (!url) return null;
 
         name = name.replace(/[\[\]]/g, "\\$&");
@@ -210,6 +209,6 @@ export class Utility {
     };
 
     public static get isHtmlHost(): boolean {
-        return false;//window && window.localStorage != null;
+        return typeof (window) != "undefined" && window.localStorage != null;
     }
 }
