@@ -4,6 +4,9 @@ import { DirectSpError } from "../src/DirectSpError";
 import { IToken } from "../src/DirectSpAuth";
 
 
+// ---------------
+// Test
+// ---------------
 test('autoSignin on', async () => {
   //init
   const client = TestUtil.CreateDspClient(null, {
@@ -34,6 +37,9 @@ test('autoSignin on', async () => {
 
 });
 
+// ---------------
+// Test
+// ---------------
 test('autoSignin off', async () => {
   //simulate result
   const client = TestUtil.CreateDspClient(null, { auth: { baseEndpointUri: "https://fakeauth.local/", isAutoSignIn: false } });
@@ -45,6 +51,9 @@ test('autoSignin off', async () => {
 });
 
 
+// ---------------
+// Test
+// ---------------
 test('login by redirect and refresh token', async () => {
   //init options
   const options: IDirectSpOptions = {
@@ -63,10 +72,12 @@ test('login by redirect and refresh token', async () => {
   // null protection
   if (!options.auth) throw new DirectSpError("options.auth is not initialized!");
 
+  const refresh_token1 = "fake_refresh_token1";
+  const refresh_token2 = "fake_refresh_token2";
+
   //simulate result
   const client = TestUtil.CreateDspClient((request) => {
 
-    const refresh_token1 = "fake_refresh_token1";
     //login
     if (request.data && request.data.grant_type == "authorization_code") {
       if (!request.data) throw new DirectSpError("request does not contain data!");
@@ -77,6 +88,8 @@ test('login by redirect and refresh token', async () => {
       expect(request.data.client_id).toBe('1234567');
       expect(request.data.redirect_uri).toBe('https://fakeclient.local/temp/callback');
       expect(request.data.code).toBe('fake_code');
+
+      //return expired token to make sure refresh token is used
       const tokens: IToken = {
         access_token: "eyJhbGciOiJSUzI1NiIsImtpZCI6Ijc3NUE5MjkyRjE5RjE0RkMyQjlCODBBQjA2MkEwNkJFODYyMzYxOUMiLCJ0eXAiOiJKV1QifQ.eyJzdWIiOiIxMDAwMTIxNSIsInVzZXJuYW1lIjoiTG95YWx0eV9BZG1pbiIsInRva2VuX3VzYWdlIjoiYWNjZXNzX3Rva2VuIiwianRpIjoiNDZjNzhkMzUtNDQ0OC00NTM4LTlmNGEtZjY4ZGYzZDhjNmM5IiwiY2ZkX2x2bCI6InByaXZhdGUiLCJzY29wZSI6WyJwcm9maWxlIiwib2ZmbGluZV9hY2Nlc3MiLCIyOSJdLCJhdWQiOiJhZG1pbmxveWFsdHlfYTUwMjI1ZjAxN2ZiNDYxMzliOTc4MGU5ODdmMGJhZWEiLCJhenAiOiJhZG1pbmxveWFsdHlfYTUwMjI1ZjAxN2ZiNDYxMzliOTc4MGU5ODdmMGJhZWEiLCJuYmYiOjE1NDQxMzIxMTksImV4cCI6MTU0NDEzMzkxOSwiaWF0IjoxNTQ0MTMyMTE5LCJpc3MiOiJodHRwczovL2F1dGguaXJhbmlhbi5jYXJkcy8iLCJhY3RvcnQiOiJleUpoYkdjaU9pSnViMjVsSWl3aWRIbHdJam9pU2xkVUluMC5leUp6ZFdJaU9pSmhaRzFwYm14dmVXRnNkSGxmWVRVd01qSTFaakF4TjJaaU5EWXhNemxpT1RjNE1HVTVPRGRtTUdKaFpXRWlmUS4ifQ.fakesign",
         expires_in: 1800,
@@ -97,7 +110,7 @@ test('login by redirect and refresh token', async () => {
       const tokens: IToken = {
         access_token: "eyJhbGciOiJSUzUxMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2p3dC1pZHAuZXhhbXBsZS5jb20iLCJzdWIiOiJtYWlsdG86bWlrZUBleGFtcGxlLmNvbSIsIm5iZiI6MTU0NDE0NTQ3NywiZXhwIjoxOTE0MTkxOTk5LCJpYXQiOjE5MTQxOTE5OTksImp0aSI6ImlkMTIzNDU2IiwidHlwIjoiaHR0cHM6Ly9leGFtcGxlLmNvbS9yZWdpc3RlciJ9.fakesign",
         expires_in: 1800,
-        refresh_token: "fake_refresh_token2",
+        refresh_token: refresh_token2,
         token_type: "Bearer"
       };
       return { data: tokens };
@@ -124,6 +137,7 @@ test('login by redirect and refresh token', async () => {
   expect(client.auth.authRequest.state).toBe(options.sessionState);
   expect(client.auth.isAuthRequest).toBe(true);
   expect(client.auth.isAuthorized).toBe(true);
+  expect(client.auth!.tokens!.refresh_token).toBe(refresh_token2); //token should be refreshed
 
   if (!client.auth.userInfo) throw new DirectSpError("client.auth.userInfo has not been retrieved!");
   expect(client.auth.userInfo.name).toBe("David");

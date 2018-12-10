@@ -11,7 +11,7 @@ import { DirectSpError as DirectSpErrorClass } from "./DirectSpError"
 import { DirectSpClient as DirectSpClientClass } from "./DirectSpClient"
 import { exceptions as exceptionsNS } from "./DirectSpError"
 import { Html as HtmlClass, Uri as UriClass, Utility as UtilityClass, Convert as ConvertClass } from "./DirectSpUtil"
-import { TestUtil as TestUtilClass } from "../test/TestUtil"
+//import { TestUtil as TestUtilClass } from "../test/TestUtil"
 
 namespace directSp {
   export const DirectSpHtmlStorage = DirectSpHtmlStorageClass;
@@ -21,8 +21,8 @@ namespace directSp {
   export const Uri = UriClass;
   export const Convert = ConvertClass;
   export const Utility = UtilityClass;
-  export const TestUtil = TestUtilClass;
   export const exceptions = exceptionsNS;
+  //export const TestUtil = TestUtilClass;
 }
 
 

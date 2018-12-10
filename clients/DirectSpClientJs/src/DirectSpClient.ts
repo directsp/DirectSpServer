@@ -360,7 +360,9 @@ export class DirectSpClient {
 
     //manage auth and RefreshToken
     private async _fetch2(request: IDirectSpRequest): Promise<IDirectSpResponse> {
-        if (this.auth && request.data && request.data.grant_type != 'refresh_token')
+        
+        //refresh token if the request is auth exists and the request is not refresh_token
+        if (this.auth && (!request.data || request.data.grant_type != 'refresh_token'))
         {
             //refreshing token
             await this.auth.refreshToken();

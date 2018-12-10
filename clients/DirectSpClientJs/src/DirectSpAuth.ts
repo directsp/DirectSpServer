@@ -431,7 +431,7 @@ export class DirectSpAuth {
                 return; //token is not refreshed because it is not required
         }
 
-        //return false if token not exists
+        //return if token not exists
         if (!this.tokens || !this.tokens.refresh_token || !this.accessTokenInfo) {
 
             //current token is not valid and can not be refreshed
