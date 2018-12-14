@@ -2,8 +2,8 @@
   "name": "@directsp/client-js",
   "version": "1.0.2",
   "description": "DirectSp Client js",
-  "main": "./lib/index.js",
-  "typings": "./lib/index.d.ts",
+  "main": "./lib/directsp.js",
+  "typings": "./lib/directsp.d.ts",
   "scripts": {
     "prepare": "npm run build",
     "build": "tsc"

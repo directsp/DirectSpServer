@@ -1,14 +1,11 @@
-import { TestUtil } from "./TestUtil";
-import { DirectSpError } from "../src/DirectSpError";
-import { IDirectSpCall } from "../src/IDirectSpInterfaces";
-
+namespace directSp {
 
 test('invoke and its options', async () => {
 
   //simulate result
   const client = TestUtil.CreateDspClient((request) => {
-    if (!request.data) throw new DirectSpError("request does not contain data!");
-    if (!request.headers) throw new DirectSpError("request does not contain headers!");
+    if (!request.data) throw new directSp.DirectSpError("request does not contain data!");
+    if (!request.headers) throw new directSp.DirectSpError("request does not contain headers!");
 
     expect(request.url).toBe("https://fake_server.local/test1");
     expect(request.headers["Content-Type"].toLowerCase()).toBe("application/json;charset=utf-8");
@@ -31,70 +28,72 @@ test('invoke and its options', async () => {
 });
 
 
-test('invokeBatch and its options', async () => {
-  // simulate result
-  const client = TestUtil.CreateDspClient((request) => {
-    if (!request.data) throw new DirectSpError("request does not contain data!");
 
-    //check invoke option
-    expect(request.data.invokeOptions.captchaId).toBe("invokeBatch-captcha");
+  test('invokeBatch and its options', async () => {
+    // simulate result
+    const client = TestUtil.CreateDspClient((request) => {
+      if (!request.data) throw new DirectSpError("request does not contain data!");
 
-    let data = [];
-    for (var i = 0; i < request.data.spCalls.length; i++) {
-      let spCall = request.data.spCalls[i];
-      if (spCall.method == 'concat') data[i] = { returnValue: spCall.params.param1 + spCall.params.param2 };
-      else if (spCall.method == 'cross') data[i] = { returnValue: spCall.params.param1 * spCall.params.param2 };
-      else throw new DirectSpError("Unknown method!");
-    }
+      //check invoke option
+      expect(request.data.invokeOptions.captchaId).toBe("invokeBatch-captcha");
 
-    return { data: data }
+      let data = [];
+      for (var i = 0; i < request.data.spCalls.length; i++) {
+        let spCall = request.data.spCalls[i];
+        if (spCall.method == 'concat') data[i] = { returnValue: spCall.params.param1 + spCall.params.param2 };
+        else if (spCall.method == 'cross') data[i] = { returnValue: spCall.params.param1 * spCall.params.param2 };
+        else throw new DirectSpError("Unknown method!");
+      }
+
+      return { data: data }
+    });
+
+    // send request
+    const spCalls: IDirectSpCall[] = [
+      { method: "concat", params: { param1: 2, param2: 3 } },
+      { method: "cross", params: { param1: 20, param2: 30 } },
+    ];
+
+    const res = await client.invokeBatch(spCalls, { captchaId: "invokeBatch-captcha" });
+    expect(res.length).toBe(2);
+    expect(res[0].returnValue).toBe(5);
+    expect(res[1].returnValue).toBe(600);
   });
 
-  // send request
-  const spCalls: IDirectSpCall[] = [
-    { method: "concat", params: { param1: 2, param2: 3 } },
-    { method: "cross", params: { param1: 20, param2: 30 } },
-  ];
 
-  const res = await client.invokeBatch(spCalls, { captchaId: "invokeBatch-captcha" });
-  expect(res.length).toBe(2);
-  expect(res[0].returnValue).toBe(5);
-  expect(res[1].returnValue).toBe(600);
-});
+  test('seqGroup option and onBeforeInvoke', async () => {
+    // simulate result
+    const client = TestUtil.CreateDspClient((request) => {
+      if (!request.data) throw new DirectSpError("request does not contain data!");
 
+      let data = { result: request.data.spCall.method };
 
-test('seqGroup option and onBeforeInvoke', async () => {
-  // simulate result
-  const client = TestUtil.CreateDspClient((request) => {
-    if (!request.data) throw new DirectSpError("request does not contain data!");
+      return { data: data }
+    });
 
-    let data = { result: request.data.spCall.method };
+    client.onBeforeInvoke = (hookParams) => {
+      hookParams.isRandomDelay = false;
+      if (hookParams.invokeParams && hookParams.invokeParams.spCall && hookParams.invokeParams.spCall.params)
+        hookParams.delay = hookParams.invokeParams.spCall.params.delay;
+      return Promise.resolve();
+    };
 
-    return { data: data }
+    const promises: Promise<any>[] = [];
+    const results: boolean[] = [];
+    promises.push(client.invoke("method1", { delay: 100 }, { seqGroup: "testGroup1" }).then(() => { results[0] = true; }).catch((e) => { results[0] = false; }));
+    promises.push(client.invoke("method1", { delay: 200 }, { seqGroup: "testGroup1" }).then(() => { results[1] = true; }).catch((e) => { results[1] = false; }));
+    promises.push(client.invoke("method1", { delay: 120 }, { seqGroup: "testGroup1" }).then(() => { results[2] = true; }).catch(() => { results[2] = false; }));
+
+    promises.push(client.invoke("method4", { delay: 70 }, { seqGroup: "testGroup2" }).then(() => { results[3] = true; }).catch(() => { results[3] = false; }));
+    promises.push(client.invoke("method4", { delay: 40 }, { seqGroup: "testGroup3" }).then(() => { results[4] = true; }).catch(() => { results[4] = false; }));
+
+    await Promise.all(promises);
+
+    expect(results[0]).toBe(false);
+    expect(results[1]).toBe(false);
+    expect(results[2]).toBe(true);
+    expect(results[3]).toBe(true);
+    expect(results[4]).toBe(true);
+
   });
-
-  client.onBeforeInvoke = (hookParams) => {
-    hookParams.isRandomDelay = false;
-    if (hookParams.invokeParams && hookParams.invokeParams.spCall && hookParams.invokeParams.spCall.params)
-      hookParams.delay = hookParams.invokeParams.spCall.params.delay;
-    return Promise.resolve();
-  };
-
-  const promises: Promise<any>[] = [];
-  const results: boolean[] = [];
-  promises.push(client.invoke("method1", { delay: 100 }, { seqGroup: "testGroup1" }).then(() => { results[0] = true; }).catch((e) => { results[0] = false; }));
-  promises.push(client.invoke("method1", { delay: 200 }, { seqGroup: "testGroup1" }).then(() => { results[1] = true; }).catch((e) => { results[1] = false; }));
-  promises.push(client.invoke("method1", { delay: 120 }, { seqGroup: "testGroup1" }).then(() => { results[2] = true; }).catch(() => { results[2] = false; }));
-
-  promises.push(client.invoke("method4", { delay: 70 }, { seqGroup: "testGroup2" }).then(() => { results[3] = true; }).catch(() => { results[3] = false; }));
-  promises.push(client.invoke("method4", { delay: 40 }, { seqGroup: "testGroup3" }).then(() => { results[4] = true; }).catch(() => { results[4] = false; }));
-
-  await Promise.all(promises);
-
-  expect(results[0]).toBe(false);
-  expect(results[1]).toBe(false);
-  expect(results[2]).toBe(true);
-  expect(results[3]).toBe(true);
-  expect(results[4]).toBe(true);
-
-});
+}
