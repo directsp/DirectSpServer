@@ -1,10 +1,5 @@
-import { IDirectSpKeyToAny } from "./DirectSpUtil";
+import { IDirectSpStorage, IDirectSpKeyToAny } from "./IDirectSpInterfaces";
 
-export interface IDirectSpStorage {
-    getItem(key: string): Promise<string | null>;
-    setItem(key: string, value: string): Promise<void>;
-    removeItem(key: string): Promise<void>;
-}
 
 export class DirectSpHtmlStorage implements IDirectSpStorage {
     private _storage: Storage;

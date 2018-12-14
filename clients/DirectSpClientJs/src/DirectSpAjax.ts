@@ -1,23 +1,7 @@
+import { IDirectSpRequest, IDirectSpResponse, IDirectSpAjaxProvider } from "./IDirectSpInterfaces";
+import { Convert } from "./DirectSpUtil";
 import { DirectSpError } from "./DirectSpError";
-import { Convert, IDirectSpKeyToAny } from "./DirectSpUtil";
 
-export interface IDirectSpRequest {
-    url: string;
-    method: string;
-    data?: any;
-    withCredentials?: boolean;
-    headers?: IDirectSpKeyToAny;
-    cache?: boolean;
-}
-
-export interface IDirectSpResponse {
-    data: any;
-    headers?: any;
-}
-
-export interface IDirectSpAjaxProvider {
-    fetch(request: IDirectSpRequest): Promise<IDirectSpResponse>;
-}
 
 export class DirectSpXmlHttpAjaxProvider implements IDirectSpAjaxProvider {
 

@@ -1,6 +1,6 @@
 import { TestUtil } from "./TestUtil";
-import { IDirectSpCall } from "../src/DirectSpClient";
 import { DirectSpError } from "../src/DirectSpError";
+import { IDirectSpCall } from "../src/IDirectSpInterfaces";
 
 
 test('invoke and its options', async () => {

@@ -1,64 +1,14 @@
 // import {directSp} from "./directSp";
-import { IDirectSpRequest, IDirectSpResponse, IDirectSpAjaxProvider, DirectSpXmlHttpAjaxProvider } from "./DirectSpAjax";
-import { DirectSpAuth, IDirectSpAuthOptions, IDirectSpAuthorizedData } from "./DirectSpAuth";
-import { DirectSpError, exceptions } from "./DirectSpError";
-import { DirectSpHtmlStorage, IDirectSpStorage } from "./DirectSpStorage";
-import { Utility, Convert, Uri, IDirectSpKeyToAny } from "./DirectSpUtil";
+
+import { IDirectSpClient, IDirectSpStorage, IDirectSpAuthorizedData, IDirectSpAjaxProvider, IDirectSpControl, IDirectSpRequest, IDirectSpResponse, IDirectSpCall, IDirectSpInvokeParams, IDirectSpHookParams, IDirectSpOptions, IDirectSpInvokeOptions, IDirectSpInvokeResult } from "./IDirectSpInterfaces";
+import { DirectSpError } from "./DirectSpError";
+import { Utility, Convert, Uri } from "./DirectSpUtil";
+import { DirectSpXmlHttpAjaxProvider } from "./DirectSpAjax";
+import { DirectSpAuth } from "./DirectSpAuth";
+import { DirectSpHtmlStorage } from "./DirectSpStorage";
 import { DirectSpErrorController } from "./DirectSpErrorController";
 import { DirectSpHelp } from "./DirectSpHelp";
-import { IDirectSpControl, DirectSpControlHtml, DirectSpControlNotImplemented } from "./DirectSpControl";
-
-export interface IDirectSpOptions {
-    homePageUri?: string;
-    resourceApiUri?: string;
-    isAutoReload?: boolean;
-    isLogEnabled?: boolean;
-    isUseAppErrorHandler?: boolean;
-    dspLocalStorage?: IDirectSpStorage;
-    dspSessionStorage?: IDirectSpStorage;
-    auth?: IDirectSpAuthOptions;
-    ajaxProvider?: IDirectSpAjaxProvider;
-    control?: IDirectSpControl;
-    sessionState?: string;
-}
-
-export interface IDirectSpInvokeOptions {
-    recordsetFormat?: string;
-    recordIndex?: number;
-    recordCount?: number;
-    isWithRecodsetDownloadUri?: boolean;
-    isUseAppErrorHandler?: boolean;
-    autoDownload?: boolean;
-    captchaId?: string;
-    captchaCode?: string;
-    requestId?: string;
-    seqGroup?: string;
-    cache?: boolean;
-}
-
-export interface IDirectSpCall {
-    method: string;
-    params?: IDirectSpKeyToAny;
-}
-
-export interface IDirectSpInvokeParams {
-    spCall?: IDirectSpCall;
-    spCalls?: IDirectSpCall[];
-    invokeOptions?: IDirectSpInvokeOptions;
-}
-
-export interface IDirectSpInvokeResult extends IDirectSpKeyToAny {
-    Recordset?: [];
-    ReturnValue?: any;
-    RecordsetUri?: string;
-}
-
-
-export interface IDirectSpHookParams {
-    invokeParams: IDirectSpInvokeParams;
-    delay: number
-    isRandomDelay: boolean;
-}
+import { DirectSpControlHtml, DirectSpControlNotImplemented } from "./DirectSpControl";
 
 /**
  * @see: https://github.com/directsp
@@ -67,7 +17,7 @@ export interface IDirectSpHookParams {
  * @event: onNewVersion: fire when new API version detected
  * @event: onBeforeInvoke: fire beofore any invoke
  */
-export class DirectSpClient {
+export class DirectSpClient implements IDirectSpClient {
     public isAutoReload: boolean;
     public isLogEnabled: boolean;
     public isUseAppErrorHandler: boolean;

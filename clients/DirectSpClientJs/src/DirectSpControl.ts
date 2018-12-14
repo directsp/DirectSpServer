@@ -1,11 +1,5 @@
+import { IDirectSpControl } from "./IDirectSpInterfaces";
 import { DirectSpError } from "./DirectSpError";
-
-export interface IDirectSpControl {
-    readonly location: URL | null;
-    reload(): Promise<void>;
-    navigate(uri: string): Promise<void>;
-    download(uri: string): Promise<void>;
-}
 
 export class DirectSpControlHtml implements IDirectSpControl {
     public get location(): URL | null {

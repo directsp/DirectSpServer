@@ -1,56 +1,10 @@
-import { DirectSpClient } from "./DirectSpClient";
-import { DirectSpError, exceptions } from "./DirectSpError";
+import { IDirectSpClient, IDirectSpStorage, IDirectSpRequest, IAuthRequest, IUserInfo, IToken, IAccessTokenInfo, IDirectSpAuthOptions } from "./IDirectSpInterfaces";
+import { DirectSpError } from "./DirectSpError";
 import { Utility, Uri, Convert, Html } from "./DirectSpUtil";
-import { IDirectSpStorage } from "./DirectSpStorage";
-import { IDirectSpRequest } from "./DirectSpAjax";
-
-export interface IAuthRequest {
-    client_id: string;
-    redirect_uri: string | null;
-    scope: string | null;
-    response_type: string | null;
-    state: string | null;
-}
-
-export interface IUserInfo {
-    username: string | null;
-    name: string | null;
-}
-
-export interface IToken {
-    access_token: string;
-    expires_in: number;
-    refresh_token: string | null;
-    token_type: string;
-}
-
-export interface IAccessTokenInfo {
-    sub: string;
-    exp: string;
-}
-
-export interface IDirectSpAuthorizedData {
-    lastPageUri: string | null;
-}
-
-export interface IDirectSpAuthOptions {
-    clientId?: string;
-    redirectUri?: string | null;
-    baseEndpointUri?: string | null;
-    authorizeEndpointUri?: string | null;
-    tokenEndpointUri?: string | null;
-    userinfoEndpointUri?: string | null;
-    logoutEndpointUri?: string | null;
-    scope?: string;
-    type?: string;
-    isPersistent?: boolean;
-    isAutoSignIn?: boolean;
-}
-
 
 export class DirectSpAuth {
     public isAutoSignIn: boolean = false;
-    public readonly _dspClient: DirectSpClient;
+    public readonly _dspClient: IDirectSpClient;
     private readonly _clientId: string;
     private readonly _redirectUri: string | null = null;
     private readonly _baseEndpointUri: string | null = null;
@@ -69,7 +23,7 @@ export class DirectSpAuth {
     private _accessTokenInfo: IAccessTokenInfo | null = null
     private _lastPageUri: string | null = null;
 
-    public constructor(dspClient: DirectSpClient, options: IDirectSpAuthOptions) {
+    public constructor(dspClient: IDirectSpClient, options: IDirectSpAuthOptions) {
         this._dspClient = dspClient;
 
         this._lastPageUri = dspClient.homePageUri;
@@ -124,7 +78,7 @@ export class DirectSpAuth {
     public get isAuthorized(): boolean { return this._tokens != null; }
     public get userId(): string | null { return this.accessTokenInfo ? this.accessTokenInfo.sub : null; }
     public get userInfo(): IUserInfo | null { return this._userInfo; }
-    public get dspClient(): DirectSpClient { return this._dspClient; }
+    public get dspClient(): IDirectSpClient { return this._dspClient; }
     private get storageNamePrefix(): string { return this._dspClient.storageNamePrefix; }
 
     public get isPersistent(): boolean { return this._isPersistent; }

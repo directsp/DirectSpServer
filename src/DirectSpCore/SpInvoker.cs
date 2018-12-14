@@ -500,8 +500,8 @@ namespace DirectSp.Core
 
         public SpInfo FindSpInfo(string spName)
         {
-            if (SpInfos.TryGetValue(spName, out SpInfo sqlSp))
-                return sqlSp;
+            if (SpInfos.TryGetValue(spName, out SpInfo spInfo))
+                return spInfo;
 
             return null;
         }
@@ -744,7 +744,7 @@ namespace DirectSp.Core
                 result = true;
             }
 
-            return Task.FromResult<bool>(result);
+            return Task.FromResult(result);
         }
         private void CleanTempFolder()
         {

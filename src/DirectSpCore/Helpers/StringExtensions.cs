@@ -6,24 +6,24 @@ namespace DirectSp.Core.Helpers
 {
     public static class StringExtensions
     {
-        public static string ToBase64(this string text)
+        public static string ToBase64(this string str)
         {
-            return ToBase64(text, Encoding.UTF8);
+            return ToBase64(str, Encoding.UTF8);
         }
 
-        private static string ToBase64(this string text, Encoding encoding)
+        private static string ToBase64(this string str, Encoding encoding)
         {
-            byte[] textAsBytes = encoding.GetBytes(text);
+            var textAsBytes = encoding.GetBytes(str);
             return Convert.ToBase64String(textAsBytes);
         }
 
-        public static string FromBase64(this string text)
+        public static string FromBase64(this string str)
         {
-            return FromBase64(text, Encoding.UTF8);
+            return FromBase64(str, Encoding.UTF8);
         }
         public static string FromBase64(this string text, Encoding encoding)
         {
-            byte[] textAsBytes = Convert.FromBase64String(text);
+            var textAsBytes = Convert.FromBase64String(text);
             return encoding.GetString(textAsBytes);
         }
     }

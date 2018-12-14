@@ -1,7 +1,6 @@
 import { TestUtil, DirectSpControlFake } from "./TestUtil";
-import { IDirectSpOptions } from "../src/DirectSpClient";
 import { DirectSpError } from "../src/DirectSpError";
-import { IToken } from "../src/DirectSpAuth";
+import { IDirectSpOptions, IToken } from "../src/IDirectSpInterfaces";
 
 
 // ---------------

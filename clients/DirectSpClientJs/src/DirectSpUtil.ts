@@ -1,7 +1,3 @@
-export interface IDirectSpKeyToAny {
-    [ket: string]: any
-}
-
 export class Convert {
 
     public static toBoolean(value: string | number | undefined | null | boolean, defaultValue: boolean = false): boolean {

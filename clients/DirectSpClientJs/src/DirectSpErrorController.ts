@@ -1,6 +1,6 @@
+import { IDirectSpRequest, IDirectSpResponse, IDirectSpInvokeOptions } from "./IDirectSpInterfaces";
 import { DirectSpError } from "./DirectSpError";
-import { IDirectSpRequest, IDirectSpResponse } from "./DirectSpAjax";
-import { DirectSpClient, IDirectSpInvokeOptions } from "./DirectSpClient";
+import { DirectSpClient } from "./DirectSpClient";
 import { Utility } from "./DirectSpUtil";
 
 
