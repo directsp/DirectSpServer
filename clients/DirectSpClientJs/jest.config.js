@@ -1,10 +1,13 @@
 
 module.exports = {
-  roots: ['./src'],
+  roots: ['./test'],
   preset: 'ts-jest',
   testEnvironment: 'node',
   globals: {
     'ts-jest': {
+    },
+    "tsConfig": {
+      "module": "none"
     }
   }
 };

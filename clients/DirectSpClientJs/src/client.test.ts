@@ -1,8 +1,10 @@
- export var a:number; //must get compiler error for npx jest
+// declare function require(a: any): any;
+// require('../lib/directsp2');
 
-test('invoke and its options', async () => {
-  throw "aaa";
-});
+// test('invoke and its options', async () => {
+//   //let a = directSp.Convert.toBoolean("1");
+//   //throw "aaa";
+// });
 
 
 // test('invoke and its options', async () => {
