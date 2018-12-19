@@ -1,6 +1,6 @@
 {
   "name": "@directsp/client-js",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "DirectSp Client js",
   "main": "./lib/directsp.js",
   "typings": "./lib/directsp.d.ts",

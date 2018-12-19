@@ -197,7 +197,7 @@ namespace directSp {
         };
 
         //invokeOptions {seqGroup:"SequenceGroupName ", pageSize:10, pageIndex:0}
-        public invoke(method: string, params?: any, invokeOptions?: IDirectSpInvokeOptions): Promise<IDirectSpInvokeResult> {
+        public invoke(method: string, params?: IDirectSpKeyToAny, invokeOptions?: IDirectSpInvokeOptions): Promise<IDirectSpInvokeResult> {
 
             const invokeParams: IDirectSpInvokeParams = {
                 spCall: {
