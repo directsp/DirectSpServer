@@ -1,4 +1,4 @@
-import { directSp } from "../lib/directsp.js";
+import {directSp} from "../lib/directsp.js";
 import { DirectSpControlFake, TestUtil } from "./TestUtil";
 
 // ---------------
@@ -46,7 +46,6 @@ test('autoSignin off', async () => {
   await new Promise(resolve => setTimeout(resolve, 10))
   expect((<DirectSpControlFake>client.control).called_navigateUri).toBe(null);
 });
-
 
 // ---------------
 // Test

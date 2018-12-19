@@ -6,7 +6,7 @@
   "typings": "./lib/directsp.d.ts",
   "scripts": {
     "prepare": "npm run build",
-    "build": "tsc"
+    "build": "tsc && echo export {directSp} >> ./lib/directSp.d.ts"
   },
   "keywords": [
     "DirectSp"

@@ -7,7 +7,7 @@ module.exports = {
     'ts-jest': {
     },
     "tsConfig": {
-      "module": "none"
+      "module": "amd"
     }
   }
 };
