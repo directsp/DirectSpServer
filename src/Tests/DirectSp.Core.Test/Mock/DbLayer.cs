@@ -22,7 +22,7 @@ namespace DirectSp.Core.Test.Mock
                         return 1;
                     }
                 default:
-                    throw new System.NotImplementedException($" test command for {command.CommandText}");
+                    throw new NotImplementedException($" test command for {command.CommandText}");
             }
         }
 

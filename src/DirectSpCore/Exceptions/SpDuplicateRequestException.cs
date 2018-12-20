@@ -2,9 +2,9 @@
 
 namespace DirectSp.Core.Exceptions
 {
-    public class DuplicateRequestException : Exception
+    public class SpDuplicateRequestException : Exception
     {
-        public DuplicateRequestException(string requestId, Exception innerException = null) :
+        public SpDuplicateRequestException(string requestId, Exception innerException = null) :
             base($"The request has been duplicated for \"{requestId}\" ", innerException)
         { }
 

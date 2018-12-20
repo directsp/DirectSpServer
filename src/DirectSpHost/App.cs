@@ -23,14 +23,13 @@ namespace DirectSp.Host
             configuration.GetSection("App").Bind((object)AppSettings);
             configuration.GetSection("Kestrel").Bind(KestlerSettings);
 
-            Directory.CreateDirectory((string)AppSettings.WorkspaceFolderPath);
-            var spInvokerOptions = new SpInvokerOptions() { WorkspaceFolderPath = Path.Combine((string)AppSettings.WorkspaceFolderPath, "DirectSp") };
+            Directory.CreateDirectory(AppSettings.WorkspaceFolderPath);
+            var spInvokerOptions = new SpInvokerOptions() { WorkspaceFolderPath = Path.Combine(AppSettings.WorkspaceFolderPath, "DirectSp") };
             configuration.GetSection("SpInvoker").Bind(spInvokerOptions);
 
             // Resolve SpInvoker internal dependencies
             var spInvokerConfig = new SpInvokerConfig
             {
-                DownloadEnable = AppSettings.DownloadEnable,
                 ConnectionString = AppSettings.ResourceDbConnectionString,
                 Options = spInvokerOptions,
                 Schema = AppSettings.ResourceDbSchema,

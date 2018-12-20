@@ -1,9 +1,6 @@
-﻿using DirectSp.Core.Helpers;
-using DirectSp.Core.Infrastructure;
-using Newtonsoft.Json;
+﻿using DirectSp.Core.Infrastructure;
 using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -29,7 +26,7 @@ namespace DirectSp.Core
             RSA rsa = _certificateProvider.GetByThumb(certificateThumb).GetRSAPrivateKey();
 
             if (rsa == null)
-                throw new Exception("No valid cert was found");
+                throw new Exception("Could not found any valid certificate!");
 
             // Sign token using certificate private key
             UTF8Encoding encoding = new UTF8Encoding();
@@ -38,7 +35,7 @@ namespace DirectSp.Core
             byte[] hash = sha256.ComputeHash(data);
             string sign = Convert.ToBase64String(rsa.SignHash(hash, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1));
             string tokenHeader = @"{'alg': 'SHA256', 'typ': 'JWT'}".Replace("'", "\"");
-            return $"{tokenHeader.ToBase64()}.{jwt.ToBase64()}.{sign}";
+            return $"{StringHelper.ToBase64(tokenHeader)}.{StringHelper.ToBase64(jwt)}.{sign}";
         }
 
         public bool CheckSign(string jwt)
@@ -50,11 +47,11 @@ namespace DirectSp.Core
             var signature = Convert.FromBase64String(jwtParts[2]);
 
             //  Find certificate by thumb number 
-            var payload = jwtParts[1].FromBase64();
+            var payload = StringHelper.FromBase64(jwtParts[1]);
             dynamic json = JObject.Parse(payload);
 
             // Check token expiration
-            var exp = new DateTime().FromUnixDate((double)json.exp);
+            var exp = Util.DateTime_FromUnixDate((double)json.exp);
             if (DateTime.Now > exp)
                 throw new ArgumentException("Token has been expired.", nameof(jwt));
 

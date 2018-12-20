@@ -7,8 +7,6 @@ namespace DirectSp.Core.SpSchema
     public class SpInfoEx
     {
         public SpDataAccessMode DataAccessMode { get; set; } = SpDataAccessMode.Write;
-        public bool Async { get; set; }
-        public string ErrorColumn { get; set; }
         public bool IsBatchAllowed { get; set; }
         public SpCaptchaMode CaptchaMode { get; set; } = SpCaptchaMode.Manual;
         public IDictionary<string, SpParamEx> Params { get; set; } = new Dictionary<string, SpParamEx>();

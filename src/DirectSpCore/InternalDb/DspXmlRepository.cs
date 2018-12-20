@@ -2,14 +2,14 @@
 using System.Xml.Linq;
 using Microsoft.AspNetCore.DataProtection.Repositories;
 using System.Linq;
-using System.Threading.Tasks;
+using DirectSp.Core.Infrastructure;
 
 namespace DirectSp.Core.InternalDb
 {
     public class DspXmlRepository : IXmlRepository
     {
         public string Name { get; private set; }
-        public DspSqlKeyValue SqlKeyValue { get; private set; }
+        public IDspKeyValue SqlKeyValue { get; private set; }
 
         public DspXmlRepository(DspSqlKeyValue sqlKeyValue, string name = "XmlRepo")
         {

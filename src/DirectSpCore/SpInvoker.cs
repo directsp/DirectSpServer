@@ -1,6 +1,5 @@
 ﻿using DirectSp.Core.Entities;
 using DirectSp.Core.Exceptions;
-using DirectSp.Core.Helpers;
 using DirectSp.Core.Infrastructure;
 using DirectSp.Core.InternalDb;
 using DirectSp.Core.SpSchema;
@@ -23,7 +22,6 @@ namespace DirectSp.Core
         private UserSessionManager SessionManager;
         private JwtTokenSigner _tokenSigner;
         private IDbLayer _dbLayer;
-        private bool _downloadEnable;
 
         public string ConnectionStringReadOnly { get; }
         public string ConnectionStringReadWrite { get; }
@@ -46,7 +44,6 @@ namespace DirectSp.Core
             KeyValue = config.KeyValue;
             _tokenSigner = config.TokenSigner;
             _dbLayer = config.DbLayer;
-            _downloadEnable = config.DownloadEnable;
             SpException.UseCamelCase = Options.UseCamelCase;
             ConnectionStringReadOnly = new SqlConnectionStringBuilder(config.ConnectionString) { ApplicationIntent = ApplicationIntent.ReadOnly }.ToString();
             ConnectionStringReadWrite = new SqlConnectionStringBuilder(config.ConnectionString) { ApplicationIntent = ApplicationIntent.ReadWrite }.ToString();
@@ -138,19 +135,17 @@ namespace DirectSp.Core
 
         public async Task<SpCallResult[]> Invoke(SpCall[] spCalls, SpInvokeParams spInvokeParams)
         {
-
             //Check DuplicateRequest if spCalls contian at least one write
-            var spInfo = FindSpInfo($"{Schema}.{spCalls.FirstOrDefault().Method}");
-            if (spInfo != null && spInfo.ExtendedProps.DataAccessMode == SpDataAccessMode.Write)
-                await CheckDuplicateRequest(spInvokeParams.InvokeOptions.RequestId, 3600 * 2);
+            foreach (var spCall in spCalls)
+            {
+                var spInfo = FindSpInfo($"{Schema}.{spCall.Method}");
+                if (spInfo != null && spInfo.ExtendedProps.DataAccessMode == SpDataAccessMode.Write)
+                {
+                    await CheckDuplicateRequest(spInvokeParams.InvokeOptions.RequestId, 3600 * 2);
+                    break;
+                }
+            }
 
-            if (spInfo != null && spInfo.ExtendedProps.Async)
-                return await InvokeBatchAsync(spCalls, spInvokeParams);
-            else return InvokeBatch(spCalls, spInvokeParams);
-        }
-
-        private async Task<SpCallResult[]> InvokeBatchAsync(SpCall[] spCalls, SpInvokeParams spInvokeParams)
-        {
             var spi = new SpInvokeParamsInternal
             {
                 SpInvokeParams = spInvokeParams,
@@ -160,7 +155,9 @@ namespace DirectSp.Core
             var spCallResults = new List<SpCallResult>();
             var tasks = new List<Task<SpCallResult>>();
             foreach (var spCall in spCalls)
+            {
                 tasks.Add(Invoke(spCall, spi));
+            }
 
             try
             {
@@ -172,34 +169,12 @@ namespace DirectSp.Core
             }
 
             foreach (var item in tasks)
+            {
                 if (item.IsCompletedSuccessfully)
-                {
-                    item.Result.Add("error", null);
                     spCallResults.Add(item.Result);
-                }
                 else
                     spCallResults.Add(new SpCallResult { { "error", SpExceptionAdapter.Convert(this, item.Exception.InnerException).SpCallError } });
-
-            return spCallResults.ToArray();
-        }
-
-        private SpCallResult[] InvokeBatch(SpCall[] spCalls, SpInvokeParams spInvokeParams)
-        {
-            var spi = new SpInvokeParamsInternal
-            {
-                SpInvokeParams = spInvokeParams,
-                IsBatch = true
-            };
-
-            var spCallResults = new List<SpCallResult>();
-            foreach (var spCall in spCalls)
-                try
-                {
-                    spCallResults.Add(Invoke(spCall, spi).Result);
-                }
-                catch (Exception ex) {
-                    spCallResults.Add(new SpCallResult { { "error", SpExceptionAdapter.Convert(this, ex.InnerException).SpCallError } });
-                }
+            }
 
             return spCallResults.ToArray();
         }
@@ -267,10 +242,6 @@ namespace DirectSp.Core
         {
             try
             {
-                //Temporary
-                if (spi.SpInvokeParams.InvokeOptions.RecordsetFormat == RecordsetFormat.TabSeparatedValues && !_downloadEnable)
-                    throw new SpException(new Exception("امکان دانلود در حال حاضر غیر فعال می باشد"));
-
                 // Check captcha
                 await CheckCaptcha(spCall, spi);
 
@@ -474,7 +445,7 @@ namespace DirectSp.Core
                     throw new SpInvalidParamSignature(callerParam.Key);
 
                 // Set param value by token payload
-                return token.Split('.')[1].FromBase64();
+                return StringHelper.FromBase64(token.Split('.')[1]);
             }
 
             return string.Empty;
@@ -513,7 +484,7 @@ namespace DirectSp.Core
 
             //fix UserString
             if (value is string)
-                value = Util.FixUserString((string)value);
+                value = StringHelper.FixUserString((string)value);
 
             if (parameterType?.ToLower() == "uniqueidentifier")
                 return Guid.Parse(value as string);
@@ -612,17 +583,6 @@ namespace DirectSp.Core
                         row.Add(AlternativeGetFieldName(dataReader.GetName(i)), AlternativeFormatDateTime(itemValue, fieldInfos[i].TypeName));
                     }
                 }
-                if (!string.IsNullOrEmpty(spInfo.ExtendedProps.ErrorColumn) && row[spInfo.ExtendedProps.ErrorColumn] != null)
-                {
-                    dynamic errorJson = JsonConvert.DeserializeObject(row[spInfo.ExtendedProps.ErrorColumn].ToString());
-                    row[spInfo.ExtendedProps.ErrorColumn] = new SpCallError
-                    {
-                        ErrorNumber = errorJson.errorId,
-                        ErrorProcName = errorJson.errorProcName,
-                        ErrorMessage = errorJson.errorMessage,
-                        ErrorName = errorJson.errorName
-                    };
-                }
                 recordset.Add(row);
             }
             return recordset;
@@ -638,7 +598,7 @@ namespace DirectSp.Core
                 if (i > 0)
                     stringBuilder.Append("\t");
 
-                var fieldName = Options.UseCamelCase ? Util.ToCamelCase(dataReader.GetName(i)) : dataReader.GetName(i);
+                var fieldName = Options.UseCamelCase ? StringHelper.ToCamelCase(dataReader.GetName(i)) : dataReader.GetName(i);
                 stringBuilder.Append(fieldName);
 
                 //AltDateTime
@@ -714,6 +674,10 @@ namespace DirectSp.Core
             var invokeOptions = spi.SpInvokeParams.InvokeOptions;
             if (invokeOptions.IsWithRecodsetDownloadUri)
             {
+                //check download
+                if (!Options.IsDownloadEnabled)
+                    throw new SpAccessDeniedOrObjectNotExistsException();
+
                 var fileTitle = string.IsNullOrWhiteSpace(invokeOptions.RecordsetFileTitle) ?
                     $"{spCall.Method}-{DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss")}" : invokeOptions.RecordsetFileTitle;
 
@@ -803,7 +767,7 @@ namespace DirectSp.Core
             }
             catch (SpObjectAlreadyExists)
             {
-                throw new DuplicateRequestException(requestId);
+                throw new SpDuplicateRequestException(requestId);
             }
         }
     }

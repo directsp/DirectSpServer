@@ -1,5 +1,4 @@
-﻿using DirectSp.Core.Helpers;
-using DirectSp.Core.SpSchema;
+﻿using DirectSp.Core.SpSchema;
 using Moq;
 using Newtonsoft.Json;
 using System;
@@ -139,7 +138,10 @@ namespace DirectSp.Core.Test.Mock
             });
         }
 
-        internal static string SignedJwtToken() => @"eyJhbGciOiAiU0hBMjU2IiwgInR5cCI6ICJKV1QifQ==.eyJPcmRlck51bWJlciI6MiwiUmVjZWl2ZXJMb3lhbHR5QWNjb3VudElkIjoxMTAzNzkzMSwiQ2x1Yk5hbWUiOiJOaWtlIiwiQW1vdW50IjoxLCJQb2ludFR5cGVJZCI6MjAyMCwiUG9pbnRUeXBlTmFtZSI6IlRlc3RUeXBlIiwiUGF5ZWVMb3lhbHR5QWNjb3VudElkIjoxMTgzLCJQYXllZUxveWFsdHlBY2NvdW50TmFtZSI6IkJlaG5hbSBFeXZhenBvb3IiLCJleHAiOjI3OTcxMzI3MTUuMTI4NDQyMywiUmV0dXJuVXJsIjoiaHR0cDovL3d3dy5nb29nbGUuY29tIiwiQ2VydGlmaWNhdGVUaHVtYiI6Ijc3IDVhIDkyIDkyIGYxIDlmIDE0IGZjIDJiIDliIDgwIGFiIDA2IDJhIDA2IGJlIDg2IDIzIDYxIDljIn0=.ELVhB5/a5rz0jI2WdIwnrzlOgm8s6eHz0yaCCAff1osfF4dhUWxUcDYVTBWadkHWelIh52qUsP0FVEV1075phsQDPuOPT7RR4BuP72nJzt/PsUoMb6fuKEygdutv3dyKEllZp7VAJny3PeSLf20aOy0MCXzdBDw7ZVF4kz/e62iwFHHqLwLDH1cfXaCAnRdEqtR6tkXwOYbvS1XJVw2fxVBBx1LLDLWD5q8gAtlVIGymI85AuveA477fcb0HzEz5ds9f3Wd0NkkGyolRSNcPlV6MHL/D2c6iF+nx6LDU9HTQ6jKPsKdjnbHRDwDo5Q1NeB8Z4FXHWutDpncRc+yCMA==";
+        internal static string SignedJwtToken()
+        {
+            return @"eyJhbGciOiAiU0hBMjU2IiwgInR5cCI6ICJKV1QifQ==.eyJPcmRlck51bWJlciI6MiwiUmVjZWl2ZXJMb3lhbHR5QWNjb3VudElkIjoxMTAzNzkzMSwiQ2x1Yk5hbWUiOiJOaWtlIiwiQW1vdW50IjoxLCJQb2ludFR5cGVJZCI6MjAyMCwiUG9pbnRUeXBlTmFtZSI6IlRlc3RUeXBlIiwiUGF5ZWVMb3lhbHR5QWNjb3VudElkIjoxMTgzLCJQYXllZUxveWFsdHlBY2NvdW50TmFtZSI6IkJlaG5hbSBFeXZhenBvb3IiLCJleHAiOjI3OTcxMzI3MTUuMTI4NDQyMywiUmV0dXJuVXJsIjoiaHR0cDovL3d3dy5nb29nbGUuY29tIiwiQ2VydGlmaWNhdGVUaHVtYiI6Ijc3IDVhIDkyIDkyIGYxIDlmIDE0IGZjIDJiIDliIDgwIGFiIDA2IDJhIDA2IGJlIDg2IDIzIDYxIDljIn0=.ELVhB5/a5rz0jI2WdIwnrzlOgm8s6eHz0yaCCAff1osfF4dhUWxUcDYVTBWadkHWelIh52qUsP0FVEV1075phsQDPuOPT7RR4BuP72nJzt/PsUoMb6fuKEygdutv3dyKEllZp7VAJny3PeSLf20aOy0MCXzdBDw7ZVF4kz/e62iwFHHqLwLDH1cfXaCAnRdEqtR6tkXwOYbvS1XJVw2fxVBBx1LLDLWD5q8gAtlVIGymI85AuveA477fcb0HzEz5ds9f3Wd0NkkGyolRSNcPlV6MHL/D2c6iF+nx6LDU9HTQ6jKPsKdjnbHRDwDo5Q1NeB8Z4FXHWutDpncRc+yCMA==";
+        }
 
         internal static string AppContext()
         {

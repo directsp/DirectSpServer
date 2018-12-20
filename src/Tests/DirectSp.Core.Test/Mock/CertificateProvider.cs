@@ -13,7 +13,7 @@ namespace DirectSp.Core.Test.Mock
             // Load certificate by physical path
             X509Certificate2 certificate = new X509Certificate2(certificatePath,"1");
 
-            return (X509Certificate2)certificate;
+            return certificate;
         }
     }
 }

@@ -131,7 +131,7 @@ namespace DirectSp.Core.Test.TestClass
             {
                 await _spInvoker.Invoke(spCall, spInvokeParams);
             }
-            catch (DuplicateRequestException)
+            catch (SpDuplicateRequestException)
             {
                 Assert.IsTrue(true);
             }
