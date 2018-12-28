@@ -1,4 +1,4 @@
-﻿namespace DirectSp.Core.SpSchema
+﻿namespace DirectSp.Core.ProcedureInfos
 {
     public class SpFieldEx
     {

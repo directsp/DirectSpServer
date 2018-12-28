@@ -11,7 +11,7 @@ using System.Timers;
 
 namespace DirectSp.Core.InternalDb
 {
-    public class DspMemoryKeyValue : IDspKeyValue
+    public class MemoryKeyValue : IDspKeyValue
     {
         class DspMemoryKeyValueItem
         {
@@ -23,7 +23,7 @@ namespace DirectSp.Core.InternalDb
         private ConcurrentDictionary<string, DspMemoryKeyValueItem> _keyValueItems = new ConcurrentDictionary<string, DspMemoryKeyValueItem>();
         private Timer _timer = new Timer(30 * 60 * 1000);// 30 minutes
 
-        public DspMemoryKeyValue()
+        public MemoryKeyValue()
         {
             _timer.Elapsed += _timer_Elapsed;
             _timer.Start();
@@ -35,19 +35,19 @@ namespace DirectSp.Core.InternalDb
             Cleanup();
         }
 
-        public Task<List<DspKeyValueItem>> All(string keyNamePattern = null)
+        public Task<List<KeyValueItem>> All(string keyNamePattern = null)
         {
             var all = _keyValueItems.Where(item => item.Value.ExpirationTime > DateTime.Now
             && (item.Key.StartsWith(keyNamePattern) || string.IsNullOrEmpty(keyNamePattern))).Select(item =>
                   {
-                      return new DspKeyValueItem
+                      return new KeyValueItem
                       {
                           KeyName = item.Key,
                           ModifiedTime = item.Value.ModifiedTime,
                           TextValue = item.Value.Value
                       };
                   });
-            return Task.FromResult<List<DspKeyValueItem>>(all.ToList());
+            return Task.FromResult<List<KeyValueItem>>(all.ToList());
         }
 
         public Task<object> GetValue(string keyName)
@@ -56,7 +56,7 @@ namespace DirectSp.Core.InternalDb
             if (!_keyValueItems.Keys.Contains(keyName) || (item = _keyValueItems[keyName]).ExpirationTime < DateTime.Now)
                 throw new SpAccessDeniedOrObjectNotExistsException();
 
-            return Task.FromResult<object>(new DspKeyValueItem
+            return Task.FromResult<object>(new KeyValueItem
             {
                 KeyName = keyName,
                 ModifiedTime = item.ModifiedTime,

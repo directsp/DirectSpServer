@@ -45,7 +45,7 @@ namespace DirectSp.Core.InternalDb
         {
             try
             {
-                var captcha = (DspKeyValueItem)await _dspKeyValue.GetValue(captchaId);
+                var captcha = (KeyValueItem)await _dspKeyValue.GetValue(captchaId);
                 await _dspKeyValue.Delete(captchaId);
 
                 if (!captcha.TextValue.Equals(code, StringComparison.OrdinalIgnoreCase))

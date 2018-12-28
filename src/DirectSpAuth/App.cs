@@ -47,7 +47,7 @@ namespace DirectSp.AuthServer
                     spInvokerConfig.KeyValue = new DspSqlKeyValue(AppSettings.KeyValueProvider.ConnectionString);
                     break;
                 case KeyValueProviderType.DspMemoryKeyValue:
-                    spInvokerConfig.KeyValue = new DspMemoryKeyValue();
+                    spInvokerConfig.KeyValue = new MemoryKeyValue();
                     break;
                 default:
                     throw new NotImplementedException($"KeyValueProvider has not been implemented. Name: {AppSettings.KeyValueProvider.Name}");

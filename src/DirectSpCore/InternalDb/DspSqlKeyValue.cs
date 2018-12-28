@@ -21,7 +21,7 @@ namespace DirectSp.Core.InternalDb
 
         public SpInvoker SpInvoker { get; private set; }
 
-        public async Task<List<DspKeyValueItem>> All(string keyNamePattern = null)
+        public async Task<List<KeyValueItem>> All(string keyNamePattern = null)
         {
             using (var sqlConnection = new SqlConnection(_connectionString))
             using (var sqlCommand = new SqlCommand("api.KeyValue_All", sqlConnection))
@@ -32,11 +32,11 @@ namespace DirectSp.Core.InternalDb
                 sqlCommand.Parameters.Add(new SqlParameter("@Context", SqlDbType.NVarChar, -1) { Direction = ParameterDirection.InputOutput, Value = "$$" });
 
                 var dataReader = await sqlCommand.ExecuteReaderAsync();
-                var keyValueItems = new List<DspKeyValueItem>();
+                var keyValueItems = new List<KeyValueItem>();
 
                 while (dataReader.Read())
                 {
-                    var keyValueItem = new DspKeyValueItem
+                    var keyValueItem = new KeyValueItem
                     {
                         KeyName = (string)dataReader["KeyName"],
                         ModifiedTime = (DateTime?)dataReader["ModifiedTime"],
@@ -97,7 +97,7 @@ namespace DirectSp.Core.InternalDb
                         throw new SpAccessDeniedOrObjectNotExistsException();
                     throw ex;
                 }
-                return new DspKeyValueItem
+                return new KeyValueItem
                 {
                     KeyName = keyName,
                     TextValue = (string)sqlCommand.Parameters["TextValue"].Value,

@@ -4,7 +4,7 @@ using System.Text;
 
 namespace DirectSp.Core.Entities
 {
-    public class DspKeyValueItem
+    public class KeyValueItem
     {
         public string KeyName { get; set; }
         public string TextValue { get; set; }

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace DirectSp.Core.SpSchema
+namespace DirectSp.Core.ProcedureInfos
 {
     public class SpParamEx
     {

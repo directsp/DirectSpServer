@@ -46,7 +46,7 @@ namespace DirectSp.Host
                     break;
 
                 case KeyValueProviderType.DspMemoryKeyValue:
-                    spInvokerConfig.KeyValue = new DspMemoryKeyValue();
+                    spInvokerConfig.KeyValue = new MemoryKeyValue();
                     break;
 
                 default:

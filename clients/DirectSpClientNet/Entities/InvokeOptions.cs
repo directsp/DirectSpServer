@@ -12,7 +12,6 @@
         public float moneyConversionRate { get; set; } = 1;
         public int? recordIndex { get; set; }
         public int? recordCount { get; set; }
-        public bool IsAntiXss { get; set; } = true;
     };
 
 }

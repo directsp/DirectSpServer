@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Data;
 
-namespace DirectSp.Core.SpSchema
+namespace DirectSp.Core.ProcedureInfos
 {
     public class SpInfo
     {

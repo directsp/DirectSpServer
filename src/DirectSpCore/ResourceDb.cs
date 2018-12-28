@@ -2,7 +2,7 @@
 using System.Data;
 using System.Data.SqlClient;
 using Newtonsoft.Json;
-using DirectSp.Core.SpSchema;
+using DirectSp.Core.ProcedureInfos;
 using DirectSp.Core.Infrastructure;
 
 namespace DirectSp.Core

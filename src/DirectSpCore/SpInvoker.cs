@@ -2,7 +2,7 @@
 using DirectSp.Core.Exceptions;
 using DirectSp.Core.Infrastructure;
 using DirectSp.Core.InternalDb;
-using DirectSp.Core.SpSchema;
+using DirectSp.Core.ProcedureInfos;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -406,7 +406,8 @@ namespace DirectSp.Core
                             continue; //process after close
 
                         // Sign text if is need
-                        SignJwt(sqlParam, spParamEx);
+                        if (spParamEx?.SignType == SpSignMode.JwtByCertThumb)
+                            sqlParam.Value = _tokenSigner.Sign(sqlParam.Value.ToString());
 
                         //convert data form db
                         var isMoney = spParamEx != null ? spParamEx.IsUseMoneyConversionRate : false;
@@ -424,12 +425,6 @@ namespace DirectSp.Core
 
             userSession.SetWriteMode(isWriteMode);
             return spCallResults;
-        }
-
-        private void SignJwt(SqlParameter sqlParam, SpParamEx spParamEx)
-        {
-            if (spParamEx?.SignType == SpSignMode.JwtByCertThumb)
-                sqlParam.Value = _tokenSigner.Sign(sqlParam.Value.ToString());
         }
 
         private string CheckJwt(KeyValuePair<string, object> callerParam, SpParam spParam, SpParamEx spParamEx)

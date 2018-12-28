@@ -1,5 +1,4 @@
-﻿using DirectSp.Core.Infrastructure;
-using System.Security.Cryptography.X509Certificates;
+﻿using System.Security.Cryptography.X509Certificates;
 
 namespace DirectSp.Core.Test.Mock
 {
@@ -8,10 +7,10 @@ namespace DirectSp.Core.Test.Mock
         public X509Certificate2 GetByThumb(string thumbNumber)
         {
             // Get certificates physical path
-             string certificatePath = "../../../certificates/star.certificate.test.pfx";
+            var certificatePath = "../../../certificates/star.certificate.test.pfx";
 
             // Load certificate by physical path
-            X509Certificate2 certificate = new X509Certificate2(certificatePath,"1");
+            var certificate = new X509Certificate2(certificatePath, "1");
 
             return certificate;
         }

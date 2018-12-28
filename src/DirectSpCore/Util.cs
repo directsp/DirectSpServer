@@ -114,33 +114,6 @@ namespace DirectSp.Core
             return ret;
         }
 
-
-        public static bool AntiXss_VerifyValue(string text, bool isThrow)
-        {
-            if (text == null)
-                return true;
-
-            char[] invalidCharacters = { '"', '\'', '<', '>', '&' };
-            var res = text.IndexOfAny(invalidCharacters) == -1;
-            if (!res && isThrow)
-                throw new ArgumentException("the argument contains invalid characters! ' ' < > &");
-            return res;
-        }
-
-        public static string AntiXss_Encode(string text)
-        {
-            if (text == null)
-                return null;
-
-            //text = text.Replace("<", "&lt;");
-            //text = text.Replace(">", "&gt;");
-            //text = text.Replace("'", "&quot;"); 
-            //text = text.Replace("javascript", "java-script", StringComparison.InvariantCultureIgnoreCase);
-            text = System.Web.HttpUtility.HtmlDecode(text);
-            text = System.Web.HttpUtility.HtmlEncode(text);
-            return text;
-        }
-
         private static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
         private static readonly double MaxUnixSeconds = (DateTime.MaxValue - UnixEpoch).TotalSeconds;
         public static double DateTime_ToUnixDate(DateTime dateTime)

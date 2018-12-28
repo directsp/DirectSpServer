@@ -16,7 +16,6 @@
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
-    <PackageReference Include="NuGet.Build" Version="2.12.0" />
   </ItemGroup>
 
 </Project>
