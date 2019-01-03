@@ -397,7 +397,7 @@ namespace DirectSp.Core
 
 
                 // Sign text if is need
-                if (spParamEx?.SignType == SpSignMode.JwtByCertThumb)
+                if (spParamEx?.SignType == SpSignType.JwtByCertThumb)
                     outParamValue = _tokenSigner.Sign(outParamValue.ToString());
 
                 // convert data form result
@@ -417,7 +417,7 @@ namespace DirectSp.Core
         private object CheckJwt(object paramValue, SpParamInfo spParam, SpParamInfoEx spParamEx)
         {
             // Sign text if need to sign
-            if (spParamEx?.SignType == SpSignMode.JwtByCertThumb && !spParam.IsOutput)
+            if (spParamEx?.SignType == SpSignType.JwtByCertThumb && !spParam.IsOutput)
             {
                 string token = paramValue.ToString();
                 if (string.IsNullOrEmpty(token))

@@ -1,9 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace DirectSp.Core.ProcedureInfos
 {
+    public enum SpCaptchaMode
+    {
+        Manual = 0,
+        Always = 1,
+        Auto = 2,
+    }
+
+    public enum SpDataAccessMode
+    {
+        Write,
+        Read,
+        ReadSnapshot,
+    }
+
+
     public class SpInfoEx
     {
         public SpDataAccessMode DataAccessMode { get; set; } = SpDataAccessMode.Write;

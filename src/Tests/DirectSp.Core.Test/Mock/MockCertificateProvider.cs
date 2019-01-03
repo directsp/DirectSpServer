@@ -2,7 +2,7 @@
 
 namespace DirectSp.Core.Test.Mock
 {
-    public class CertificateProvider : ICertificateProvider
+    public class MockCertificateProvider : ICertificateProvider
     {
         public X509Certificate2 GetByThumb(string thumbNumber)
         {

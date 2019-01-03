@@ -124,6 +124,8 @@ namespace DirectSp.Core.Providers
 
         private SpInfo ProcInfo_FromMethodInfo(MethodInfo methodInfo)
         {
+            var paramsEx = new Dictionary<string, SpParamInfoEx>();
+
             //create paramInfo
             var spParamInfos = new List<SpParamInfo>();
             foreach (var paramInfo in methodInfo.GetParameters())
@@ -138,14 +140,31 @@ namespace DirectSp.Core.Providers
                     SystemTypeName = paramInfo.ParameterType.Name
                 };
                 spParamInfos.Add(spParamInfo);
+
+                //extended paramInfo
+                var paramAttribute = paramInfo.GetCustomAttribute<DirectSpParamAttribute>() ?? new DirectSpParamAttribute();
+                var spParamInfoEx = new SpParamInfoEx()
+                {
+                    SignType = paramAttribute.SignType
+                };
+
+                paramsEx[paramInfo.Name] = spParamInfoEx;
             }
+
+            var directSpAttribute = methodInfo.GetCustomAttribute<DirectSpProcAttribute>() ?? new DirectSpProcAttribute();
 
             //create procedure infos
             var spInfo = new SpInfo
             {
                 ProcedureName = methodInfo.Name,
-                Params = spParamInfos.ToArray()
+                Params = spParamInfos.ToArray(),
+                ExtendedProps = new SpInfoEx()
+                {
+                    IsBatchAllowed = directSpAttribute.IsBatchAllowed,
+                    Params = paramsEx
+                }
             };
+
             return spInfo;
         }
     }
