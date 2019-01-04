@@ -25,7 +25,7 @@ namespace DirectSp.Core.Providers
             _object = obj;
         }
 
-        public Task<CommandResult> Execute(SpInfo procInfo, IDictionary<string, object> callParams, bool isReadScale)
+        public async Task<CommandResult> Execute(SpInfo procInfo, IDictionary<string, object> callParams, bool isReadScale)
         {
             var schema = procInfo.SchemaName;
             var procName = procInfo.ProcedureName;
@@ -42,7 +42,7 @@ namespace DirectSp.Core.Providers
                 if (propertyInfo == null) throw new ArgumentException($"{propName} property does not found!");
                 var result = new CommandResult();
                 result.OutParams["ReturnValue"] = propertyInfo.GetValue(_object);
-                return Task.FromResult(result);
+                return result;
             }
             else if (procName == "setProperty")
             {
@@ -51,7 +51,7 @@ namespace DirectSp.Core.Providers
                 var propertyInfo = typeInfo.GetProperty(propName);
                 if (propertyInfo == null) throw new Exception($"{propName} property not found!");
                 propertyInfo.SetValue(this, Convert.ChangeType(propValue, propertyInfo.PropertyType));
-                return Task.FromResult((CommandResult)null);
+                return null;
             }
             else
             {
@@ -83,13 +83,31 @@ namespace DirectSp.Core.Providers
                 }
 
                 var ret = new CommandResult();
-                var result = methodInfo.Invoke(_object, parameterValues);
 
-                //set return value
-                ret.ReturnValue = result;
+                //invoke command and set return value
+                if (methodInfo.ReturnType == typeof(void))
+                    methodInfo.Invoke(_object, parameterValues);
+                else
+                {
+                    var invokeRes = methodInfo.Invoke(_object, parameterValues);
+
+                    //manage result for Task (void)
+                    if (invokeRes is Task && !invokeRes.GetType().IsGenericType)
+                    {
+                        await (Task)invokeRes;
+                    }
+                    //manage result for Task (generic)
+                    else if (invokeRes is Task)
+                    {
+                        await ((Task)invokeRes).ConfigureAwait(false);
+                        ret.ReturnValue = ((Task)invokeRes).GetType().GetProperty("Result").GetValue(invokeRes);
+                    }
+                    else
+                        ret.ReturnValue = invokeRes;
+                }
 
                 //set output paramters
-                for (var i=0; i< parameterInfos.Length; i++)
+                for (var i = 0; i < parameterInfos.Length; i++)
                 {
                     var parameterInfo = parameterInfos[i];
                     if (parameterInfo.IsOut || parameterInfo.ParameterType.IsByRef)
@@ -99,7 +117,7 @@ namespace DirectSp.Core.Providers
                     }
                 }
 
-                return Task.FromResult(ret);
+                return ret;
             }
         }
 
@@ -161,6 +179,7 @@ namespace DirectSp.Core.Providers
                 ExtendedProps = new SpInfoEx()
                 {
                     IsBatchAllowed = directSpAttribute.IsBatchAllowed,
+                    CaptchaMode = directSpAttribute.CaptchaMode,
                     Params = paramsEx
                 }
             };

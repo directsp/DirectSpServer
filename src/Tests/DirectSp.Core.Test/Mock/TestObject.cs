@@ -1,4 +1,6 @@
 ﻿using DirectSp.Core.ProcedureInfos;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace DirectSp.Core.Test.Mock
 {
@@ -24,14 +26,30 @@ namespace DirectSp.Core.Test.Mock
             return "Test1_Batch_result";
         }
 
-        public void Test3_SignParam([DirectSpParam(SignType = SpSignType.JwtByCertThumb)] out string jwtToken)
+        public void Test3_SignParam(string json, [DirectSpParam(SignType = SpSignType.JwtByCertThumb)] out string jwtToken)
         {
-            jwtToken = Data.JwtToken;
+            jwtToken = json;
         }
 
         public void Test4_ValidateSign([DirectSpParam(SignType = SpSignType.JwtByCertThumb)] string jwtToken)
         {
         }
+
+        [DirectSpProc(CaptchaMode =SpCaptchaMode.Always)]
+        public void CaptchaRequiredMethod()
+        {
+        }
+
+        public Task AsyncVoidMethod()
+        {
+            return Task.Factory.StartNew(() => Thread.Sleep(1));
+        }
+
+        public Task<int> AsyncIntMethod()
+        {
+            return Task.Factory.StartNew(() => { return 1; });
+        }
+
 
 
     }

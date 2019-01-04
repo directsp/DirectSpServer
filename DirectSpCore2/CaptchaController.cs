@@ -2,33 +2,23 @@
 using System;
 using System.Threading.Tasks;
 using DirectSp.Core.Exceptions;
-using Newtonsoft.Json;
 
 namespace DirectSp.Core
 {
-    internal class CaptchaRequest
-    {
-        [JsonProperty("CaptchaId")]
-        public string Id { get; set; }
-
-        [JsonProperty("CaptchaImage")]
-        public byte[] ImageBuffer { get; set; }
-    }
-
     internal class CaptchaController
     {
         private readonly IKeyValueProvider _KeyValueProvider;
-        private readonly ICaptchaProvider _CaptchaProvider;
+        private readonly ICaptchaProvider _captchaProvider;
 
         public CaptchaController(IKeyValueProvider keyValueProvider, ICaptchaProvider  captchaProvider)
         {
             _KeyValueProvider = keyValueProvider;
-            _CaptchaProvider = captchaProvider;
+            _captchaProvider = captchaProvider;
         }
 
         public async Task<CaptchaRequest> Create()
         {
-            var captchaData = _CaptchaProvider.Generate();
+            var captchaData = _captchaProvider.Generate();
             var captchaId = $"captcha/{Guid.NewGuid()}";
             await _KeyValueProvider.SetValue(captchaId, captchaData.Text, 600, true);
             return new CaptchaRequest

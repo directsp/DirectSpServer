@@ -7,5 +7,6 @@ namespace DirectSp.Core
     public class DirectSpProcAttribute : Attribute
     {
         public bool IsBatchAllowed { get; set; }
+        public SpCaptchaMode CaptchaMode { get; set; } = SpCaptchaMode.Manual;
     }
 }

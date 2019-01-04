@@ -1,10 +1,11 @@
-﻿using DirectSp.Core.Providers;
-using DirectSp.Core.Entities;
+﻿using DirectSp.Core.Entities;
+using DirectSp.Core.Exceptions;
+using DirectSp.Core.Providers;
 using DirectSp.Core.Test.Mock;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Threading.Tasks;
-using DirectSp.Core.Exceptions;
 using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace DirectSp.Core.Test.TestClass
 {
@@ -12,6 +13,10 @@ namespace DirectSp.Core.Test.TestClass
     public class SpInvokerTest
     {
         private Invoker _invoker;
+        private static readonly string JwtToken_unsigned = "eyJhbGciOiAiU0hBMjU2IiwgInR5cCI6ICJKV1QifQ==.eyJPcmRlck51bWJlciI6MiwiUmVjZWl2ZXJMb3lhbHR5QWNjb3VudElkIjoxMTAzNzkzMSwiQ2x1Yk5hbWUiOiJOaWtlIiwiQW1vdW50IjoxLCJQb2ludFR5cGVJZCI6MjAyMCwiUG9pbnRUeXBlTmFtZSI6IlRlc3RUeXBlIiwiUGF5ZWVMb3lhbHR5QWNjb3VudElkIjoxMTgzLCJQYXllZUxveWFsdHlBY2NvdW50TmFtZSI6IkJlaG5hbSBFeXZhenBvb3IiLCJleHAiOjI3OTcxMzI3MTUuMTI4NDQyMywiUmV0dXJuVXJsIjoiaHR0cDovL3d3dy5nb29nbGUuY29tIiwiQ2VydGlmaWNhdGVUaHVtYiI6Ijc3IDVhIDkyIDkyIGYxIDlmIDE0IGZjIDJiIDliIDgwIGFiIDA2IDJhIDA2IGJlIDg2IDIzIDYxIDljIn0=.6fHosNT0dNDqMo+wp2OdsdEPAOjlDU14HxngVcda60OmdxFz7II=";
+        private static readonly string JwtToken_signed = "eyJhbGciOiAiU0hBMjU2IiwgInR5cCI6ICJKV1QifQ==.eyJPcmRlck51bWJlciI6MiwiUmVjZWl2ZXJMb3lhbHR5QWNjb3VudElkIjoxMTAzNzkzMSwiQ2x1Yk5hbWUiOiJOaWtlIiwiQW1vdW50IjoxLCJQb2ludFR5cGVJZCI6MjAyMCwiUG9pbnRUeXBlTmFtZSI6IlRlc3RUeXBlIiwiUGF5ZWVMb3lhbHR5QWNjb3VudElkIjoxMTgzLCJQYXllZUxveWFsdHlBY2NvdW50TmFtZSI6IkJlaG5hbSBFeXZhenBvb3IiLCJleHAiOjI3OTcxMzI3MTUuMTI4NDQyMywiUmV0dXJuVXJsIjoiaHR0cDovL3d3dy5nb29nbGUuY29tIiwiQ2VydGlmaWNhdGVUaHVtYiI6Ijc3IDVhIDkyIDkyIGYxIDlmIDE0IGZjIDJiIDliIDgwIGFiIDA2IDJhIDA2IGJlIDg2IDIzIDYxIDljIn0=.ELVhB5/a5rz0jI2WdIwnrzlOgm8s6eHz0yaCCAff1osfF4dhUWxUcDYVTBWadkHWelIh52qUsP0FVEV1075phsQDPuOPT7RR4BuP72nJzt/PsUoMb6fuKEygdutv3dyKEllZp7VAJny3PeSLf20aOy0MCXzdBDw7ZVF4kz/e62iwFHHqLwLDH1cfXaCAnRdEqtR6tkXwOYbvS1XJVw2fxVBBx1LLDLWD5q8gAtlVIGymI85AuveA477fcb0HzEz5ds9f3Wd0NkkGyolRSNcPlV6MHL/D2c6iF+nx6LDU9HTQ6jKPsKdjnbHRDwDo5Q1NeB8Z4FXHWutDpncRc+yCMA==";
+        private static readonly string JwtToken = @"{'OrderNumber':2,'ReceiverLoyaltyAccountId':11037931,'ClubName':'Nike','Amount':1,'PointTypeId':2020,'PointTypeName':'TestType','PayeeLoyaltyAccountId':1183,'PayeeLoyaltyAccountName':'Behnam Eyvazpoor','exp':2797132715.1284423,'ReturnUrl':'http://www.google.com','CertificateThumb':'77 5a 92 92 f1 9f 14 fc 2b 9b 80 ab 06 2a 06 be 86 23 61 9c'}".Replace("'", "\"");
+
 
         [TestInitialize]
         public void Init()
@@ -24,6 +29,7 @@ namespace DirectSp.Core.Test.TestClass
                 Schema = "TestObject",
                 CommandProvider = new ObjectCommandProvider(new TestObject()),
                 CertificateProvider = new MockCertificateProvider(),
+                CaptchaProvider = new MockCaptchaProvider(),
                 Logger = Logger.Current
 
             };
@@ -37,7 +43,7 @@ namespace DirectSp.Core.Test.TestClass
             var spCall = new SpCall
             {
                 Method = "Test1",
-                Params = Util.Dyn2Dict(new { param2="v2", param3 = "v3" } )
+                Params = Util.Dyn2Dict(new { param2 = "v2", param3 = "v3" })
             };
 
             var result = await _invoker.Invoke(spCall);
@@ -47,7 +53,7 @@ namespace DirectSp.Core.Test.TestClass
         }
 
         [TestMethod]
-        public async Task TestParallelInvokeSp()
+        public async Task TestParallelInvoke()
         {
             var spCalls = new SpCall[10];
 
@@ -78,10 +84,11 @@ namespace DirectSp.Core.Test.TestClass
             var spCall = new SpCall
             {
                 Method = "Test3_SignParam",
+                Params = Util.Dyn2Dict(new { json = JwtToken })
             };
 
             var result = await _invoker.Invoke(spCall);
-            Assert.IsTrue((string)result["jwtToken"] == Data.JwtToken_signed);
+            Assert.IsTrue((string)result["jwtToken"] == JwtToken_signed);
         }
 
         [TestMethod]
@@ -90,7 +97,7 @@ namespace DirectSp.Core.Test.TestClass
             var spCall = new SpCall
             {
                 Method = "Test4_ValidateSign",
-                Params = Util.Dyn2Dict(new { jwtToken = Data.JwtToken_signed  })
+                Params = Util.Dyn2Dict(new { jwtToken = JwtToken_signed })
             };
 
             await _invoker.Invoke(spCall);
@@ -102,7 +109,7 @@ namespace DirectSp.Core.Test.TestClass
             var spCall = new SpCall
             {
                 Method = "Test4_ValidateSign",
-                Params = Util.Dyn2Dict(new { jwtToken = Data.JwtToken_unsigned  })
+                Params = Util.Dyn2Dict(new { jwtToken = JwtToken_unsigned })
             };
 
             try
@@ -117,14 +124,14 @@ namespace DirectSp.Core.Test.TestClass
         }
 
         [TestMethod]
-        public async Task TestDouplicateRequestHandling()
+        public async Task TestDuplicateRequestException()
         {
             var spCall = new SpCall
             {
                 Method = "TestSimple"
             };
 
-            var spInvokeParams = new SpInvokeParams { InvokeOptions = new InvokeOptions { RequestId = Guid.NewGuid().ToString() }, UserRemoteIp = "1" };
+            var spInvokeParams = new SpInvokeParams { InvokeOptions = new InvokeOptions { RequestId = Guid.NewGuid().ToString() }, UserRemoteIp = "127.0.0.1" };
             await _invoker.Invoke(spCall, spInvokeParams);
 
             try
@@ -136,5 +143,88 @@ namespace DirectSp.Core.Test.TestClass
             {
             }
         }
+
+        [TestMethod]
+        public async Task TestCaptchaRequired()
+        {
+            var spCall = new SpCall
+            {
+                Method = "CaptchaRequiredMethod"
+            };
+
+            var spInvokeParams = new SpInvokeParams { InvokeOptions = new InvokeOptions { }, UserRemoteIp = "127.0.0.1" };
+            try
+            {
+                await _invoker.Invoke(spCall, spInvokeParams);
+                Assert.Fail("SpInvalidCaptchaException was expected!");
+            }
+            catch (SpInvalidCaptchaException ex)
+            {
+                var captchaRequest = (CaptchaRequest)ex.SpCallError.ErrorData;
+
+                //try with captcha
+                try
+                {
+                    spInvokeParams = new SpInvokeParams { InvokeOptions = new InvokeOptions { CaptchaId = captchaRequest.Id, CaptchaCode = "1234" }, UserRemoteIp = "127.0.0.1" };
+                    await _invoker.Invoke(spCall, spInvokeParams);
+                    Assert.Fail("SpInvalidCaptchaException was expected!");
+                }
+                catch (SpInvalidCaptchaException ex2)
+                {
+                    captchaRequest = (CaptchaRequest)ex2.SpCallError.ErrorData;
+                    spInvokeParams = new SpInvokeParams { InvokeOptions = new InvokeOptions { CaptchaId = captchaRequest.Id, CaptchaCode = "123" }, UserRemoteIp = "127.0.0.1" };
+                    await _invoker.Invoke(spCall, spInvokeParams);
+
+                    //second call with the same captcha id must fail
+                    try
+                    {
+                        await _invoker.Invoke(spCall, spInvokeParams);
+                        Assert.Fail("SpInvalidCaptchaException was expected for second retry!");
+                    }
+                    catch (SpInvalidCaptchaException)
+                    {
+                        //expected exception
+                    }
+                }
+            }
+        }
+
+        [TestMethod]
+        public async Task TestAsyncInt()
+        {
+            var spCall = new SpCall
+            {
+                Method = "AsyncIntMethod"
+            };
+
+            var spInvokeParams = new SpInvokeParams { InvokeOptions = new InvokeOptions { }, UserRemoteIp = "127.0.0.1" };
+            var result = await _invoker.Invoke(spCall, spInvokeParams);
+            Assert.AreEqual(result.ReturnValue, 1);
+        }
+
+        [TestMethod]
+        public async Task TestAsyncVoid()
+        {
+            var spCall = new SpCall
+            {
+                Method = "AsyncVoidMethod"
+            };
+
+            var spInvokeParams = new SpInvokeParams { InvokeOptions = new InvokeOptions { }, UserRemoteIp = "127.0.0.1" };
+            var result = await _invoker.Invoke(spCall, spInvokeParams);
+
+            try
+            {
+                var returnValue = result.ReturnValue;
+                Assert.Fail("KeyNotFoundException expected!");
+            }
+            catch (KeyNotFoundException)
+            {
+                //expected
+            }
+
+        }
+
+
     }
 }
