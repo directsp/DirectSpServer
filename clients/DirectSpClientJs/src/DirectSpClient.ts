@@ -439,13 +439,15 @@ namespace directSp {
 
             //Load Api info if it is not loaded
             if (!this._systemApi || reload) {
-                let result: IDirectSpInvokeResult = await this.invoke("System_Api");
+                let result: IDirectSpInvokeResult = await this.invoke("System_api");
                 this._systemApi = result.api;
                 if (!result.api)
                     return "DirectSp: Could not retreive api information!";
             }
 
-            return DirectSpHelp.help(this._systemApi, criteria);
+            let ret =  DirectSpHelp.help(this._systemApi, criteria);
+            console.log(ret);
+            return this._systemApi;
         };
 
     };

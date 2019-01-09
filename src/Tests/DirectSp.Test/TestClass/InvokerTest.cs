@@ -60,7 +60,7 @@ namespace DirectSp.Test.TestClass
             //set property
             var spCall = new SpCall
             {
-                Method = "Prop1_set",
+                Method = "set_Prop1",
                 Params = Util.Dyn2Dict(new { value = expectedValue })
             };
 
@@ -69,7 +69,7 @@ namespace DirectSp.Test.TestClass
             //get property
             spCall = new SpCall
             {
-                Method = "Prop1_get",
+                Method = "get_Prop1",
             };
 
             result = await _invoker.Invoke(spCall);

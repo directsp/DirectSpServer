@@ -8,10 +8,13 @@ namespace directSp {
             if (criteria == "") criteria = null;
 
             //find all proc that match
-            let foundProc = [];
-            for (let i = 0; i < systemApi.length; i++) {
-                if (criteria == null || systemApi[i].procedureName.toLowerCase().indexOf(criteria) != -1) {
-                    foundProc.push(systemApi[i]);
+            let foundProc: any = [];
+            for (var item in systemApi) {
+                if (systemApi.hasOwnProperty(item)) {
+                    let api = systemApi[item];
+                    if (criteria == null || api.procedureName.toLowerCase().indexOf(criteria) != -1) {
+                        foundProc.push(api);
+                    }
                 }
             }
 
@@ -20,7 +23,7 @@ namespace directSp {
                 result += ("DirectSp: Nothing found!");
             } else {
                 for (let i = 0; i < foundProc.length; i++) {
-                    if (foundProc[i].procedureName.toLowerCase() == criteria || foundProc.length == 1)
+                    if (foundProc.length == 1)
                         result += this._helpImpl(foundProc[i]);
                     else
                         result += (foundProc[i].procedureName) + "\n";
@@ -114,14 +117,12 @@ namespace directSp {
             else if (paramType.indexOf("time") != -1) return "datetime";
             else if (paramType.indexOf("money") != -1) return "money";
             else if (paramType.indexOf("int") != -1) return "integer";
-            else if (
-                paramType.indexOf("float") != -1 ||
-                paramType.indexOf("decimal") != -1
-            )
-                return "float";
-            else if (paramType.indexOf("bit") != -1 || paramType.indexOf("decimal") != -1)
-                return "boolean";
-            return "string";
+            else if (paramType.indexOf("float") != -1) return "float";
+            else if (paramType.indexOf("decimal") != -1) return "float";
+            else if (paramType.indexOf("bit") != -1) return "boolean";
+            else if (paramType.indexOf("bool") != -1) return "boolean";
+            else if (paramType.indexOf("string") != -1) return "string";
+            return "object";
         };
 
         private static _formatHelpParamName(paramName: string): string {

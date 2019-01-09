@@ -137,7 +137,7 @@ namespace DirectSp
                 {
                     var spList = _commandProvider.GetSystemApi(out string appUserContext).Result;
                     foreach (var item in spList)
-                        spInfos.Add(item.SchemaName + "." + item.ProcedureName, item);
+                        spInfos.Add(item.ProcedureName, item);
 
                     _SpInfos = spInfos;
                     _appUserContext = new InvokeContext(appUserContext, "$$");
@@ -151,7 +151,7 @@ namespace DirectSp
             //Check DuplicateRequest if spCalls contian at least one write
             foreach (var spCall in spCalls)
             {
-                var spInfo = FindSpInfo($"{_schema}.{spCall.Method}");
+                var spInfo = FindSpInfo($"{spCall.Method}");
                 if (spInfo != null && spInfo.ExtendedProps.DataAccessMode == SpDataAccessMode.Write)
                 {
                     await CheckDuplicateRequest(spInvokeParams.InvokeOptions.RequestId, 3600 * 2);
@@ -222,7 +222,7 @@ namespace DirectSp
         public async Task<SpCallResult> Invoke(SpCall spCall, SpInvokeParams spInvokeParams, bool isSystem = false)
         {
             // Check duplicate request
-            var spInfo = FindSpInfo($"{_schema}.{spCall.Method}");
+            var spInfo = FindSpInfo($"{spCall.Method}");
             if (spInfo != null && spInfo.ExtendedProps.DataAccessMode == SpDataAccessMode.Write)
                 await CheckDuplicateRequest(spInvokeParams.InvokeOptions.RequestId, spInfo.ExtendedProps.CommandTimeout);
 
@@ -300,7 +300,7 @@ namespace DirectSp
             VerifyUserRequestLimit(userSession);
 
             //find api
-            var spName = _schema + "." + spCall.Method;
+            var spName = spCall.Method;
             if (spCall.Method == "System_api")
                 return Help();
 

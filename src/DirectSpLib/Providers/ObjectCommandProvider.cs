@@ -33,94 +33,69 @@ namespace DirectSp.Providers
             if (schema != _targetType.Name)
                 throw new Exception($"Invalid schema {schema}!");
 
-            var typeInfo = _targetType;
+            var methodInfo = _targetType.GetMethod(procName);
+            if (methodInfo == null) throw new Exception($"{procName} was not found!");
 
-            if (procName.Length >= 4 && procName.Substring(procName.Length - 4) == "_get")
+            //call method by name parameters
+            var parameterInfos = methodInfo.GetParameters();
+            var parameterValues = new object[parameterInfos.Length];
+            for (var i = 0; i < parameterInfos.Length; i++)
             {
-                var propName = procName.Substring(0, procName.Length - 4);
-                var propertyInfo = typeInfo.GetProperty(propName);
-                if (propertyInfo == null) throw new ArgumentException($"{propName} property does not found!");
-                var result = new CommandResult();
-                result.OutParams["returnValue"] = propertyInfo.GetValue(_targetObject);
-                return result;
+                var parameterInfo = parameterInfos[i];
+                if (callParams.TryGetValue(parameterInfo.Name, out object value) && value != Undefined.Value)
+                {
+                    parameterValues[i] = value;
+                }
+                else if (parameterInfo.HasDefaultValue)
+                {
+                    parameterValues[i] = parameterInfo.DefaultValue;
+                }
             }
-            if (procName.Length >= 4 && procName.Substring(procName.Length - 4) == "_set")
+
+            //throw error if there is additional params in given parameters
+            foreach (var callParam in callParams)
             {
-                var propName = procName.Substring(0, procName.Length - 4);
-                var propValue = callParams["value"];
-                var propertyInfo = typeInfo.GetProperty(propName);
-                if (propertyInfo == null) throw new Exception($"{propName} property not found!");
-                propertyInfo.SetValue(_targetObject, Convert.ChangeType(propValue, propertyInfo.PropertyType));
-                var result = new CommandResult();
-                return result;
+                if (parameterInfos.FirstOrDefault(x => x.Name == callParam.Key) == null)
+                    throw new Exception($"Unknown parameter! ParameterName: {callParam.Key}");
             }
+
+            var ret = new CommandResult();
+
+            //invoke command and set return value
+            if (methodInfo.ReturnType == typeof(void))
+                methodInfo.Invoke(_targetObject, parameterValues);
             else
             {
-                var methodInfo = typeInfo.GetMethod(procName);
-                if (methodInfo == null) throw new Exception($"{procName} was not found!");
+                var invokeRes = methodInfo.Invoke(_targetObject, parameterValues);
 
-                //call method by name parameters
-                var parameterInfos = methodInfo.GetParameters();
-                var parameterValues = new object[parameterInfos.Length];
-                for (var i = 0; i < parameterInfos.Length; i++)
+                //manage result for Task (void)
+                if (invokeRes is Task && !invokeRes.GetType().IsGenericType)
                 {
-                    var parameterInfo = parameterInfos[i];
-                    if (callParams.TryGetValue(parameterInfo.Name, out object value) && value != Undefined.Value)
-                    {
-                        parameterValues[i] = value;
-                    }
-                    else if (parameterInfo.HasDefaultValue)
-                    {
-                        parameterValues[i] = parameterInfo.DefaultValue;
-                    }
+                    await (Task)invokeRes;
                 }
-
-
-                //throw error if there is additional params in given parameters
-                foreach (var callParam in callParams)
+                //manage result for Task (generic)
+                else if (invokeRes is Task)
                 {
-                    if (parameterInfos.FirstOrDefault(x => x.Name == callParam.Key) == null)
-                        throw new Exception($"Unknown parameter! ParameterName: {callParam.Key}");
+                    await ((Task)invokeRes).ConfigureAwait(false);
+                    ret.OutParams["returnValue"] = ((Task)invokeRes).GetType().GetProperty("Result").GetValue(invokeRes);
+
                 }
-
-                var ret = new CommandResult();
-
-                //invoke command and set return value
-                if (methodInfo.ReturnType == typeof(void))
-                    methodInfo.Invoke(_targetObject, parameterValues);
                 else
-                {
-                    var invokeRes = methodInfo.Invoke(_targetObject, parameterValues);
-
-                    //manage result for Task (void)
-                    if (invokeRes is Task && !invokeRes.GetType().IsGenericType)
-                    {
-                        await (Task)invokeRes;
-                    }
-                    //manage result for Task (generic)
-                    else if (invokeRes is Task)
-                    {
-                        await ((Task)invokeRes).ConfigureAwait(false);
-                        ret.OutParams["returnValue"] = ((Task)invokeRes).GetType().GetProperty("Result").GetValue(invokeRes);
-
-                    }
-                    else
-                        ret.OutParams["returnValue"] = invokeRes;
-                }
-
-                //set output paramters
-                for (var i = 0; i < parameterInfos.Length; i++)
-                {
-                    var parameterInfo = parameterInfos[i];
-                    if (parameterInfo.IsOut || parameterInfo.ParameterType.IsByRef)
-                    {
-                        if (callParams.ContainsKey(parameterInfo.Name))
-                            ret.OutParams[parameterInfo.Name] = parameterValues[i];
-                    }
-                }
-
-                return ret;
+                    ret.OutParams["returnValue"] = invokeRes;
             }
+
+            //set output paramters
+            for (var i = 0; i < parameterInfos.Length; i++)
+            {
+                var parameterInfo = parameterInfos[i];
+                if (parameterInfo.IsOut || parameterInfo.ParameterType.IsByRef)
+                {
+                    if (callParams.ContainsKey(parameterInfo.Name))
+                        ret.OutParams[parameterInfo.Name] = parameterValues[i];
+                }
+            }
+
+            return ret;
         }
 
         public Task<SpInfo[]> GetSystemApi(out string context)
@@ -140,66 +115,7 @@ namespace DirectSp.Providers
                 spInfos.Add(spInfo);
             }
 
-            foreach (var propInfo in type.GetProperties())
-            {
-                if (propInfo.CanRead)
-                {
-                    var spInfo = ProcInfo_FromPropInfo(propInfo, true);
-                    spInfo.SchemaName = type.Name;
-                    spInfos.Add(spInfo);
-                }
-
-                if (propInfo.CanWrite)
-                {
-                    var spInfo = ProcInfo_FromPropInfo(propInfo, false);
-                    spInfo.SchemaName = type.Name;
-                    spInfos.Add(spInfo);
-                }
-            }
-
-
             return spInfos.ToArray();
-        }
-
-        private SpInfo ProcInfo_FromPropInfo(PropertyInfo propInfo, bool getMode)
-        {
-            var paramsEx = new Dictionary<string, SpParamInfoEx>();
-            var spParamInfos = new List<SpParamInfo>();
-            var procName = propInfo.Name + (getMode ? "_get" : "_set");
-            var paramName = getMode ? "returnValue" : "value";
-
-            var spParamInfo = new SpParamInfo
-            {
-                ParamName = paramName,
-                IsOutput = getMode,
-                UserTypeName = propInfo.PropertyType.Name,
-                SystemTypeName = propInfo.PropertyType.Name
-            };
-            spParamInfos.Add(spParamInfo);
-
-            //extended paramInfo
-            var paramAttribute = propInfo.GetCustomAttribute<DirectSpParamAttribute>() ?? new DirectSpParamAttribute();
-            var spParamInfoEx = new SpParamInfoEx()
-            {
-                SignType = paramAttribute.SignType
-            };
-
-            paramsEx[paramName] = spParamInfoEx;
-
-            var directSpAttribute = propInfo.GetCustomAttribute<DirectSpProcAttribute>() ?? new DirectSpProcAttribute();
-            var spInfo = new SpInfo
-            {
-                ProcedureName = procName,
-                Params = spParamInfos.ToArray(),
-                ExtendedProps = new SpInfoEx()
-                {
-                    IsBatchAllowed = directSpAttribute.IsBatchAllowed,
-                    CaptchaMode = directSpAttribute.CaptchaMode,
-                    Params = paramsEx
-                }
-            };
-
-            return spInfo;
         }
 
         private SpParamInfo ProcInfo_GetParamInfo(ParameterInfo paramInfo, Dictionary<string, SpParamInfoEx> paramsEx)
