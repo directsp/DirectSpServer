@@ -19,9 +19,9 @@ namespace DirectSp.Host
         public async Task Invoke(HttpContext context)
         {
             // put delay for invoke call
-            if (App.AppSettings.InvokeDelayInterval != 0)
+            if (App.HostSettings.InvokeDelayInterval != 0)
             {
-                var interval = App.AppSettings.InvokeDelayInterval * 1000;
+                var interval = App.HostSettings.InvokeDelayInterval * 1000;
                 var delay = new Random().Next(interval / 2, interval + interval / 2);
                 Thread.Sleep(delay);
             }

@@ -1,8 +1,6 @@
-﻿using DirectSp.Core;
-using DirectSp.Core.Database;
-using DirectSp.Core.Entities;
-using DirectSp.Core.InternalDb;
+﻿using DirectSp.Entities;
 using DirectSp.Host.Settings;
+using DirectSp.Providers;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.IO;
@@ -12,55 +10,48 @@ namespace DirectSp.Host
 {
     static class App
     {
-        public static SpInvoker SpInvoker { get; private set; }
-        public static AppSettings AppSettings { get; private set; } = new AppSettings();
-        public static KestlerSettings KestlerSettings = new KestlerSettings();
+        public static Invoker Invoker { get; private set; }
+        public static HostSettings HostSettings { get; private set; } = new HostSettings();
+        public static KestlerSettings KestlerSettings { get; private set; } = new KestlerSettings();
         public static X509Certificate2 KestrelSslCertificate { get; private set; }
 
         public static void Configure(IConfigurationRoot configuration)
         {
             //load settings
-            configuration.GetSection("App").Bind((object)AppSettings);
-            configuration.GetSection("Kestrel").Bind(KestlerSettings);
+            configuration.GetSection("DirectSpHost").Bind(HostSettings);
+            configuration.GetSection("Kestler").Bind(KestlerSettings);
 
-            Directory.CreateDirectory(AppSettings.WorkspaceFolderPath);
-            var spInvokerOptions = new SpInvokerOptions() { WorkspaceFolderPath = Path.Combine(AppSettings.WorkspaceFolderPath, "DirectSp") };
-            configuration.GetSection("SpInvoker").Bind(spInvokerOptions);
-
-            // Resolve SpInvoker internal dependencies
-            var spInvokerConfig = new SpInvokerConfig
-            {
-                ConnectionString = AppSettings.ResourceDbConnectionString,
-                Options = spInvokerOptions,
-                Schema = AppSettings.ResourceDbSchema,
-                KeyValue = null,
-                TokenSigner = new JwtTokenSigner(new CertificateProvider()),
-                DbLayer = new DbLayer()
+            var invokerOptions = new InvokerOptions() {
+                WorkspaceFolderPath = Path.Combine(HostSettings.WorkspaceFolderPath, "DirectSp")
             };
+            configuration.GetSection("DirectSpInvoker").Bind(invokerOptions);
+            Directory.CreateDirectory(HostSettings.WorkspaceFolderPath);
 
             // Create KeyValue instance base of AppSetting.json settings
-            switch (AppSettings.KeyValueProvider.Name)
+            switch (HostSettings.KeyValueProvider.Name)
             {
-                case KeyValueProviderType.DspSqlKeyValue:
-                    spInvokerConfig.KeyValue = new DspSqlKeyValue(AppSettings.KeyValueProvider.ConnectionString);
+                case KeyValueProviderType.SqlKeyValue:
+                    invokerOptions.KeyValueProvider = new SqlKeyValueProvider(HostSettings.KeyValueProvider.ConnectionString);
                     break;
 
-                case KeyValueProviderType.DspMemoryKeyValue:
-                    spInvokerConfig.KeyValue = new MemoryKeyValue();
+                case KeyValueProviderType.MemoryKeyValue:
+                    invokerOptions.KeyValueProvider = new MemoryKeyValueProvder();
                     break;
 
                 default:
-                    throw new NotImplementedException($"KeyValueProvider has not been implemented. Name: {AppSettings.KeyValueProvider.Name}");
+                    throw new NotImplementedException($"KeyValueProvider has not been implemented. Name: {HostSettings.KeyValueProvider.Name}");
             }
 
-            SpInvoker = new SpInvoker(spInvokerConfig);
+            Invoker = new Invoker(invokerOptions);
 
             // find Kestrel Ssl Certificate
-            var certStore = new X509Store(StoreName.My, StoreLocation.LocalMachine, OpenFlags.OpenExistingOnly);
             if (!string.IsNullOrEmpty(KestlerSettings.ListenIp) && !string.IsNullOrEmpty(KestlerSettings.SslCertificateThumb))
             {
-                var certList = certStore.Certificates.Find(X509FindType.FindByThumbprint, KestlerSettings.SslCertificateThumb, true);
-                KestrelSslCertificate = certList.Count > 0 ? certList[0] : null;
+                //Invoker.CertificateProvider.GetByThumb(); todo
+                //var certStore = new X509Store(StoreName.My, StoreLocation.LocalMachine, OpenFlags.OpenExistingOnly);
+                //var certList = certStore.Certificates.Find(X509FindType.FindByThumbprint, KestlerSettings.SslCertificateThumb, true);
+                //KestrelSslCertificate = certList.Count > 0 ? certList[0] : null;
+                KestrelSslCertificate = Invoker.CertificateProvider.GetByThumb(KestlerSettings.SslCertificateThumb);
             }
         }
     }

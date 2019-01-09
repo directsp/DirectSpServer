@@ -1,0 +1,3 @@
+﻿CREATE TYPE [dbo].[TSTRINGA]
+    FROM VARCHAR (8000) NULL;
+

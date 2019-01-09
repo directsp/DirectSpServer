@@ -1,5 +1,4 @@
-﻿using DirectSp.Core;
-using DirectSp.Core.Entities;
+﻿using DirectSp.Entities;
 using log4net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,14 +10,14 @@ using System.Threading.Tasks;
 
 namespace DirectSp.Host.Controllers
 {
-    public class ApiController : DirectSp.Core.Controllers.ApiController
+    public class ApiController : DirectSp.Controllers.ApiController
     {
-        protected override SpInvoker SpInvoker { get { return App.SpInvoker; } }
+        protected override Invoker Invoker { get { return App.Invoker; } }
         private ILog _logger;
 
         public ApiController()
         {
-            _logger = Logger.Log4Net;
+            _logger = Logger.Current;
         }
 
         [HttpPost, Authorize]

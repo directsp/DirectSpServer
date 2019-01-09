@@ -4,7 +4,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>DirectSpClient</AssemblyName>
     <RootNamespace>DirectSp.DirectSpClient</RootNamespace>
-    <Authors>Mohammad Nikravan,Behnam eyvazpoor</Authors>
+    <Authors>Mohammad Nikravan</Authors>
     <PackageId>DirectSpClient</PackageId>
     <PackageTags>DirectSp Client .NET</PackageTags>
     <Company>directsp.net</Company>

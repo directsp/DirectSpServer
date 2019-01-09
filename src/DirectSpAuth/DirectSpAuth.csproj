@@ -44,10 +44,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DirectSpCore\DirectSpCore.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Update="Certificates\IrancardAuth.cer">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

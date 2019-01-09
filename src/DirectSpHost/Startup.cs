@@ -1,8 +1,7 @@
 ﻿using System;
-using DirectSp.Core;
-using log4net;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -11,29 +10,18 @@ namespace DirectSp.Host
 {
     public class Startup
     {
-        public Startup(IHostingEnvironment env)
+        public Startup(IConfiguration configuration)
         {
-            var builder = new ConfigurationBuilder()
-                .SetBasePath(env.ContentRootPath)
-                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-                .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true);
-
-            if (env.IsEnvironment("Development"))
-            {
-                // This will push telemetry data through Application Insights pipeline faster, allowing you to view results immediately.
-                builder.AddApplicationInsightsSettings(developerMode: true);
-            }
-            builder.AddEnvironmentVariables();
-            Configuration = builder.Build();
+            Configuration = configuration;
         }
 
-        public IConfigurationRoot Configuration { get; }
+        public IConfiguration Configuration { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container
         public void ConfigureServices(IServiceCollection services)
         {
             //read settings
-            App.Configure(Configuration);
+            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
 
             //enable cross-origin; MUST before anything
             services.AddCors(o => o.AddPolicy("CorsPolicy", builder =>
@@ -47,13 +35,12 @@ namespace DirectSp.Host
             }));
 
             // Add framework services.
-            services.AddApplicationInsightsTelemetry(Configuration);
             services.AddAppAuthentication();
 
             //Init MVC
             services.AddMvc().AddJsonOptions(options =>
             {
-                if (App.SpInvoker.Options.UseCamelCase)
+                if (App.Invoker.UseCamelCase)
                     options.SerializerSettings.ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver();
             });
 
@@ -67,14 +54,10 @@ namespace DirectSp.Host
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory, IApplicationLifetime  applicationLifeTime)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
         {
-            applicationLifeTime.ApplicationStopped.Register(onShutdown);
-            loggerFactory.AddConsole(Configuration.GetSection("Logging"));
-            loggerFactory.AddDebug();
-
             // Cors must configure before any Authorization to allow token request
-            if (App.AppSettings.EnableCors)
+            if (App.HostSettings.EnableCors)
                 app.UseCors("CorsPolicy");
 
             //User Authentication Server and Client (Before Static Files and MVC)
@@ -87,12 +70,5 @@ namespace DirectSp.Host
             app.UseStaticFiles();
             app.UseMvc();
         }
-
-        private void onShutdown()
-        {
-            ILog logger= Logger.Log4Net;
-            logger.Error("---------------------Stoped---------------------------------");
-        }
-
     }
 }

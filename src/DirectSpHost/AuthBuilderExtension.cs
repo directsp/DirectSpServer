@@ -10,7 +10,7 @@ namespace DirectSp.Host
     {
         public static IServiceCollection AddAppAuthentication(this IServiceCollection services)
         {
-            var authOptions = App.AppSettings.Authentication;
+            var authOptions = App.HostSettings.Authentication;
             var cert = new X509Certificate2(authOptions.CertificateFile);
             var signingKey = new X509SecurityKey(cert);
 
@@ -20,7 +20,7 @@ namespace DirectSp.Host
                 {
                     ValidIssuer = new Uri(authOptions.ValidIssuer).ToString(),
                     IssuerSigningKey = signingKey,
-                    ValidAudiences = App.AppSettings.Authentication.ValidAudiences,
+                    ValidAudiences = App.HostSettings.Authentication.ValidAudiences,
                     ValidateAudience = true,
                     ValidateIssuerSigningKey = true,
                     ValidateLifetime = true,

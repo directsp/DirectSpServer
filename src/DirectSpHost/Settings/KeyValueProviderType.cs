@@ -2,7 +2,7 @@
 {
     enum KeyValueProviderType
     {
-        DspMemoryKeyValue,
-        DspSqlKeyValue
+        MemoryKeyValue,
+        SqlKeyValue
     }
 }
