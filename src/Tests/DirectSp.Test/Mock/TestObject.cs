@@ -1,4 +1,5 @@
 ﻿using DirectSp.ProcedureInfos;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -51,5 +52,11 @@ namespace DirectSp.Test.Mock
         {
             return Task.Factory.StartNew(() => { return 1; });
         }
+
+        public void ThrowException(string message)
+        {
+            throw new Exception(message);
+        }
+
     }
 }

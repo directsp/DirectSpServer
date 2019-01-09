@@ -76,6 +76,27 @@ namespace DirectSp.Test.TestClass
             Assert.AreEqual(result["returnValue"], expectedValue);
         }
 
+        [TestMethod]
+        public async Task TestException()
+        {
+            var expectedMessage = "FooException";
+            var spCall = new SpCall
+            {
+                Method = "ThrowException",
+                Params = Util.Dyn2Dict(new { message = expectedMessage })
+            };
+
+            try
+            {
+                await _invoker.Invoke(spCall);
+                Assert.Fail("Exception was expected");
+            }
+            catch (DirectSpException ex)
+            {
+                Assert.AreEqual(ex.SpCallError.ErrorMessage, expectedMessage);
+            }
+        }
+
 
         [TestMethod]
         public async Task TestParallelInvoke()

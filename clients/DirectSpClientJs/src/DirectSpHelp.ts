@@ -80,9 +80,6 @@ namespace directSp {
                 }
             }
             str +=
-                "\n\t" +
-                this._formatHelpParam("returnValue", "integer", maxParamNameLength);
-            str +=
                 "\n\t" + this._formatHelpParam("recordset", "array", maxParamNameLength);
 
             //sample

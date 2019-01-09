@@ -55,47 +55,54 @@ namespace DirectSp.Providers
             //throw error if there is additional params in given parameters
             foreach (var callParam in callParams)
             {
-                if (parameterInfos.FirstOrDefault(x => x.Name == callParam.Key) == null)
+                if (callParam.Key != "returnValue" && parameterInfos.FirstOrDefault(x => x.Name == callParam.Key) == null)
                     throw new Exception($"Unknown parameter! ParameterName: {callParam.Key}");
             }
 
             var ret = new CommandResult();
 
-            //invoke command and set return value
-            if (methodInfo.ReturnType == typeof(void))
-                methodInfo.Invoke(_targetObject, parameterValues);
-            else
+            try
             {
-                var invokeRes = methodInfo.Invoke(_targetObject, parameterValues);
-
-                //manage result for Task (void)
-                if (invokeRes is Task && !invokeRes.GetType().IsGenericType)
-                {
-                    await (Task)invokeRes;
-                }
-                //manage result for Task (generic)
-                else if (invokeRes is Task)
-                {
-                    await ((Task)invokeRes).ConfigureAwait(false);
-                    ret.OutParams["returnValue"] = ((Task)invokeRes).GetType().GetProperty("Result").GetValue(invokeRes);
-
-                }
+                //invoke command and set return value
+                if (methodInfo.ReturnType == typeof(void))
+                    methodInfo.Invoke(_targetObject, parameterValues);
                 else
-                    ret.OutParams["returnValue"] = invokeRes;
-            }
-
-            //set output paramters
-            for (var i = 0; i < parameterInfos.Length; i++)
-            {
-                var parameterInfo = parameterInfos[i];
-                if (parameterInfo.IsOut || parameterInfo.ParameterType.IsByRef)
                 {
-                    if (callParams.ContainsKey(parameterInfo.Name))
-                        ret.OutParams[parameterInfo.Name] = parameterValues[i];
-                }
-            }
+                    var invokeRes = methodInfo.Invoke(_targetObject, parameterValues);
 
-            return ret;
+                    //manage result for Task (void)
+                    if (invokeRes is Task && !invokeRes.GetType().IsGenericType)
+                    {
+                        await (Task)invokeRes;
+                    }
+                    //manage result for Task (generic)
+                    else if (invokeRes is Task)
+                    {
+                        await ((Task)invokeRes).ConfigureAwait(false);
+                        ret.OutParams["returnValue"] = ((Task)invokeRes).GetType().GetProperty("Result").GetValue(invokeRes);
+
+                    }
+                    else
+                        ret.OutParams["returnValue"] = invokeRes;
+                }
+
+                //set output paramters
+                for (var i = 0; i < parameterInfos.Length; i++)
+                {
+                    var parameterInfo = parameterInfos[i];
+                    if (parameterInfo.IsOut || parameterInfo.ParameterType.IsByRef)
+                    {
+                        if (callParams.ContainsKey(parameterInfo.Name))
+                            ret.OutParams[parameterInfo.Name] = parameterValues[i];
+                    }
+                }
+
+                return ret;
+            }
+            catch (TargetInvocationException ex)
+            {
+                throw ex.InnerException;
+            }
         }
 
         public Task<SpInfo[]> GetSystemApi(out string context)
@@ -120,10 +127,12 @@ namespace DirectSp.Providers
 
         private SpParamInfo ProcInfo_GetParamInfo(ParameterInfo paramInfo, Dictionary<string, SpParamInfoEx> paramsEx)
         {
+            var isRetParam = paramInfo.Position == -1;
+
             var spParamInfo = new SpParamInfo
             {
-                ParamName = paramInfo.Name ?? "returnValue",
-                IsOutput = paramInfo.IsOut || paramInfo.IsRetval,
+                ParamName = isRetParam ? "returnValue" : paramInfo.Name,
+                IsOutput = paramInfo.IsOut || paramInfo.IsRetval || isRetParam,
                 IsOptional = paramInfo.IsOptional,
                 DefaultValue = paramInfo.DefaultValue,
                 UserTypeName = paramInfo.ParameterType.Name,
@@ -152,8 +161,10 @@ namespace DirectSp.Providers
                 spParamInfos.Add(ProcInfo_GetParamInfo(paramInfo, paramsEx));
 
             //add return value as an out parameter
-            spParamInfos.Add(ProcInfo_GetParamInfo(methodInfo.ReturnParameter, paramsEx));
+            if (methodInfo.ReturnParameter.ParameterType != typeof(void))
+                spParamInfos.Add(ProcInfo_GetParamInfo(methodInfo.ReturnParameter, paramsEx));
 
+            // add method attributes
             var directSpAttribute = methodInfo.GetCustomAttribute<DirectSpProcAttribute>() ?? new DirectSpProcAttribute();
 
             //create procedure infos

@@ -435,19 +435,23 @@ namespace directSp {
             }
         };
 
-        public async help(criteria: string | null = null, reload: boolean = false): Promise<string> {
+        public help(criteria: string | null = null, reload: boolean = false): string {
 
             //Load Api info if it is not loaded
             if (!this._systemApi || reload) {
-                let result: IDirectSpInvokeResult = await this.invoke("System_api");
-                this._systemApi = result.api;
-                if (!result.api)
-                    return "DirectSp: Could not retreive api information!";
+                this.invoke("System_api").then(data => {
+                    this._systemApi = data.api;
+                    if (this._systemApi)
+                        this.help(criteria);
+                    else
+                        console.log("DirectSp: Could not retreive API information!");
+                });
+                return "";
             }
 
-            let ret =  DirectSpHelp.help(this._systemApi, criteria);
-            console.log(ret);
-            return this._systemApi;
+            let res = DirectSpHelp.help(this._systemApi, criteria);
+            console.log(res);
+            return "";
         };
 
     };
