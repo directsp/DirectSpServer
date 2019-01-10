@@ -4,10 +4,10 @@ namespace DirectSp
 {
     public class CaptchaRequest
     {
-        [JsonProperty("CaptchaId")]
+        [JsonProperty("captchaId")]
         public string Id { get; set; }
 
-        [JsonProperty("CaptchaImage")]
+        [JsonProperty("captchaImage")]
         public byte[] ImageBuffer { get; set; }
     }
 }
