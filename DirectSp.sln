@@ -17,11 +17,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DirectSpClientNet", "client
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DirectSpCore_Old", "src\DirectSpCore_Old\DirectSpCore_Old.csproj", "{5FD7BBD4-3B5C-499E-95D3-3CFA7CEC959E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DirectSpLib", "src\DirectSpLib\DirectSpLib.csproj", "{BECBF248-1D36-4571-BA03-BC48030C4D15}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DirectSpNetCoreLib", "src\DirectSpNetCoreLib\DirectSpNetCoreLib.csproj", "{9A041689-7A6E-4CED-9931-104BC4142F57}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DirectSp.Test", "src\Tests\DirectSp.Test\DirectSp.Test.csproj", "{3FC946EA-4D3D-4FAA-B05C-76BDB272D286}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DirectSpServerStandard", "src\DirectSpServerStandard\DirectSpServerStandard.csproj", "{1AADB9C6-CE17-4423-9ECA-F749B6941106}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DirectSpServerNetCore", "src\DirectSpServerNetCore\DirectSpServerNetCore.csproj", "{F5A92332-D739-4854-B305-3A1DDAE38C79}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,18 +45,18 @@ Global
 		{5FD7BBD4-3B5C-499E-95D3-3CFA7CEC959E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5FD7BBD4-3B5C-499E-95D3-3CFA7CEC959E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5FD7BBD4-3B5C-499E-95D3-3CFA7CEC959E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{BECBF248-1D36-4571-BA03-BC48030C4D15}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BECBF248-1D36-4571-BA03-BC48030C4D15}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BECBF248-1D36-4571-BA03-BC48030C4D15}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BECBF248-1D36-4571-BA03-BC48030C4D15}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9A041689-7A6E-4CED-9931-104BC4142F57}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9A041689-7A6E-4CED-9931-104BC4142F57}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9A041689-7A6E-4CED-9931-104BC4142F57}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9A041689-7A6E-4CED-9931-104BC4142F57}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3FC946EA-4D3D-4FAA-B05C-76BDB272D286}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3FC946EA-4D3D-4FAA-B05C-76BDB272D286}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3FC946EA-4D3D-4FAA-B05C-76BDB272D286}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3FC946EA-4D3D-4FAA-B05C-76BDB272D286}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1AADB9C6-CE17-4423-9ECA-F749B6941106}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1AADB9C6-CE17-4423-9ECA-F749B6941106}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1AADB9C6-CE17-4423-9ECA-F749B6941106}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1AADB9C6-CE17-4423-9ECA-F749B6941106}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F5A92332-D739-4854-B305-3A1DDAE38C79}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F5A92332-D739-4854-B305-3A1DDAE38C79}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F5A92332-D739-4854-B305-3A1DDAE38C79}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F5A92332-D739-4854-B305-3A1DDAE38C79}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

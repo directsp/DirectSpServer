@@ -24,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\DirectSpLib\DirectSpLib.csproj" />
+    <ProjectReference Include="..\..\DirectSpServerStandard\DirectSpServerStandard.csproj" />
   </ItemGroup>
 
 </Project>

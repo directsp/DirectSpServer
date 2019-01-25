@@ -6,7 +6,7 @@ namespace DirectSp
 {
     class UserSession
     {
-        public UserSession(InvokeContext spContext)
+        public UserSession(DirectSpInvokeContext spContext)
         {
             SpContext = spContext;
         }
@@ -61,8 +61,8 @@ namespace DirectSp
             }
         }
 
-        private InvokeContext _SpContext;
-        public InvokeContext SpContext
+        private DirectSpInvokeContext _SpContext;
+        public DirectSpInvokeContext SpContext
         {
             get
             {

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using System.IO;
 using System.Net;
@@ -14,12 +15,13 @@ namespace DirectSp.Host
 
         public static IWebHostBuilder CreateWebHostBuilder(string[] args)
         {
-            return new WebHostBuilder()
+            return 
+                WebHost.CreateDefaultBuilder(args)
                 .UseKestrel(options =>
                 {
-                    if (!string.IsNullOrEmpty(App.KestlerSettings.ListenIp))
+                    if (!string.IsNullOrEmpty(App.KestrelSettings.ListenIp))
                     {
-                        options.Listen(IPAddress.Parse(App.KestlerSettings.ListenIp), 443, listenOptions =>
+                        options.Listen(IPAddress.Parse(App.KestrelSettings.ListenIp), 443, listenOptions =>
                         {
                             listenOptions.UseHttps(App.KestrelSslCertificate);
                         });
@@ -27,8 +29,6 @@ namespace DirectSp.Host
                     }
                 })
                 .UseSetting("detailedErrors", "true")
-                .UseContentRoot(Directory.GetCurrentDirectory())
-                .UseIISIntegration()
                 .UseStartup<Startup>();
         }
     }

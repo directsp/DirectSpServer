@@ -11,7 +11,7 @@ namespace DirectSp.Controllers
 {
     public abstract class ApiController : Controller
     {
-        protected abstract Invoker Invoker { get; }
+        protected abstract DirectSpInvoker Invoker { get; }
 
         public async Task<IActionResult> Invoke(string method, [FromBody] InvokeParams invokeParams)
         {

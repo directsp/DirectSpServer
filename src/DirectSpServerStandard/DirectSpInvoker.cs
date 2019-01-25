@@ -16,7 +16,7 @@ using System.Threading.Tasks;
 
 namespace DirectSp
 {
-    public class Invoker
+    public class DirectSpInvoker
     {
         private class FieldInfo
         {
@@ -26,7 +26,7 @@ namespace DirectSp
         }
 
         public IKeyValueProvider KeyValueProvider { get; }
-        public InvokerPath InvokerPath { get; }
+        public DirectSpInvokerPath InvokerPath { get; }
         public ICaptchaProvider CaptchaProvider => _captchaController.CaptchaProvider;
         public ICertificateProvider CertificateProvider => _tokenSigner.CertificateProvider;
         public bool UseCamelCase { get; private set; }
@@ -43,13 +43,13 @@ namespace DirectSp
         private readonly int _downloadedRecordsetFileLifetime;
         private readonly CultureInfo _alternativeCulture;
         private readonly AlternativeCalendar _alternativeCalendar;
-        private readonly object LockObject = new object();
+        private readonly object _lockObject = new object();
 
-        public Invoker(InvokerOptions options)
+        public DirectSpInvoker(InvokerOptions options)
         {
             if (options.CommandProvider == null) throw new ArgumentNullException("CommandProvider");
 
-            InvokerPath = new InvokerPath(options.WorkspaceFolderPath);
+            InvokerPath = new DirectSpInvokerPath(options.WorkspaceFolderPath);
             KeyValueProvider = options.KeyValueProvider;
             UseCamelCase = options.UseCamelCase;
             _logger = options.Logger;
@@ -70,12 +70,12 @@ namespace DirectSp
 
         private DateTime? LastCleanTempFolderTime;
 
-        public InvokeContext _appUserContext;
-        public InvokeContext AppUserContext
+        public DirectSpInvokeContext _appUserContext;
+        public DirectSpInvokeContext AppUserContext
         {
             get
             {
-                lock (LockObject)
+                lock (_lockObject)
                 {
                     if (_appUserContext == null)
                     {
@@ -92,7 +92,7 @@ namespace DirectSp
         {
             get
             {
-                lock (LockObject)
+                lock (_lockObject)
                 {
                     if (_SpInfos == null)
                     {
@@ -131,16 +131,16 @@ namespace DirectSp
 
         private void RefreshApi()
         {
-            lock (LockObject)
+            lock (_lockObject)
             {
                 var spInfos = new Dictionary<string, SpInfo>();
                 {
-                    var spList = _commandProvider.GetSystemApi(out string appUserContext).Result;
-                    foreach (var item in spList)
+                   var systemApiInfo = _commandProvider.GetSystemApi().Result;
+                    foreach (var item in systemApiInfo.ProcInfos)
                         spInfos.Add(item.ProcedureName, item);
 
                     _SpInfos = spInfos;
-                    _appUserContext = new InvokeContext(appUserContext, "$$");
+                    _appUserContext = new DirectSpInvokeContext(systemApiInfo.Context, "$$");
                     AppVersion = _appUserContext.AppVersion; //don't make AppVersion property because _AppUserContext may not be initialized when there is error
                 }
             }
@@ -401,7 +401,7 @@ namespace DirectSp
                 // process Context
                 if (outParamName.Equals("Context", StringComparison.OrdinalIgnoreCase))
                 {
-                    userSession.SpContext = new InvokeContext((string)outParamValue);
+                    userSession.SpContext = new DirectSpInvokeContext((string)outParamValue);
                     continue;
                 }
 

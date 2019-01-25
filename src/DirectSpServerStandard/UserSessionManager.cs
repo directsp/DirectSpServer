@@ -23,7 +23,7 @@ namespace DirectSp
             var sessionKey = userId + "#" + audience;
             if (!UserSessions.TryGetValue(sessionKey, out UserSession userSession))
             {
-                userSession = new UserSession(new InvokeContext(appName, userId, audience));
+                userSession = new UserSession(new DirectSpInvokeContext(appName, userId, audience));
                 UserSessions[sessionKey] = userSession;
             }
 

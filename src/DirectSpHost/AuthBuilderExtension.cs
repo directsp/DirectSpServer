@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using DirectSp.Host.Settings;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using System;
@@ -8,23 +9,22 @@ namespace DirectSp.Host
 {
     public static class AuthBuilderExtension
     {
-        public static IServiceCollection AddAppAuthentication(this IServiceCollection services)
+        internal static IServiceCollection AddAppAuthentication(this IServiceCollection services, AuthSettings authSettings)
         {
-            var authOptions = App.HostSettings.Authentication;
-            var cert = new X509Certificate2(authOptions.CertificateFile);
+            var cert = new X509Certificate2(authSettings.CertificateFile);
             var signingKey = new X509SecurityKey(cert);
 
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
             {
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
-                    ValidIssuer = new Uri(authOptions.ValidIssuer).ToString(),
+                    ValidIssuer = new Uri(authSettings.ValidIssuer).ToString(),
                     IssuerSigningKey = signingKey,
-                    ValidAudiences = App.HostSettings.Authentication.ValidAudiences,
+                    ValidAudiences = authSettings.ValidAudiences,
                     ValidateAudience = true,
                     ValidateIssuerSigningKey = true,
                     ValidateLifetime = true,
-                    ClockSkew = TimeSpan.FromSeconds(authOptions.ClockSkew)
+                    ClockSkew = TimeSpan.FromSeconds(authSettings.ClockSkew)
                 };
 
             });

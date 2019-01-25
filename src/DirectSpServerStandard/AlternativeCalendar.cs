@@ -16,7 +16,7 @@ namespace DirectSp
 
         public bool IsDateTime(string typeName)
         {
-            return typeName.ToLower().Substring(0, 4) == "date" && AlternativeCulture != null;
+            return typeName.Length >=4 && typeName.ToLower().Substring(0, 4) == "date" && AlternativeCulture != null;
         }
 
         public string FormatDateTime(object fieldValue, string typeName)

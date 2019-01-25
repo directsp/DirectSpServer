@@ -13,9 +13,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Certificates\**" />
     <Compile Remove="wwwroot\app\**" />
+    <Content Remove="Certificates\**" />
     <Content Remove="wwwroot\app\**" />
+    <EmbeddedResource Remove="Certificates\**" />
     <EmbeddedResource Remove="wwwroot\app\**" />
+    <None Remove="Certificates\**" />
     <None Remove="wwwroot\app\**" />
   </ItemGroup>
 
@@ -34,12 +38,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Certificates\" />
     <Folder Include="Providers\" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DirectSpNetCoreLib\DirectSpNetCoreLib.csproj" />
+    <ProjectReference Include="..\DirectSpServerNetCore\DirectSpServerNetCore.csproj" />
+    <ProjectReference Include="..\DirectSpServerStandard\DirectSpServerStandard.csproj" />
   </ItemGroup>
 
 </Project>

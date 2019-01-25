@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Http;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
@@ -12,7 +13,7 @@ namespace DirectSp.Host.Controllers
 {
     public class ApiController : DirectSp.Controllers.ApiController
     {
-        protected override Invoker Invoker { get { return App.Invoker; } }
+        protected override DirectSpInvoker Invoker { get { return App.DirectSpInvoker; } }
         private ILog _logger;
 
         public ApiController()

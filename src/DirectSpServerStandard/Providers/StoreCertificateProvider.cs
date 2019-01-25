@@ -15,7 +15,7 @@ namespace DirectSp.Providers
 
             // Throw null reference exception if certificate is not exist
             if (certificates == null || certificates.Count == 0)
-                throw new NullReferenceException("Certificate's not found!!!");
+                throw new Exception("Could not find the certificate!");
 
             return certificates[0];
         }

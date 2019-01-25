@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>DirectSp</RootNamespace>
-    <AssemblyName>DirectSp</AssemblyName>
+    <AssemblyName>DirectSpServerStandard</AssemblyName>
     <Authors>Mohammad Nikravan</Authors>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Company>DirectSp</Company>

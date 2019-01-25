@@ -1,4 +1,5 @@
 ﻿using DirectSp.ProcedureInfos;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -32,7 +33,7 @@ namespace DirectSp
 
     public interface ICommandProvider
     {
-        Task<SpInfo[]> GetSystemApi(out string context);
+        Task<SpSystemApiInfo> GetSystemApi();
         Task<CommandResult> Execute(SpInfo procInfo, IDictionary<string, object> callParams, bool isReadScale);
     }
 }

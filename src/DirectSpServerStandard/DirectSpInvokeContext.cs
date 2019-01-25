@@ -5,7 +5,7 @@ using System;
 
 namespace DirectSp
 {
-    public class InvokeContext
+    public class DirectSpInvokeContext
     {
         private JObject Body;
         public DateTime? ModifiedTime { get; private set; }
@@ -13,12 +13,12 @@ namespace DirectSp
         public string AppVersion { get; private set; }
         public string AuthUserId { get; private set; }
 
-        public InvokeContext(string body, string authUserId = null)
+        public DirectSpInvokeContext(string body, string authUserId = null)
         {
             Construct(body, authUserId);
         }
 
-        public InvokeContext(string appName, string authUserId, string audience)
+        public DirectSpInvokeContext(string appName, string authUserId, string audience)
         {
             var obj = new JObject
             {
@@ -55,7 +55,7 @@ namespace DirectSp
             
             //create new invokeOptions
             var obj = Body.DeepClone();
-            obj["InvokeOptions"] = new JObject( JsonConvert.DeserializeObject(JsonConvert.SerializeObject(spCallOptions, serializeSettings)) ); //add options
+            obj["InvokeOptions"] = JToken.FromObject(spCallOptions); //add options
             var ret = JsonConvert.SerializeObject(obj);
             return ret;
         }

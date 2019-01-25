@@ -4,9 +4,9 @@ using System.IO;
 
 namespace DirectSp
 {
-    public class InvokerPath
+    public class DirectSpInvokerPath
     {
-        public InvokerPath(string workspaceFolder)
+        public DirectSpInvokerPath(string workspaceFolder)
         {
             if (string.IsNullOrEmpty(workspaceFolder))
                 throw new ArgumentNullException(nameof(workspaceFolder));

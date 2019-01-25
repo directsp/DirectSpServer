@@ -1,6 +1,6 @@
 ﻿namespace DirectSp.Host.Settings
 {
-    public class KestlerSettings
+    class KestrelSettings
     {
         public string ListenIp { get; set; }
         public string SslCertificateThumb { get; set; }

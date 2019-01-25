@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 
+
 namespace DirectSp.Providers
 {
     public class ObjectCommandProvider : ICommandProvider
@@ -16,6 +17,7 @@ namespace DirectSp.Providers
         public ObjectCommandProvider(object obj)
             : this(obj, obj.GetType())
         {
+
         }
 
         public ObjectCommandProvider(object targetObject, Type targetType)
@@ -105,11 +107,15 @@ namespace DirectSp.Providers
             }
         }
 
-        public Task<SpInfo[]> GetSystemApi(out string context)
+        public Task<SpSystemApiInfo> GetSystemApi()
         {
-            var ctx = new InvokeContext(appName: _targetType.Name, authUserId: "$$", audience: null);
-            context = JsonConvert.SerializeObject(ctx);
-            return Task.FromResult(_spInfos);
+            var ctx = new DirectSpInvokeContext(appName: _targetType.Name, authUserId: "$$", audience: null);
+            var ret = new SpSystemApiInfo()
+            {
+                Context = JsonConvert.SerializeObject(ctx),
+                ProcInfos = _spInfos
+            };
+            return Task.FromResult(ret);
         }
 
         private SpInfo[] SpInfos_FromType(Type type)

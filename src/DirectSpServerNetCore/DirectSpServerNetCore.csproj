@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
     <RootNamespace>DirectSp</RootNamespace>
-    <AssemblyName>DirectSpNetCore</AssemblyName>
+    <AssemblyName>DirectSpServerNetCore</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DirectSpLib\DirectSpLib.csproj" />
+    <ProjectReference Include="..\DirectSpServerStandard\DirectSpServerStandard.csproj" />
   </ItemGroup>
 
   <ItemGroup>
