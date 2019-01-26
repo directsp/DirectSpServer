@@ -78,6 +78,7 @@ namespace DirectSp.Providers
             {
                 fields.Add(new CommandResultField()
                 {
+                    Name = dataReader.GetName(i),
                     TypeName = Util.GetFriendlySqlTypeName(dataReader.GetProviderSpecificFieldType(i).Name),
                 });
             }
@@ -96,6 +97,7 @@ namespace DirectSp.Providers
                 data.Add(row);
             }
 
+            resultTable.Data = data.ToArray();
             return resultTable;
         }
 

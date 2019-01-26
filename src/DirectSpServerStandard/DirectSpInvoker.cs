@@ -585,7 +585,7 @@ namespace DirectSp
                     var value = data[i][j];
 
                     // append the next line
-                    if (i > 0)
+                    if (j > 0)
                         stringBuilder.Append("\t");
 
                     // get value
