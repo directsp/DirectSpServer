@@ -1,5 +1,4 @@
-﻿using DirectSp.Entities;
-using DirectSp.Exceptions;
+﻿using DirectSp.Exceptions;
 using DirectSp.Providers;
 using DirectSp.Test.Mock;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -23,7 +22,7 @@ namespace DirectSp.Test.TestClass
         {
 
             // Resolve SpInvoker internal dependencies
-            var invokerOptions = new InvokerOptions
+            var invokerOptions = new DirectSpInvokerOptions
             {
                 WorkspaceFolderPath = "Workspace/Directsp",
                 Schema = "TestObject",
@@ -112,7 +111,7 @@ namespace DirectSp.Test.TestClass
                 };
             }
 
-            var invokeOptions = new SpInvokeParams()
+            var invokeOptions = new InvokeOptions()
             {
                 AuthUserId = "1",
                 UserRemoteIp = "127.0.0.1"
@@ -177,7 +176,7 @@ namespace DirectSp.Test.TestClass
                 Method = "TestSimple"
             };
 
-            var spInvokeParams = new SpInvokeParams { InvokeOptions = new InvokeOptions { RequestId = Guid.NewGuid().ToString() }, UserRemoteIp = "127.0.0.1" };
+            var spInvokeParams = new InvokeOptions { ApiInvokeOptions = new ApiInvokeOptions { RequestId = Guid.NewGuid().ToString() }, UserRemoteIp = "127.0.0.1" };
             await _directSpInvoker.Invoke(spCall, spInvokeParams);
 
             try
@@ -198,7 +197,7 @@ namespace DirectSp.Test.TestClass
                 Method = "CaptchaRequiredMethod"
             };
 
-            var spInvokeParams = new SpInvokeParams { InvokeOptions = new InvokeOptions { }, UserRemoteIp = "127.0.0.1" };
+            var spInvokeParams = new InvokeOptions { ApiInvokeOptions = new ApiInvokeOptions { }, UserRemoteIp = "127.0.0.1" };
             try
             {
                 await _directSpInvoker.Invoke(spCall, spInvokeParams);
@@ -211,14 +210,14 @@ namespace DirectSp.Test.TestClass
                 //try with captcha
                 try
                 {
-                    spInvokeParams = new SpInvokeParams { InvokeOptions = new InvokeOptions { CaptchaId = captchaRequest.Id, CaptchaCode = "1234" }, UserRemoteIp = "127.0.0.1" };
+                    spInvokeParams = new InvokeOptions { ApiInvokeOptions = new ApiInvokeOptions { CaptchaId = captchaRequest.Id, CaptchaCode = "1234" }, UserRemoteIp = "127.0.0.1" };
                     await _directSpInvoker.Invoke(spCall, spInvokeParams);
                     Assert.Fail("SpInvalidCaptchaException was expected!");
                 }
                 catch (InvalidCaptchaException ex2)
                 {
                     captchaRequest = (CaptchaRequest)ex2.SpCallError.ErrorData;
-                    spInvokeParams = new SpInvokeParams { InvokeOptions = new InvokeOptions { CaptchaId = captchaRequest.Id, CaptchaCode = "123" }, UserRemoteIp = "127.0.0.1" };
+                    spInvokeParams = new InvokeOptions { ApiInvokeOptions = new ApiInvokeOptions { CaptchaId = captchaRequest.Id, CaptchaCode = "123" }, UserRemoteIp = "127.0.0.1" };
                     await _directSpInvoker.Invoke(spCall, spInvokeParams);
 
                     //second call with the same captcha id must fail
@@ -243,7 +242,7 @@ namespace DirectSp.Test.TestClass
                 Method = "AsyncIntMethod"
             };
 
-            var spInvokeParams = new SpInvokeParams { InvokeOptions = new InvokeOptions { }, UserRemoteIp = "127.0.0.1" };
+            var spInvokeParams = new InvokeOptions { ApiInvokeOptions = new ApiInvokeOptions { }, UserRemoteIp = "127.0.0.1" };
             var result = await _directSpInvoker.Invoke(spCall, spInvokeParams);
             Assert.AreEqual(result.ReturnValue, 1);
         }
@@ -256,7 +255,7 @@ namespace DirectSp.Test.TestClass
                 Method = "AsyncVoidMethod"
             };
 
-            var spInvokeParams = new SpInvokeParams { InvokeOptions = new InvokeOptions { }, UserRemoteIp = "127.0.0.1" };
+            var spInvokeParams = new InvokeOptions { ApiInvokeOptions = new ApiInvokeOptions { }, UserRemoteIp = "127.0.0.1" };
             var result = await _directSpInvoker.Invoke(spCall, spInvokeParams);
 
             try

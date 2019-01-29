@@ -42,8 +42,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DirectSpServerNetCore\DirectSpServerNetCore.csproj" />
-    <ProjectReference Include="..\DirectSpServerStandard\DirectSpServerStandard.csproj" />
+    <ProjectReference Include="..\DirectSpInvokerNetCore\DirectSpInvokerNetCore.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,5 +1,4 @@
-﻿using DirectSp.Entities;
-using DirectSp.Host.Settings;
+﻿using DirectSp.Host.Settings;
 using DirectSp.Providers;
 using Microsoft.Extensions.Configuration;
 using System;
@@ -21,7 +20,7 @@ namespace DirectSp.Host
             configuration.GetSection("DirectSpHost").Bind(HostSettings);
             configuration.GetSection("Kestrel").Bind(KestrelSettings);
 
-            var directSpInvokerOptions = new InvokerOptions() {
+            var directSpInvokerOptions = new DirectSpInvokerOptions() {
                 WorkspaceFolderPath = Path.Combine(HostSettings.WorkspaceFolderPath, "DirectSp")
             };
             configuration.GetSection("DirectSpInvoker").Bind(directSpInvokerOptions);
