@@ -22,44 +22,59 @@ namespace DirectSp
             _basePath = basePath;
         }
 
-        private bool IsUriMatch(Uri uri)
+        private bool IsUriMatch(string path)
         {
-            var path = uri.AbsolutePath;
             return path.IndexOf("/" + _basePath + "/") == 0 || path == "/" + _basePath;
         }
 
-        private string _DownloadRecordsetPath => $"/{_basePath}/download/recordset";
+        private string _downloadRecordsetPath => $"/{_basePath}/download/recordset";
 
         public async Task<HttpResponseMessage> Process(HttpRequestMessage requestMessage)
         {
-            if (!IsUriMatch(requestMessage.RequestUri))
+            var uri = requestMessage.RequestUri;
+            var path = uri.AbsolutePath.TrimEnd('/');
+            var lastSegment = Path.GetFileName(path);
+
+            //match URI
+            if (!IsUriMatch(path))
                 return null;
-
-            if (requestMessage.RequestUri.AbsolutePath.Equals(_DownloadRecordsetPath, StringComparison.InvariantCultureIgnoreCase))
-                return DownloadRecorset(requestMessage);
-
-            // parse request
-            var json = await requestMessage.Content.ReadAsStringAsync();
-            var invokeParams = JsonConvert.DeserializeObject<InvokeParams>(json);
-            var spInvokeParams = new SpInvokeParams
-            {
-                AuthUserId = (string)requestMessage.Properties["AuthUserId"] ?? "$$",
-                UserRemoteIp = ((IPEndPoint)requestMessage.Properties["RemoteEndPoint"]).Address.ToString(),
-                InvokeOptions = invokeParams.InvokeOptions,
-                RecordsetDownloadUrlTemplate = new UriBuilder(requestMessage.RequestUri) { Path = _DownloadRecordsetPath, Query = "id={id}&filename={filename}" }.ToString(),
-            };
 
             // prepare json serialize
             var jsonSerializerSettings = new JsonSerializerSettings();
             if (_invoker.UseCamelCase)
                 jsonSerializerSettings.ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver();
 
+            if (path.Equals(_downloadRecordsetPath, StringComparison.InvariantCultureIgnoreCase))
+                return DownloadRecorset(requestMessage);
+
+            // parse request
+            var json = await requestMessage.Content.ReadAsStringAsync();
+            var spInvokeParams = new SpInvokeParams
+            {
+                AuthUserId = (string)requestMessage.Properties["AuthUserId"],
+                UserRemoteIp = ((IPEndPoint)requestMessage.Properties["RemoteEndPoint"]).Address.ToString(),
+                InvokeOptions = null,
+                RecordsetDownloadUrlTemplate = new UriBuilder(uri) { Path = _downloadRecordsetPath, Query = "id={id}&filename={filename}" }.ToString(),
+            };
+
             // process
             var response = new HttpResponseMessage();
             try
             {
-                //invoke
-                var result = await _invoker.Invoke(invokeParams.SpCall, spInvokeParams);
+                object result = null;
+                if (lastSegment== "invokebatch")
+                {
+                    var invokeParamsBatch = JsonConvert.DeserializeObject<InvokeParamsBatch>(json);
+                    spInvokeParams.InvokeOptions = invokeParamsBatch.InvokeOptions;
+                    result = await _invoker.Invoke(invokeParamsBatch.SpCalls, spInvokeParams);
+                }
+                else
+                {
+                    var invokeParams = JsonConvert.DeserializeObject<InvokeParams>(json);
+                    spInvokeParams.InvokeOptions = invokeParams.InvokeOptions;
+                    result = await _invoker.Invoke(invokeParams.SpCall, spInvokeParams);
+                }
+
                 response.Content = new StringContent(JsonConvert.SerializeObject(result, jsonSerializerSettings), System.Text.Encoding.UTF8, "application/json");
                 response.StatusCode = HttpStatusCode.OK;
             }

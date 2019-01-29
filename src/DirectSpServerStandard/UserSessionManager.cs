@@ -16,6 +16,10 @@ namespace DirectSp
         private ConcurrentDictionary<string, UserSession> UserSessions = new ConcurrentDictionary<string, UserSession>();
         public UserSession GetUserSession(string appName, string userId, string audience)
         {
+            //create empty session for anonymous
+            if (string.IsNullOrEmpty(userId))
+                return new UserSession(new DirectSpInvokeContext(appName, null, audience));
+
             //try cleanup on each request
             CleanUp();
 
