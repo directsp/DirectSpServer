@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http;
 using System.Net;
 using System.Threading.Tasks;
 
-namespace DirectSp.Host
+namespace DirectSp
 {
     public class DirectSpFilter
     {
