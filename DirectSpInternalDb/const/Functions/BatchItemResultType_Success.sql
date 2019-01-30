@@ -1,6 +1,0 @@
-﻿CREATE FUNCTION [const].[BatchItemResultType_Success]()
-RETURNS INT WITH SCHEMABINDING
-AS 
-BEGIN
-    RETURN 2;
-END
