@@ -46,7 +46,8 @@ namespace DirectSp.Providers
                 var parameterInfo = parameterInfos[i];
                 if (callParams.TryGetValue(parameterInfo.Name, out object value) && value != Undefined.Value)
                 {
-                    parameterValues[i] = value;
+                    var parameterType = parameterInfo.ParameterType.IsByRef ? parameterInfo.ParameterType.GetElementType() : parameterInfo.ParameterType;
+                    parameterValues[i] = Convert.ChangeType(value, parameterType);
                 }
                 else if (parameterInfo.HasDefaultValue)
                 {

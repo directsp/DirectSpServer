@@ -39,6 +39,7 @@ namespace DirectSp.Test.TestClass
         [TestMethod]
         public async Task TestSimpleInvoke()
         {
+            //test1
             var spCall = new SpCall
             {
                 Method = "Test1",
@@ -50,6 +51,20 @@ namespace DirectSp.Test.TestClass
             Assert.AreEqual(result["param1"], "v2_v3_v4");
             Assert.AreEqual(result["param2"], "param2_result");
         }
+
+        [TestMethod]
+        public async Task TestSimpleInvoke_ChangeType()
+        {
+            //Test_Long
+            var spCall = new SpCall
+            {
+                Method = "Test_Long",
+                Params = Util.Dyn2Dict(new { param1 = (long)100 })
+            };
+            var result = await _directSpInvoker.Invoke(spCall);
+            Assert.AreEqual((int)result["param2"], 100);
+        }
+
 
         [TestMethod]
         public async Task TestGetSetProperty()

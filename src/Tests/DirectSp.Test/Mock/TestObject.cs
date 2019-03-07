@@ -38,6 +38,11 @@ namespace DirectSp.Test.Mock
         {
         }
 
+        public void Test_Long(int param1, out int param2)
+        {
+            param2 = param1;
+        }
+
         [DirectSpProc(CaptchaMode =SpCaptchaMode.Always)]
         public void CaptchaRequiredMethod()
         {
