@@ -43,6 +43,11 @@ namespace DirectSp.Test.Mock
             param2 = param1;
         }
 
+        public void Test_Nullable(long? param1, out long? param2)
+        {
+            param2 = param1;
+        }
+
         [DirectSpProc(CaptchaMode =SpCaptchaMode.Always)]
         public void CaptchaRequiredMethod()
         {

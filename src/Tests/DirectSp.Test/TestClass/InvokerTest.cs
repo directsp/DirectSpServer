@@ -62,7 +62,29 @@ namespace DirectSp.Test.TestClass
                 Params = Util.Dyn2Dict(new { param1 = (long)100 })
             };
             var result = await _directSpInvoker.Invoke(spCall);
-            Assert.AreEqual((int)result["param2"], 100);
+            Assert.AreEqual(result["param2"], 100);
+        }
+
+        [TestMethod]
+        public async Task TestSimpleInvoke_Nullable()
+        {
+            //Test_Long
+            var spCall = new SpCall
+            {
+                Method = "Test_Nullable",
+                Params = Util.Dyn2Dict(new { param1=(long?)100 })
+            };
+            var result = await _directSpInvoker.Invoke(spCall);
+            Assert.AreEqual(result["param2"], (long?)100);
+
+            //Test_Long (null)
+            spCall = new SpCall
+            {
+                Method = "Test_Nullable",
+                Params = Util.Dyn2Dict(new { param1 = (long?)null })
+            };
+            result = await _directSpInvoker.Invoke(spCall);
+            Assert.IsNull(result["param2"]);
         }
 
 
