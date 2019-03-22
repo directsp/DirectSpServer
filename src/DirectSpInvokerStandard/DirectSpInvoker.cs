@@ -327,7 +327,8 @@ namespace DirectSp
                 RecordIndex = invokeOptions.RecordIndex,
                 RecordCount = invokeOptions.RecordCount,
                 InvokerAppVersion = AppVersion,
-                IsReadonlyIntent = spInfo.ExtendedProps.DataAccessMode == SpDataAccessMode.Read || spInfo.ExtendedProps.DataAccessMode == SpDataAccessMode.ReadSnapshot
+                IsReadonlyIntent = spInfo.ExtendedProps.DataAccessMode == SpDataAccessMode.Read || spInfo.ExtendedProps.DataAccessMode == SpDataAccessMode.ReadSnapshot,
+                RemoteIp = spi.SpInvokeParams.UserRemoteIp
             };
 
             //Get Connection String caring about ReadScale

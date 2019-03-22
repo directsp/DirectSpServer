@@ -22,7 +22,9 @@ namespace DirectSp
         [DefaultValue(null)]
         public string InvokerAppVersion { get; set; }
 
-        public bool IsReadonlyIntent { get; set; }
+        [DefaultValue(null)]
+        public string RemoteIp { get; set; }
 
+        public bool IsReadonlyIntent { get; set; }
     }
 }

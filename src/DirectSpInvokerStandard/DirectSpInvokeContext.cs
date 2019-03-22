@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Net;
 
 namespace DirectSp
 {
@@ -11,6 +12,7 @@ namespace DirectSp
         public string AppName { get; private set; }
         public string AppVersion { get; private set; }
         public string AuthUserId { get; private set; }
+        public string Audience { get; private set; }
 
         public DirectSpInvokeContext(string body, string authUserId = null)
         {
@@ -37,6 +39,7 @@ namespace DirectSp
             if (obj.TryGetValue("ModifiedTime", out jToken)) ModifiedTime = (DateTime?)jToken;
             if (obj.TryGetValue("AppVersion", out jToken)) AppVersion = (string)jToken;
             if (obj.TryGetValue("AppName", out jToken)) AppName = (string)jToken;
+            if (obj.TryGetValue("Audience", out jToken)) Audience = (string)jToken;
             if (authUserId==null && obj.TryGetValue("AuthUserId", out jToken)) AuthUserId = (string)jToken;
 
             obj["InvokeOptions"] = null; //remove InvokeOptions
