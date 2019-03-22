@@ -1,4 +1,5 @@
 ﻿using DirectSp.ProcedureInfos;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,7 +18,7 @@ namespace DirectSp.Test.Mock
         public string Test1(out string param1, ref string param2, string param3, string param4 = "v4")
         {
             param1 = param2 + "_" + param3 + "_" + param4;
-            param2 = "param2_result"; 
+            param2 = "param2_result";
             return "Test1_result";
         }
 
@@ -48,7 +49,7 @@ namespace DirectSp.Test.Mock
             param2 = param1;
         }
 
-        [DirectSpProc(CaptchaMode =SpCaptchaMode.Always)]
+        [DirectSpProc(CaptchaMode = SpCaptchaMode.Always)]
         public void CaptchaRequiredMethod()
         {
         }
@@ -68,5 +69,29 @@ namespace DirectSp.Test.Mock
             throw new Exception(message);
         }
 
+        public void TestContext(string param1)
+        {
+            var context = DirectSpContext.Current;
+            var expectedAgentUserId = "agent_user_id";
+            var expectedAgentData = "agent_data";
+
+            Assert.AreEqual(context.AuthUserId, "$$");
+
+            if (param1 == "a1")
+            {
+                context.AgentContext.UserId = expectedAgentUserId;
+                context.AgentContext.Data = expectedAgentData;
+            }
+            else if (param1 == "a2")
+            {
+                Assert.AreEqual(context.RecordCount, 215);
+                Assert.AreEqual(context.AgentContext.UserId, expectedAgentUserId);
+                Assert.AreEqual(context.AgentContext.Data, expectedAgentData);
+            }
+            else
+            {
+                Assert.Fail("Invalid param1");
+            }
+        }
     }
 }

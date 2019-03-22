@@ -1,6 +1,5 @@
 ﻿using DirectSp.Exceptions;
 using DirectSp.ProcedureInfos;
-using DirectSp.Providers;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -9,7 +8,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -67,65 +65,41 @@ namespace DirectSp
             DirectSpException.UseCamelCase = options.UseCamelCase;
         }
 
-        private DateTime? LastCleanTempFolderTime;
-
-        public DirectSpInvokeContext _appUserContext;
-        public DirectSpInvokeContext AppUserContext
-        {
-            get
-            {
-                lock (_lockObject)
-                {
-                    if (_appUserContext == null)
-                    {
-                        RefreshApi();
-                    }
-
-                    return _appUserContext;
-                }
-            }
-        }
-
-        private Dictionary<string, SpInfo> _SpInfos;
+        private Dictionary<string, SpInfo> _spInfos;
         public Dictionary<string, SpInfo> SpInfos
         {
             get
             {
                 lock (_lockObject)
                 {
-                    if (_SpInfos == null)
+                    if (_spInfos == null)
                     {
                         RefreshApi();
                     }
 
-                    return _SpInfos;
+                    return _spInfos;
                 }
             }
         }
 
-        public string AppName => AppUserContext.AppName;
+        public string AppAuthUserId => "$$";
+        public string AppName { get; private set; }
         public string AppVersion { get; private set; }
 
         // User Request Count control
         private void VerifyUserRequestLimit(UserSession userSession)
         {
             //AppUserId does not have request limit
-            if (userSession.SpContext.AuthUserId == AppUserContext.AuthUserId)
-            {
+            if (userSession.AuthUserId == AppAuthUserId)
                 return;
-            }
 
             //Reset ResetRequestCount
             if (userSession.RequestIntervalStartTime.AddSeconds(_sessionMaxRequestCycleInterval) < DateTime.Now)
-            {
                 userSession.ResetRequestCount();
-            }
 
             //Reject Request
             if (userSession.RequestCount > _sessionMaxRequestCount)
-            {
                 throw new DirectSpException("Too many request! Please try a few minutes later!");
-            }
         }
 
         private void RefreshApi()
@@ -134,13 +108,12 @@ namespace DirectSp
             {
                 var spInfos = new Dictionary<string, SpInfo>();
                 {
-                   var systemApiInfo = _commandProvider.GetSystemApi().Result;
+                    var systemApiInfo = _commandProvider.GetSystemApi().Result;
+                    AppName = systemApiInfo.AppName;
+                    AppVersion = systemApiInfo.AppVersion;
                     foreach (var item in systemApiInfo.ProcInfos)
                         spInfos.Add(item.ProcedureName, item);
-
-                    _SpInfos = spInfos;
-                    _appUserContext = new DirectSpInvokeContext(systemApiInfo.Context, "$$");
-                    AppVersion = _appUserContext.AppVersion; //don't make AppVersion property because _AppUserContext may not be initialized when there is error
+                    _spInfos = spInfos;
                 }
             }
         }
@@ -228,7 +201,7 @@ namespace DirectSp
             // Call main invoke
             var spi = new InvokeOptionsInternal { SpInvokeParams = spInvokeParams, IsSystem = isSystem };
             if (isSystem)
-                spi.SpInvokeParams.AuthUserId = AppUserContext.AuthUserId;
+                spi.SpInvokeParams.AuthUserId = AppAuthUserId;
 
             return await Invoke(spCall, spi);
         }
@@ -293,7 +266,7 @@ namespace DirectSp
             // retrieve user session
             var invokeParams = spi.SpInvokeParams;
             var invokeOptions = spi.SpInvokeParams.ApiInvokeOptions;
-            var userSession = _sessionManager.GetUserSession(AppName, invokeParams.AuthUserId, invokeParams.Audience);
+            var userSession = _sessionManager.GetUserSession(invokeParams.AuthUserId, invokeParams.Audience);
 
             //Verify user request limit
             VerifyUserRequestLimit(userSession);
@@ -319,16 +292,21 @@ namespace DirectSp
             if (!spInfo.ExtendedProps.IsBatchAllowed && spi.IsBatch)
                 throw new SpBatchIsNotAllowedException(spInfo.ProcedureName);
 
-            //Create spCallOptions
-            var spCallOptions = new SpCallOptions()
+            //Create DirectSpContext
+            var context = new DirectSpContext()
             {
                 IsBatch = spi.IsBatch,
                 IsCaptcha = spi.IsCaptcha,
                 RecordIndex = invokeOptions.RecordIndex,
                 RecordCount = invokeOptions.RecordCount,
-                InvokerAppVersion = AppVersion,
+                AppVersion = AppVersion,
                 IsReadonlyIntent = spInfo.ExtendedProps.DataAccessMode == SpDataAccessMode.Read || spInfo.ExtendedProps.DataAccessMode == SpDataAccessMode.ReadSnapshot,
-                RemoteIp = spi.SpInvokeParams.UserRemoteIp
+                RemoteIp = spi.SpInvokeParams.UserRemoteIp,
+                AppName = AppName,
+                Audience = invokeParams.Audience,
+                AuthUserId = invokeParams.AuthUserId,
+                ClientVersion = null, //not implemented yet
+                AgentContext = userSession.AgentContext
             };
 
             //Get Connection String caring about ReadScale
@@ -337,11 +315,6 @@ namespace DirectSp
             //create SqlParameters
             var spCallResults = new SpCallResult();
             var paramValues = new Dictionary<string, object>();
-
-            //set context param if exists
-            var contextSpParam = spInfo.Params.FirstOrDefault(x => x.ParamName.Equals("context", StringComparison.InvariantCultureIgnoreCase));
-            if (contextSpParam != null)
-                paramValues.Add(contextSpParam.ParamName, userSession.SpContext.ToString(spCallOptions));
 
             //set other caller params
             var spCallParams = spCall.Params ?? new Dictionary<string, object>();
@@ -356,7 +329,7 @@ namespace DirectSp
                     throw new ArgumentException($"parameter '{paramName}' does not exists!");
                 spInfo.ExtendedProps.Params.TryGetValue(spParam.ParamName, out SpParamInfoEx spParamEx);
 
-                //make sure Context has not been set be the caller
+                //make sure Context has not been set by the caller
                 if (paramName.Equals("Context", StringComparison.OrdinalIgnoreCase))
                     throw new ArgumentException($"You can not set '{paramName}' parameter!");
 
@@ -384,7 +357,10 @@ namespace DirectSp
             }
 
             // execute the command
-            var commandResult = await _commandProvider.Execute(spInfo, paramValues, isReadScale);
+            var commandResult = await _commandProvider.Execute(spInfo, context, paramValues, isReadScale);
+
+            // store agentContext
+            userSession.AgentContext = commandResult.AgentContext;
 
             // fill Recordset and close dataReader BEFORE reading sqlParameters
             if (commandResult.Table != null)
@@ -398,14 +374,6 @@ namespace DirectSp
                 var spParam = spInfo.Params.FirstOrDefault(x => x.ParamName.Equals($"{outParamName}", StringComparison.OrdinalIgnoreCase));
                 spInfo.ExtendedProps.Params.TryGetValue(outParamName, out SpParamInfoEx spParamEx);
 
-                // process Context
-                if (outParamName.Equals("Context", StringComparison.OrdinalIgnoreCase))
-                {
-                    userSession.SpContext = new DirectSpInvokeContext((string)outParamValue);
-                    continue;
-                }
-
-
                 // Sign text if is need
                 if (spParamEx?.SignType == SpSignType.JwtByCertThumb)
                     outParamValue = _tokenSigner.Sign(outParamValue.ToString());
@@ -418,7 +386,6 @@ namespace DirectSp
                 if (_alternativeCalendar.IsDateTime(spParam.SystemTypeName.ToString()))
                     spCallResults.Add(_alternativeCalendar.GetFieldName(outParamName), _alternativeCalendar.FormatDateTime(value, spParam.SystemTypeName));
             }
-
 
             userSession.SetWriteMode(isWriteMode);
             return spCallResults;
@@ -682,11 +649,12 @@ namespace DirectSp
 
             return Task.FromResult(result);
         }
+
         private void CleanTempFolder()
         {
             // Check interval time
             var lifeTime = DateTime.Now.AddSeconds(-_downloadedRecordsetFileLifetime);
-            if (LastCleanTempFolderTime != null && LastCleanTempFolderTime > lifeTime)
+            if (_lastCleanTempFolderTime != null && _lastCleanTempFolderTime > lifeTime)
             {
                 return; // Last cleaning was not far
             }
@@ -702,10 +670,11 @@ namespace DirectSp
                 }
             }
 
-            LastCleanTempFolderTime = DateTime.Now;
+            _lastCleanTempFolderTime = DateTime.Now;
         }
 
 
+        private DateTime? _lastCleanTempFolderTime;
         private async Task CheckDuplicateRequest(string requestId, int commandTimeout = 30)
         {
             if (string.IsNullOrEmpty(requestId))

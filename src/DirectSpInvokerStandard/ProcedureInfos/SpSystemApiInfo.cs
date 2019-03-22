@@ -6,7 +6,8 @@ namespace DirectSp.ProcedureInfos
 {
     public class SpSystemApiInfo
     {
-        public string Context { get; set; }
+        public string AppName { get; set; }
+        public string AppVersion { get; set; }
         public SpInfo[] ProcInfos { get; set; }
     }
 }

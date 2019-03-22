@@ -22,9 +22,14 @@ namespace DirectSp.Providers
 
         }
 
-        public async Task<CommandResult> Execute(SpInfo procInfo, IDictionary<string, object> callParams, bool isReadScale)
+        public async Task<CommandResult> Execute(SpInfo procInfo, DirectSpContext context, IDictionary<string, object> callParams, bool isReadScale)
         {
             var res = new CommandResult();
+
+            //set context param if exists
+            var contextSpParam = procInfo.Params.FirstOrDefault(x => x.ParamName.Equals("context", StringComparison.InvariantCultureIgnoreCase));
+            if (contextSpParam != null)
+                callParams.Add(contextSpParam.ParamName, JsonConvert.SerializeObject(context));
 
             using (var sqlConnection = new SqlConnection(isReadScale ? ConnectionStringReadOnly : ConnectionStringReadWrite))
             using (var sqlCommand = new SqlCommand($"{procInfo.SchemaName}.{procInfo.ProcedureName}", sqlConnection))
@@ -56,11 +61,28 @@ namespace DirectSp.Providers
                 }
 
                 //return out parameter
+                res.AgentContext = context.AgentContext;
                 for (var i = 0; i < sqlCommand.Parameters.Count; i++)
                 {
                     var sqlParameter = sqlCommand.Parameters[i];
                     if (sqlParameter.Direction == ParameterDirection.InputOutput || sqlParameter.Direction == ParameterDirection.Output || sqlParameter.Direction == ParameterDirection.ReturnValue)
-                        res.OutParams.Add(sqlParameter.ParameterName.Substring(1), sqlParameter.Value != DBNull.Value ? sqlParameter.Value : null);
+                    {
+                        //process context param
+                        if (sqlParameter.ParameterName.Equals("@Context", StringComparison.OrdinalIgnoreCase))
+                        {
+                            if (sqlParameter.Value != DBNull.Value)
+                            {
+                                var newContext = JsonConvert.DeserializeObject<DirectSpContext>((string)sqlParameter.Value);
+                                res.AgentContext = newContext.AgentContext;
+                            }
+                        }
+                        //process non context param
+                        else
+                        {
+                            res.OutParams.Add(sqlParameter.ParameterName.Substring(1), sqlParameter.Value != DBNull.Value ? sqlParameter.Value : null);
+                        }
+                    }
+
                 }
             }
 
@@ -124,7 +146,8 @@ namespace DirectSp.Providers
                 var ret = new SpSystemApiInfo
                 {
                     ProcInfos = JsonConvert.DeserializeObject<SpInfo[]>(api),
-                    Context = sqlParameters.Find(x => x.ParameterName == "@Context").Value as string //context
+                    AppName = sqlParameters.Find(x => x.ParameterName == "@AppName").Value as string,
+                    AppVersion= sqlParameters.Find(x => x.ParameterName == "@AppVersion").Value as string //context
                 };
 
                 //remove @ from param names and add return values

@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 
@@ -27,7 +28,7 @@ namespace DirectSp.Providers
             _spInfos = SpInfos_FromType(targetType);
         }
 
-        public async Task<CommandResult> Execute(SpInfo procInfo, IDictionary<string, object> callParams, bool isReadScale)
+        public async Task<CommandResult> Execute(SpInfo procInfo, DirectSpContext context, IDictionary<string, object> callParams, bool isReadScale)
         {
             var schema = procInfo.SchemaName;
             var procName = procInfo.ProcedureName;
@@ -68,6 +69,9 @@ namespace DirectSp.Providers
 
             try
             {
+                //Set Thread Context
+                Thread.SetData(Thread.GetNamedDataSlot("DirectSpContext"), context);
+
                 //invoke command and set return value
                 if (methodInfo.ReturnType == typeof(void))
                     methodInfo.Invoke(_targetObject, parameterValues);
@@ -88,8 +92,13 @@ namespace DirectSp.Providers
 
                     }
                     else
+                    {
                         ret.OutParams["returnValue"] = invokeRes;
+                    }
                 }
+
+                //set agent context
+                ret.AgentContext = context.AgentContext;
 
                 //set output paramters
                 for (var i = 0; i < parameterInfos.Length; i++)
@@ -108,14 +117,18 @@ namespace DirectSp.Providers
             {
                 throw ex.InnerException;
             }
+            finally
+            {
+                Thread.SetData(Thread.GetNamedDataSlot("DirectSpContext"), null);
+            }
         }
 
         public Task<SpSystemApiInfo> GetSystemApi()
         {
-            var ctx = new DirectSpInvokeContext(appName: _targetType.Name, authUserId: "$$", audience: null);
             var ret = new SpSystemApiInfo()
             {
-                Context = JsonConvert.SerializeObject(ctx),
+                AppName = _targetType.Name,
+                AppVersion = "*",
                 ProcInfos = _spInfos
             };
             return Task.FromResult(ret);

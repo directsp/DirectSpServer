@@ -14,38 +14,42 @@ namespace DirectSp
         }
 
         private ConcurrentDictionary<string, UserSession> UserSessions = new ConcurrentDictionary<string, UserSession>();
-        public UserSession GetUserSession(string appName, string userId, string audience)
+        public UserSession GetUserSession(string authUserId, string audience)
         {
+            //create default audience
+            if (audience == null)
+                audience = "";
+
             //create empty session for anonymous
-            if (string.IsNullOrEmpty(userId))
-                return new UserSession(new DirectSpInvokeContext(appName, null, audience));
+            if (string.IsNullOrEmpty(authUserId))
+                return new UserSession(authUserId, audience);
 
             //try cleanup on each request
             CleanUp();
 
             //Create or get userSession
-            var sessionKey = userId + "#" + audience;
+            var sessionKey = authUserId + "#" + audience ?? "";
             if (!UserSessions.TryGetValue(sessionKey, out UserSession userSession))
             {
-                userSession = new UserSession(new DirectSpInvokeContext(appName, userId, audience));
+                userSession = new UserSession(authUserId, audience);
                 UserSessions[sessionKey] = userSession;
             }
 
             return userSession;
         }
 
-        private object CleaningLock = new object();
-        private DateTime LastCleanupTime = DateTime.Now;
+        private readonly object _cleaningLock = new object();
+        private DateTime _lastCleanupTime = DateTime.Now;
 
         private void CleanUp()
         {
-            if (!Monitor.TryEnter(CleaningLock))
+            if (!Monitor.TryEnter(_cleaningLock))
                 return;
 
             try
             {
                 //Check the cleanup time
-                if (LastCleanupTime.AddSeconds(SessionTimeout) > DateTime.Now)
+                if (_lastCleanupTime.AddSeconds(SessionTimeout) > DateTime.Now)
                     return;
 
                 //find expired sessions
@@ -62,11 +66,11 @@ namespace DirectSp
                     UserSessions.TryRemove(item, out UserSession userSession);
                 }
 
-                LastCleanupTime = DateTime.Now;
+                _lastCleanupTime = DateTime.Now;
             }
             finally
             {
-                Monitor.Exit(CleaningLock);
+                Monitor.Exit(_cleaningLock);
             }
         }
 

@@ -40,28 +40,34 @@ namespace DirectSp.Test.TestClass
         public async Task TestSimpleInvoke()
         {
             //test1
-            var spCall = new SpCall
-            {
-                Method = "Test1",
-                Params = Util.Dyn2Dict(new { param2 = "v2", param3 = "v3" })
-            };
-
-            var result = await _directSpInvoker.Invoke(spCall);
+            var result = await _directSpInvoker.Invoke("Test1", new { param2 = "v2", param3 = "v3" });
             Assert.AreEqual(result.ReturnValue, "Test1_result");
             Assert.AreEqual(result["param1"], "v2_v3_v4");
             Assert.AreEqual(result["param2"], "param2_result");
         }
 
         [TestMethod]
+        public async Task TestContext()
+        {
+            //test1
+            await _directSpInvoker.Invoke("TestContext", new { param1 = "a1" });
+
+            var invokeOptions = new InvokeOptions()
+            {
+                ApiInvokeOptions = new ApiInvokeOptions()
+                {
+                    RecordCount = 215
+                }
+            };
+            await _directSpInvoker.Invoke("TestContext", new { param1 = "a2" }, invokeOptions, true);
+        }
+
+
+        [TestMethod]
         public async Task TestSimpleInvoke_ChangeType()
         {
             //Test_Long
-            var spCall = new SpCall
-            {
-                Method = "Test_Long",
-                Params = Util.Dyn2Dict(new { param1 = (long)100 })
-            };
-            var result = await _directSpInvoker.Invoke(spCall);
+            var result = await _directSpInvoker.Invoke("Test_Long", new { param1 = (long)100 });
             Assert.AreEqual(result["param2"], 100);
         }
 
@@ -69,21 +75,11 @@ namespace DirectSp.Test.TestClass
         public async Task TestSimpleInvoke_Nullable()
         {
             //Test_Long
-            var spCall = new SpCall
-            {
-                Method = "Test_Nullable",
-                Params = Util.Dyn2Dict(new { param1=(long?)100 })
-            };
-            var result = await _directSpInvoker.Invoke(spCall);
+            var result = await _directSpInvoker.Invoke("Test_Nullable", new { param1 = (long?)100 });
             Assert.AreEqual(result["param2"], (long?)100);
 
             //Test_Long (null)
-            spCall = new SpCall
-            {
-                Method = "Test_Nullable",
-                Params = Util.Dyn2Dict(new { param1 = (long?)null })
-            };
-            result = await _directSpInvoker.Invoke(spCall);
+            result = await _directSpInvoker.Invoke("Test_Nullable", new { param1 = (long?)null });
             Assert.IsNull(result["param2"]);
         }
 
@@ -94,21 +90,10 @@ namespace DirectSp.Test.TestClass
             var expectedValue = 2;
 
             //set property
-            var spCall = new SpCall
-            {
-                Method = "set_Prop1",
-                Params = Util.Dyn2Dict(new { value = expectedValue })
-            };
-
-            var result = await _directSpInvoker.Invoke(spCall);
+            var result = await _directSpInvoker.Invoke("set_Prop1", new { value = expectedValue });
 
             //get property
-            spCall = new SpCall
-            {
-                Method = "get_Prop1",
-            };
-
-            result = await _directSpInvoker.Invoke(spCall);
+            result = await _directSpInvoker.Invoke("get_Prop1", new { });
             Assert.AreEqual(result["returnValue"], expectedValue);
         }
 
@@ -116,15 +101,9 @@ namespace DirectSp.Test.TestClass
         public async Task TestException()
         {
             var expectedMessage = "FooException";
-            var spCall = new SpCall
-            {
-                Method = "ThrowException",
-                Params = Util.Dyn2Dict(new { message = expectedMessage })
-            };
-
             try
             {
-                await _directSpInvoker.Invoke(spCall);
+                await _directSpInvoker.Invoke("ThrowException", new { message = expectedMessage });
                 Assert.Fail("Exception was expected");
             }
             catch (DirectSpException ex)
@@ -163,40 +142,22 @@ namespace DirectSp.Test.TestClass
         [TestMethod]
         public async Task TestJwtTokenSign()
         {
-            var spCall = new SpCall
-            {
-                Method = "Test3_SignParam",
-                Params = Util.Dyn2Dict(new { json = JwtToken })
-            };
-
-            var result = await _directSpInvoker.Invoke(spCall);
+            var result = await _directSpInvoker.Invoke("Test3_SignParam", new { json = JwtToken });
             Assert.IsTrue((string)result["jwtToken"] == JwtToken_signed);
         }
 
         [TestMethod]
         public async Task TestJwtTokenValidate_CheckPass()
         {
-            var spCall = new SpCall
-            {
-                Method = "Test4_ValidateSign",
-                Params = Util.Dyn2Dict(new { jwtToken = JwtToken_signed })
-            };
-
-            await _directSpInvoker.Invoke(spCall);
+            await _directSpInvoker.Invoke("Test4_ValidateSign", new { jwtToken = JwtToken_signed });
         }
 
         [TestMethod]
         public async Task TestJwtTokenValidate_CheckReject()
         {
-            var spCall = new SpCall
-            {
-                Method = "Test4_ValidateSign",
-                Params = Util.Dyn2Dict(new { jwtToken = JwtToken_unsigned })
-            };
-
             try
             {
-                await _directSpInvoker.Invoke(spCall);
+                await _directSpInvoker.Invoke("Test4_ValidateSign", new { jwtToken = JwtToken_unsigned });
 
             }
             catch (SpInvalidParamSignature)
@@ -306,7 +267,5 @@ namespace DirectSp.Test.TestClass
             }
 
         }
-
-
     }
 }

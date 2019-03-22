@@ -1,76 +1,83 @@
 ﻿using System;
+using System.Threading;
 
 namespace DirectSp
 {
     class UserSession
     {
-        public UserSession(DirectSpInvokeContext spContext)
+        public UserSession(string authUserId, string audience, DirectSpAgentContext agentContext = null)
         {
-            SpContext = spContext;
+            AuthUserId = authUserId;
+            Audience = audience;
+            AgentContext = agentContext ?? new DirectSpAgentContext();
         }
 
-        private readonly object LockObject = new object();
-        private DateTime _LastRequestTime;
+        private readonly object _lockObject = new object();
+        private DateTime _lastRequestTime;
         public DateTime LastWriteTime
         {
             get
             {
-                lock (LockObject)
-                    return _LastRequestTime;
+                lock (_lockObject)
+                    return _lastRequestTime;
             }
         }
         public void SetWriteMode(bool isWriteMode)
         {
-            lock (LockObject)
+            lock (_lockObject)
             {
-                _RequestCount++;
+                _requestCount++;
                 if (isWriteMode)
-                    _LastRequestTime = DateTime.Now;
+                    _lastRequestTime = DateTime.Now;
             }
         }
 
 
-        private DateTime _RequestIntervalStartTime;
+        private DateTime _requestIntervalStartTime;
         public DateTime RequestIntervalStartTime
         {
             get
             {
-                lock (LockObject)
-                    return _RequestIntervalStartTime;
+                lock (_lockObject)
+                    return _requestIntervalStartTime;
             }
         }
 
-        private int _RequestCount;
+        private int _requestCount;
         public int RequestCount
         {
             get
             {
-                lock (LockObject)
-                    return _RequestCount;
+                lock (_lockObject)
+                    return _requestCount;
             }
         }
 
         public void ResetRequestCount()
         {
-            lock (LockObject)
+            lock (_lockObject)
             {
-                _RequestIntervalStartTime = DateTime.Now;
-                _RequestCount = 0;
+                _requestIntervalStartTime = DateTime.Now;
+                _requestCount = 0;
             }
         }
 
-        private DirectSpInvokeContext _SpContext;
-        public DirectSpInvokeContext SpContext
+        private DirectSpAgentContext _agentContext;
+
+        public string AuthUserId { get; }
+        public string Audience { get; }
+
+        public DirectSpAgentContext AgentContext
         {
             get
             {
-                lock (LockObject)
-                    return _SpContext;
+                lock (_lockObject)
+                    return _agentContext;
             }
             set
             {
-                lock (LockObject)
-                    _SpContext = value;
+                lock (_lockObject)
+                    _agentContext = value;
             }
         }
 

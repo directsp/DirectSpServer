@@ -28,12 +28,12 @@ namespace DirectSp
     {
         public Dictionary<string, object> OutParams = new Dictionary<string, object>();
         public CommandResultTable Table;
+        public DirectSpAgentContext AgentContext;
     }
-
 
     public interface ICommandProvider
     {
         Task<SpSystemApiInfo> GetSystemApi();
-        Task<CommandResult> Execute(SpInfo procInfo, IDictionary<string, object> callParams, bool isReadScale);
+        Task<CommandResult> Execute(SpInfo procInfo, DirectSpContext context, IDictionary<string, object> callParams, bool isReadScale);
     }
 }
