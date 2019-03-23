@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http.Extensions;
 using System;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -39,6 +40,9 @@ namespace DirectSp
             requestMessage.Headers.Host = uri.Authority;
             requestMessage.RequestUri = uri;
             requestMessage.Method = new HttpMethod(request.Method);
+            requestMessage.Properties["MS_IsLocal"] = IPAddress.IsLoopback(request.HttpContext.Connection.RemoteIpAddress);
+            requestMessage.Properties["RemoteEndPoint"] = new IPEndPoint(request.HttpContext.Connection.RemoteIpAddress, request.HttpContext.Connection.RemotePort);
+
 
             return requestMessage;
         }

@@ -6,7 +6,8 @@ namespace DirectSp
 {
     public class InvokeOptions
     {
-        public string UserRemoteIp { get; set; }
+        public bool IsLocalRequest { get; set; } = true;
+        public string RequestRemoteIp { get; set; }
         public string AuthUserId { get; set; }
         public string Audience { get; set; }
         public ApiInvokeOptions ApiInvokeOptions { get; set; } = new ApiInvokeOptions();

@@ -47,11 +47,13 @@ namespace DirectSp
                 return DownloadRecorset(requestMessage);
 
             // parse request
+
             var json = await requestMessage.Content.ReadAsStringAsync();
             var spInvokeParams = new InvokeOptions
             {
                 AuthUserId = (string)requestMessage.Properties["AuthUserId"],
-                UserRemoteIp = ((IPEndPoint)requestMessage.Properties["RemoteEndPoint"]).Address.ToString(),
+                RequestRemoteIp = ((IPEndPoint)requestMessage.Properties["RemoteEndPoint"]).Address.ToString(),
+                IsLocalRequest = requestMessage.Properties.ContainsKey("MS_IsLocal") ? (bool)requestMessage.Properties["MS_IsLocal"] : true,
                 ApiInvokeOptions = null,
                 RecordsetDownloadUrlTemplate = new UriBuilder(uri) { Path = _downloadRecordsetPath, Query = "id={id}&filename={filename}" }.ToString(),
             };

@@ -256,12 +256,18 @@ namespace DirectSp
 
         private async Task<SpCallResult> InvokeCore2(SpCall spCall, InvokeOptionsInternal spi)
         {
-            if (!spi.IsSystem && string.IsNullOrWhiteSpace(spi.SpInvokeParams.UserRemoteIp))
+            System.Net.IPAddress.TryParse(spi.SpInvokeParams.RequestRemoteIp, out System.Net.IPAddress requestRemoteIp);
+
+            if (!spi.IsSystem && requestRemoteIp == null)
             {
-                var ex = new ArgumentException(spi.SpInvokeParams.UserRemoteIp, "UserRemoteIp");
+                var ex = new ArgumentException(spi.SpInvokeParams.RequestRemoteIp, "RequestRemoteIp");
                 _logger?.LogError(ex.Message, ex);
                 throw ex;
             }
+
+            //fix isLocal for system request and loopback
+            if (spi.IsSystem || (requestRemoteIp != null && System.Net.IPAddress.IsLoopback(requestRemoteIp)))
+                spi.SpInvokeParams.IsLocalRequest = true;
 
             // retrieve user session
             var invokeParams = spi.SpInvokeParams;
@@ -301,7 +307,8 @@ namespace DirectSp
                 RecordCount = invokeOptions.RecordCount,
                 AppVersion = AppVersion,
                 IsReadonlyIntent = spInfo.ExtendedProps.DataAccessMode == SpDataAccessMode.Read || spInfo.ExtendedProps.DataAccessMode == SpDataAccessMode.ReadSnapshot,
-                RemoteIp = spi.SpInvokeParams.UserRemoteIp,
+                RequestRemoteIp = spi.SpInvokeParams.RequestRemoteIp,
+                IsLocalRequest = spi.SpInvokeParams.IsLocalRequest,
                 AppName = AppName,
                 Audience = invokeParams.Audience,
                 AuthUserId = invokeParams.AuthUserId,

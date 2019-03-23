@@ -13,7 +13,8 @@ namespace DirectSp
         public int? RecordIndex { get; internal set; }
         public int? RecordCount { get; internal set; }
         public string ClientVersion { get; internal set; }
-        public string RemoteIp { get; internal set; }
+        public string RequestRemoteIp { get; internal set; }
+        public bool IsLocalRequest { get; internal set; }
         public bool IsReadonlyIntent { get; internal set; }
         public DirectSpAgentContext AgentContext { get; internal set; }
 
@@ -23,7 +24,6 @@ namespace DirectSp
             {
                 var nameSlot = Thread.GetNamedDataSlot("DirectSpContext");
                 return nameSlot!=null ? (DirectSpContext)Thread.GetData(nameSlot) : null;
-
             }
         }
     }
