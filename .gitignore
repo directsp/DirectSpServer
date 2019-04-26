@@ -1,6 +1,7 @@
 bin
 obj
 .vs
+.nuget
 *.cer
 Publish*.bat
 appsettings.json
