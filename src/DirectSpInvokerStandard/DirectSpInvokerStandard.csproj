@@ -13,8 +13,8 @@
     <NeutralLanguage>en</NeutralLanguage>
     <Version>2.0.7</Version>
     <PackageId>DirectSp.Invoker.Standard</PackageId>
-    <Product>DirectSpInvokerStandard</Product>
-    <PackageLicenseExpression>LGPL</PackageLicenseExpression>
+    <Product></Product>
+    <PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/directsp</RepositoryUrl>
   </PropertyGroup>
 

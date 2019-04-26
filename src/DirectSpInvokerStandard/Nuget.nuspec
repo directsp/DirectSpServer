@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+  <metadata>
+    <id>DirectSp.Invoker.Standard</id>
+    <version>2.0.7</version>
+    <authors>Mohammad Nikravan</authors>
+    <owners>Mohammad Nikravan</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Directly call a .net class object via RestAPI</description>
+    <tags></tags>
+    <repository url="https://github.com/directsp" />
+    <projectUrl>https://github.com/directsp</projectUrl>
+    <license type="expression">LGPL-3.0-or-later</license>
+    <dependencies>
+    </dependencies>
+  </metadata>
+</package>
