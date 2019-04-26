@@ -88,6 +88,7 @@ namespace DirectSp
 
             //add headers
             response.Headers.Add("DSP-AppVersion", _invoker.AppVersion);
+            response.Headers.Add("Access-Control-Expose-Headers", "DSP-AppVersion");
             return response;
         }
 
@@ -120,6 +121,7 @@ namespace DirectSp
 
                 //Add headers
                 response.Headers.Add("DSP-AppVersion", _invoker.AppVersion);
+                response.Headers.Add("Access-Control-Expose-Headers", "DSP-AppVersion");
                 response.Content.Headers.Add("content-disposition", $"attachment; filename=\"{fileName}\"");
                 return response;
             }
