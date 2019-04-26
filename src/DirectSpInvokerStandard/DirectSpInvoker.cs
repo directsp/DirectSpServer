@@ -41,6 +41,7 @@ namespace DirectSp
         private readonly CultureInfo _alternativeCulture;
         private readonly AlternativeCalendar _alternativeCalendar;
         private readonly object _lockObject = new object();
+        private readonly string _appVersion;
 
         public DirectSpInvoker(DirectSpInvokerOptions options)
         {
@@ -62,6 +63,7 @@ namespace DirectSp
             _alternativeCulture = options.AlternativeCulture;
             _commandProvider = options.CommandProvider;
             _alternativeCalendar = new AlternativeCalendar(_alternativeCulture);
+            _appVersion = options.AppVersion;
             DirectSpException.UseCamelCase = options.UseCamelCase;
         }
 
@@ -110,7 +112,7 @@ namespace DirectSp
                 {
                     var systemApiInfo = _commandProvider.GetSystemApi().Result;
                     AppName = systemApiInfo.AppName;
-                    AppVersion = systemApiInfo.AppVersion;
+                    AppVersion = _appVersion ?? systemApiInfo.AppVersion;
                     foreach (var item in systemApiInfo.ProcInfos)
                         spInfos.Add(item.ProcedureName, item);
                     _spInfos = spInfos;
