@@ -20,7 +20,6 @@ namespace DirectSp.Test.TestClass
         [TestInitialize]
         public void Init()
         {
-
             // Resolve SpInvoker internal dependencies
             var invokerOptions = new DirectSpInvokerOptions
             {
