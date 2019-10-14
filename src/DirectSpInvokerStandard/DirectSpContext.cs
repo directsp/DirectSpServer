@@ -16,6 +16,7 @@ namespace DirectSp
         public string RequestRemoteIp { get; internal set; }
         public bool IsLocalRequest { get; internal set; }
         public bool IsReadonlyIntent { get; internal set; }
+        public string UserAgent { get; internal set; }
         public DirectSpAgentContext AgentContext { get; internal set; }
 
         public static DirectSpContext Current

@@ -10,10 +10,10 @@ namespace DirectSp.Host
     {
         public static void Main(string[] args)
         {
-            CreateWebHostBuilder(args).Build().Run();
+            CreateHostBuilder(args).Build().Run();
         }
 
-        public static IWebHostBuilder CreateWebHostBuilder(string[] args)
+        public static IWebHostBuilder CreateHostBuilder(string[] args)
         {
             return 
                 WebHost.CreateDefaultBuilder(args)
@@ -28,7 +28,6 @@ namespace DirectSp.Host
 
                     }
                 })
-                .UseSetting("detailedErrors", "true")
                 .UseStartup<Startup>();
         }
     }

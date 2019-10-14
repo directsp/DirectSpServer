@@ -27,20 +27,12 @@ namespace DirectSp.Host
             Directory.CreateDirectory(HostSettings.WorkspaceFolderPath);
 
             // Create KeyValue instance base of AppSetting.json settings
-            switch (HostSettings.KeyValueProvider.Name)
+            directSpInvokerOptions.KeyValueProvider = HostSettings.KeyValueProvider.Name switch
             {
-                case KeyValueProviderType.SqlKeyValue:
-                    directSpInvokerOptions.KeyValueProvider = new SqlKeyValueProvider(HostSettings.KeyValueProvider.ConnectionString);
-                    break;
-
-                case KeyValueProviderType.MemoryKeyValue:
-                    directSpInvokerOptions.KeyValueProvider = new MemoryKeyValueProvder();
-                    break;
-
-                default:
-                    throw new NotImplementedException($"KeyValueProvider has not been implemented. Name: {HostSettings.KeyValueProvider.Name}");
-            }
-
+                KeyValueProviderType.SqlKeyValue => new SqlKeyValueProvider(HostSettings.KeyValueProvider.ConnectionString),
+                KeyValueProviderType.MemoryKeyValue => new MemoryKeyValueProvder(),
+                _ => throw new NotImplementedException($"KeyValueProvider has not been implemented. Name: {HostSettings.KeyValueProvider.Name}"),
+            };
             directSpInvokerOptions.CommandProvider = new SqlCommandProvider(HostSettings.ResourceDbConnectionString);
             DirectSpInvoker = new DirectSpInvoker(directSpInvokerOptions);
 

@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
+﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Threading;
@@ -27,14 +26,6 @@ namespace DirectSp.Host
             }
 
             await _next(context);
-        }
-    }
-
-    public static class AppFilterExtension
-    {
-        public static IApplicationBuilder UseAppFilter(this IApplicationBuilder app, IHostingEnvironment env)
-        {
-            return app.UseMiddleware<AppFilter>();
         }
     }
 

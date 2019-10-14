@@ -55,6 +55,7 @@ namespace DirectSp
                 RequestRemoteIp = ((IPEndPoint)requestMessage.Properties["RemoteEndPoint"]).Address.ToString(),
                 IsLocalRequest = requestMessage.Properties.ContainsKey("MS_IsLocal") ? (bool)requestMessage.Properties["MS_IsLocal"] : true,
                 ApiInvokeOptions = null,
+                UserAgent = requestMessage.Headers.UserAgent?.ToString(),
                 RecordsetDownloadUrlTemplate = new UriBuilder(uri) { Path = _downloadRecordsetPath, Query = "id={id}&filename={filename}" }.ToString(),
             };
 

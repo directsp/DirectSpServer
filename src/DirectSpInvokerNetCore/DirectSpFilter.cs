@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using System.Net;
 using System.Threading.Tasks;
 
@@ -34,13 +33,4 @@ namespace DirectSp
             await _next(context);
         }
     }
-
-    public static class DirectSpFilterExtension
-    {
-        public static IApplicationBuilder UseDirectSpFilter(this IApplicationBuilder app, DirectSpHttpHandler directSpHttpHandler)
-        {
-            return app.UseMiddleware<DirectSpFilter>(directSpHttpHandler);
-        }
-    }
-
 }

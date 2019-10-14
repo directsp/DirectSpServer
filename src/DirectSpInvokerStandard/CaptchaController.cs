@@ -41,10 +41,6 @@ namespace DirectSp
             {
                 throw new InvalidCaptchaException(reCreate ? await Create() : null, procName);
             }
-
         }
-
-
-
     }
 }

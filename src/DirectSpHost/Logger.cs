@@ -8,7 +8,7 @@ namespace DirectSp.Host
 {
     public static class Logger
     {
-        private static Lazy<ILog> log4Net = new Lazy<ILog>(() => Start());
+        private static readonly Lazy<ILog> log4Net = new Lazy<ILog>(() => Start());
         public static ILog Current => log4Net.Value;
         public static string LogFolder { get; set; }
 

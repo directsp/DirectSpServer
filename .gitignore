@@ -4,10 +4,6 @@ obj
 .nuget
 *.cer
 Publish*.bat
-appsettings.json
-/DirectSpClientNetTest
-DirectSpClientNetTest
 /src/DirectSpHost/Properties/PublishProfiles
 /src/DirectSpHost/log4net.config
-/DirectSpInternalDb
 /src/DirectSpHost/Log

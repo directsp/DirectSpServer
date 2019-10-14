@@ -8,10 +8,10 @@ namespace DirectSp
 {
     public static class Util
     {
-        public static T SafeDBNull<T>(object value, T defaultValue = default(T))
+        public static T SafeDBNull<T>(object value, T defaultValue = default)
         {
             if (value == null)
-                return default(T);
+                return default;
 
             if (value is string)
                 return (T)Convert.ChangeType(value, typeof(T));
@@ -110,7 +110,7 @@ namespace DirectSp
             for (int i = 0; i < stringChars.Length; i++)
                 stringChars[i] = chars[random.Next(chars.Length)];
 
-            var ret = new String(stringChars);
+            var ret = new string(stringChars);
             return ret;
         }
 

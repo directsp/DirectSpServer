@@ -12,5 +12,6 @@ namespace DirectSp
         public string Audience { get; set; }
         public ApiInvokeOptions ApiInvokeOptions { get; set; } = new ApiInvokeOptions();
         public string RecordsetDownloadUrlTemplate { get; set; } //should contain {id} and {filename}
+        public string UserAgent { get; set; }
     }
 }

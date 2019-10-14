@@ -16,19 +16,12 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
-    "SqlApiService": {
-      "commandName": "Project",
-      "launchUrl": "http://localhost:5000/api/values",
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
-      },
-      "applicationUrl": "https://127.0.0.4"
-    },
     "Kestler": {
       "commandName": "Project",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
-      }
+      },
+      "applicationUrl": "https://127.0.0.2"
     }
   }
 }

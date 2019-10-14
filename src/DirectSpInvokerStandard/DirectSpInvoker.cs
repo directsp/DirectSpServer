@@ -311,6 +311,7 @@ namespace DirectSp
                 IsReadonlyIntent = spInfo.ExtendedProps.DataAccessMode == SpDataAccessMode.Read || spInfo.ExtendedProps.DataAccessMode == SpDataAccessMode.ReadSnapshot,
                 RequestRemoteIp = spi.SpInvokeParams.RequestRemoteIp,
                 IsLocalRequest = spi.SpInvokeParams.IsLocalRequest,
+                UserAgent = spi.SpInvokeParams.UserAgent,
                 AppName = AppName,
                 Audience = invokeParams.Audience,
                 AuthUserId = invokeParams.AuthUserId,
