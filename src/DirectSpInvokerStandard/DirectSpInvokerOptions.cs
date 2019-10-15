@@ -6,7 +6,6 @@ namespace DirectSp
 {
     public class DirectSpInvokerOptions
     {
-        public string Schema { get; set; } = "api";
         /// <summary>
         /// If set then AppVersion of API will be ignored
         /// </summary>

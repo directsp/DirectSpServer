@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Text;
 
 namespace DirectSp
@@ -7,7 +8,7 @@ namespace DirectSp
     public class InvokeOptions
     {
         public bool IsLocalRequest { get; set; } = true;
-        public string RequestRemoteIp { get; set; }
+        public IPAddress RequestRemoteIp { get; set; }
         public string AuthUserId { get; set; }
         public string Audience { get; set; }
         public ApiInvokeOptions ApiInvokeOptions { get; set; } = new ApiInvokeOptions();

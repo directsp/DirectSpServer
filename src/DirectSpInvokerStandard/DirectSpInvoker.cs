@@ -29,7 +29,6 @@ namespace DirectSp
         public bool UseCamelCase { get; private set; }
         private readonly CaptchaController _captchaController;
         private readonly ICommandProvider _commandProvider;
-        private readonly string _schema;
         private readonly UserSessionManager _sessionManager;
         private readonly ILogger _logger;
         private readonly JwtTokenSigner _tokenSigner;
@@ -51,7 +50,6 @@ namespace DirectSp
             KeyValueProvider = options.KeyValueProvider;
             UseCamelCase = options.UseCamelCase;
             _logger = options.Logger;
-            _schema = options.Schema ?? throw new Exception("Schema is not set!");
             _sessionManager = new UserSessionManager(options.SessionTimeout);
             _sessionMaxRequestCycleInterval = options.SessionMaxRequestCycleInterval;
             _sessionMaxRequestCount = options.SessionMaxRequestCount;
@@ -258,17 +256,8 @@ namespace DirectSp
 
         private async Task<SpCallResult> InvokeCore2(SpCall spCall, InvokeOptionsInternal spi)
         {
-            System.Net.IPAddress.TryParse(spi.SpInvokeParams.RequestRemoteIp, out System.Net.IPAddress requestRemoteIp);
-
-            if (!spi.IsSystem && requestRemoteIp == null)
-            {
-                var ex = new ArgumentException(spi.SpInvokeParams.RequestRemoteIp, "RequestRemoteIp");
-                _logger?.LogError(ex.Message, ex);
-                throw ex;
-            }
-
             //fix isLocal for system request and loopback
-            if (spi.IsSystem || (requestRemoteIp != null && System.Net.IPAddress.IsLoopback(requestRemoteIp)))
+            if (spi.IsSystem)
                 spi.SpInvokeParams.IsLocalRequest = true;
 
             // retrieve user session
@@ -309,7 +298,7 @@ namespace DirectSp
                 RecordCount = invokeOptions.RecordCount,
                 AppVersion = AppVersion,
                 IsReadonlyIntent = spInfo.ExtendedProps.DataAccessMode == SpDataAccessMode.Read || spInfo.ExtendedProps.DataAccessMode == SpDataAccessMode.ReadSnapshot,
-                RequestRemoteIp = spi.SpInvokeParams.RequestRemoteIp,
+                RequestRemoteIp = spi.SpInvokeParams.RequestRemoteIp?.ToString(),
                 IsLocalRequest = spi.SpInvokeParams.IsLocalRequest,
                 UserAgent = spi.SpInvokeParams.UserAgent,
                 AppName = AppName,
@@ -577,7 +566,7 @@ namespace DirectSp
                         itemValueString = $"\"{itemValueString}\"";
 
                         // Add ="" if it was a number
-                        if (double.TryParse(itemValue.ToString(), out double t))
+                        if (double.TryParse(itemValue.ToString(), out double _))
                             itemValueString = $"={itemValueString}";
                     }
 

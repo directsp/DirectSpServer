@@ -4,6 +4,7 @@ using DirectSp.Test.Mock;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace DirectSp.Test.TestClass
@@ -24,7 +25,6 @@ namespace DirectSp.Test.TestClass
             var invokerOptions = new DirectSpInvokerOptions
             {
                 WorkspaceFolderPath = "Workspace/Directsp",
-                Schema = "TestObject",
                 CommandProvider = new ObjectCommandProvider(new TestObject()),
                 CertificateProvider = new MockCertificateProvider(),
                 CaptchaProvider = new MockCaptchaProvider(),
@@ -129,7 +129,6 @@ namespace DirectSp.Test.TestClass
             var invokeOptions = new InvokeOptions()
             {
                 AuthUserId = "1",
-                RequestRemoteIp = "127.0.0.1"
             };
 
             var result = await _directSpInvoker.Invoke(spCalls, invokeOptions);
@@ -173,7 +172,7 @@ namespace DirectSp.Test.TestClass
                 Method = "TestSimple"
             };
 
-            var spInvokeParams = new InvokeOptions { ApiInvokeOptions = new ApiInvokeOptions { RequestId = Guid.NewGuid().ToString() }, RequestRemoteIp = "127.0.0.1" };
+            var spInvokeParams = new InvokeOptions { ApiInvokeOptions = new ApiInvokeOptions { RequestId = Guid.NewGuid().ToString() } };
             await _directSpInvoker.Invoke(spCall, spInvokeParams);
 
             try
@@ -194,7 +193,7 @@ namespace DirectSp.Test.TestClass
                 Method = "CaptchaRequiredMethod"
             };
 
-            var spInvokeParams = new InvokeOptions { ApiInvokeOptions = new ApiInvokeOptions { }, RequestRemoteIp = "127.0.0.1" };
+            var spInvokeParams = new InvokeOptions();
             try
             {
                 await _directSpInvoker.Invoke(spCall, spInvokeParams);
@@ -207,14 +206,14 @@ namespace DirectSp.Test.TestClass
                 //try with captcha
                 try
                 {
-                    spInvokeParams = new InvokeOptions { ApiInvokeOptions = new ApiInvokeOptions { CaptchaId = captchaRequest.Id, CaptchaCode = "1234" }, RequestRemoteIp = "127.0.0.1" };
+                    spInvokeParams = new InvokeOptions { ApiInvokeOptions = new ApiInvokeOptions { CaptchaId = captchaRequest.Id, CaptchaCode = "1234" } };
                     await _directSpInvoker.Invoke(spCall, spInvokeParams);
                     Assert.Fail("SpInvalidCaptchaException was expected!");
                 }
                 catch (InvalidCaptchaException ex2)
                 {
                     captchaRequest = (CaptchaRequest)ex2.SpCallError.ErrorData;
-                    spInvokeParams = new InvokeOptions { ApiInvokeOptions = new ApiInvokeOptions { CaptchaId = captchaRequest.Id, CaptchaCode = "123" }, RequestRemoteIp = "127.0.0.1" };
+                    spInvokeParams = new InvokeOptions { ApiInvokeOptions = new ApiInvokeOptions { CaptchaId = captchaRequest.Id, CaptchaCode = "123" } };
                     await _directSpInvoker.Invoke(spCall, spInvokeParams);
 
                     //second call with the same captcha id must fail
@@ -239,7 +238,7 @@ namespace DirectSp.Test.TestClass
                 Method = "AsyncIntMethod"
             };
 
-            var spInvokeParams = new InvokeOptions { ApiInvokeOptions = new ApiInvokeOptions { }, RequestRemoteIp = "127.0.0.1" };
+            var spInvokeParams = new InvokeOptions ();
             var result = await _directSpInvoker.Invoke(spCall, spInvokeParams);
             Assert.AreEqual(result.ReturnValue, 1);
         }
@@ -252,7 +251,7 @@ namespace DirectSp.Test.TestClass
                 Method = "AsyncVoidMethod"
             };
 
-            var spInvokeParams = new InvokeOptions { ApiInvokeOptions = new ApiInvokeOptions { }, RequestRemoteIp = "127.0.0.1" };
+            var spInvokeParams = new InvokeOptions ();
             var result = await _directSpInvoker.Invoke(spCall, spInvokeParams);
 
             try

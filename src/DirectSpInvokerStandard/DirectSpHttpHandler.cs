@@ -14,6 +14,7 @@ namespace DirectSp
     {
         private readonly string _basePath;
         private readonly DirectSpInvoker _invoker;
+        private string DownloadRecordsetPath => $"/{_basePath}/download/recordset";
 
         public DirectSpHttpHandler(DirectSpInvoker invoker, string basePath)
         {
@@ -26,7 +27,6 @@ namespace DirectSp
             return path.IndexOf("/" + _basePath + "/") == 0 || path == "/" + _basePath;
         }
 
-        private string _downloadRecordsetPath => $"/{_basePath}/download/recordset";
 
         public async Task<HttpResponseMessage> Process(HttpRequestMessage requestMessage)
         {
@@ -43,20 +43,23 @@ namespace DirectSp
             if (_invoker.UseCamelCase)
                 jsonSerializerSettings.ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver();
 
-            if (path.Equals(_downloadRecordsetPath, StringComparison.InvariantCultureIgnoreCase))
+            if (path.Equals(DownloadRecordsetPath, StringComparison.InvariantCultureIgnoreCase))
                 return DownloadRecorset(requestMessage);
 
             // parse request
 
             var json = await requestMessage.Content.ReadAsStringAsync();
+            var requestRemoteIp = requestMessage.Properties.ContainsKey("RemoteEndPoint") ? ((IPEndPoint)requestMessage.Properties["RemoteEndPoint"]).Address : null;
+            var isLocalIp = requestRemoteIp == null || IPAddress.IsLoopback(requestRemoteIp);
+
             var spInvokeParams = new InvokeOptions
             {
                 AuthUserId = (string)requestMessage.Properties["AuthUserId"],
-                RequestRemoteIp = ((IPEndPoint)requestMessage.Properties["RemoteEndPoint"]).Address.ToString(),
-                IsLocalRequest = requestMessage.Properties.ContainsKey("MS_IsLocal") ? (bool)requestMessage.Properties["MS_IsLocal"] : true,
+                RequestRemoteIp = requestRemoteIp,
+                IsLocalRequest = requestMessage.Properties.ContainsKey("MS_IsLocal") ? (bool)requestMessage.Properties["MS_IsLocal"] : isLocalIp,
                 ApiInvokeOptions = null,
                 UserAgent = requestMessage.Headers.UserAgent?.ToString(),
-                RecordsetDownloadUrlTemplate = new UriBuilder(uri) { Path = _downloadRecordsetPath, Query = "id={id}&filename={filename}" }.ToString(),
+                RecordsetDownloadUrlTemplate = new UriBuilder(uri) { Path = DownloadRecordsetPath, Query = "id={id}&filename={filename}" }.ToString(),
             };
 
             // process
