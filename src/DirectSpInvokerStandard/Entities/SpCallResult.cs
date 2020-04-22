@@ -1,5 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Text.Json;
 
 namespace DirectSp
 {
@@ -7,17 +7,17 @@ namespace DirectSp
     {
         public T ConvertParams<T>()
         {
-            return JToken.FromObject(this).ToObject<T>();
+            return JsonSerializer.Deserialize<T>(JsonSerializer.Serialize(this));
         }
 
         public T ConvertParam<T>(string paramName)
         {
-            return ContainsKey(paramName) ? JToken.FromObject(this[paramName]).ToObject<T>() : default(T);
+            return ContainsKey(paramName) ? JsonSerializer.Deserialize<T>(JsonSerializer.Serialize(this[paramName])) : default;
         }
 
         public T ConvertRecordset<T>() where T : class
         {
-            return Recordset != null ? JToken.FromObject(Recordset).ToObject<T>() : null;
+            return Recordset != null ? JsonSerializer.Deserialize<T>(JsonSerializer.Serialize(Recordset)) : null;
         }
 
         public IDictionary<string, string> RecordsetFields => (IDictionary<string, string>)this["RecordsetFields"];

@@ -1,10 +1,10 @@
 ﻿using DirectSp.Exceptions;
-using Newtonsoft.Json;
 using System;
 using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Web;
 
@@ -39,9 +39,9 @@ namespace DirectSp
                 return null;
 
             // prepare json serialize
-            var jsonSerializerSettings = new JsonSerializerSettings();
+            var jsonSerializerOptions = new JsonSerializerOptions();
             if (_invoker.UseCamelCase)
-                jsonSerializerSettings.ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver();
+                jsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
 
             if (path.Equals(DownloadRecordsetPath, StringComparison.InvariantCultureIgnoreCase))
                 return DownloadRecorset(requestMessage);
@@ -69,24 +69,24 @@ namespace DirectSp
                 object result = null;
                 if (lastSegment== "invokebatch")
                 {
-                    var invokeParamsBatch = JsonConvert.DeserializeObject<ApiInvokeParamsBatch>(json);
+                    var invokeParamsBatch = JsonSerializer.Deserialize<ApiInvokeParamsBatch>(json);
                     spInvokeParams.ApiInvokeOptions = invokeParamsBatch.InvokeOptions;
                     result = await _invoker.Invoke(invokeParamsBatch.SpCalls, spInvokeParams);
                 }
                 else
                 {
-                    var invokeParams = JsonConvert.DeserializeObject<ApiInvokeParams>(json);
+                    var invokeParams = JsonSerializer.Deserialize<ApiInvokeParams>(json);
                     spInvokeParams.ApiInvokeOptions = invokeParams.InvokeOptions;
                     result = await _invoker.Invoke(invokeParams.SpCall, spInvokeParams);
                 }
 
-                response.Content = new StringContent(JsonConvert.SerializeObject(result, jsonSerializerSettings), System.Text.Encoding.UTF8, "application/json");
+                response.Content = new StringContent(JsonSerializer.Serialize(result, jsonSerializerOptions), System.Text.Encoding.UTF8, "application/json");
                 response.StatusCode = HttpStatusCode.OK;
             }
             catch (Exception ex)
             {
                 var dspError = ex is DirectSpException ? (DirectSpException)ex : new DirectSpException(ex);
-                response.Content = new StringContent(JsonConvert.SerializeObject(dspError.SpCallError, jsonSerializerSettings));
+                response.Content = new StringContent(JsonSerializer.Serialize(dspError.SpCallError, jsonSerializerOptions));
                 response.StatusCode = dspError.StatusCode;
             }
 

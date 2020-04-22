@@ -28,7 +28,7 @@ namespace DirectSp.Test.TestClass
                 CommandProvider = new ObjectCommandProvider(new TestObject()),
                 CertificateProvider = new MockCertificateProvider(),
                 CaptchaProvider = new MockCaptchaProvider(),
-                Logger = Logger.Current
+                Logger = Log.Current
 
             };
 
@@ -89,10 +89,10 @@ namespace DirectSp.Test.TestClass
             var expectedValue = 2;
 
             //set property
-            var result = await _directSpInvoker.Invoke("set_Prop1", new { value = expectedValue });
+            await _directSpInvoker.Invoke("set_Prop1", new { value = expectedValue });
 
             //get property
-            result = await _directSpInvoker.Invoke("get_Prop1", new { });
+            var result = await _directSpInvoker.Invoke("get_Prop1", new { });
             Assert.AreEqual(result["returnValue"], expectedValue);
         }
 
