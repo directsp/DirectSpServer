@@ -14,7 +14,7 @@ namespace DirectSp
         public int SessionMaxRequestCount { get; set; } = 100; //100 requests
         public int SessionMaxRequestCycleInterval { get; set; } = 5 * 60; //5 minutes
         public int ReadonlyConnectionSyncInterval { get; set; } = 10; //10 seconds
-        public bool UseCamelCase { get; set; } = true;
+        internal bool UseCamelCase { get; set; } = false;
         public int DownloadedRecordsetFileLifetime { get; set; } = 5 * 3600; //5 hours
         public CultureInfo AlternativeCulture { get; set; }
         public string WorkspaceFolderPath { get; set; }

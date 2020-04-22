@@ -1,7 +1,6 @@
 ﻿using System;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System.Net;
+using System.Text.Json;
 
 namespace DirectSp.Exceptions
 {
@@ -49,10 +48,10 @@ namespace DirectSp.Exceptions
 
         public override string ToString()
         {
-            var settings = new JsonSerializerSettings();
+            var settings = new JsonSerializerOptions();
             if (UseCamelCase)
-                settings.ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver();
-            return JsonConvert.SerializeObject(SpCallError, settings);
+                settings.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+            return JsonSerializer.Serialize(SpCallError, settings);
         }
 
         public HttpStatusCode StatusCode { get; protected set; }
@@ -73,8 +72,8 @@ namespace DirectSp.Exceptions
                     ErrorData = _SpCallError.ErrorData
                 };
 
-                if (UseCamelCase && spCallError.ErrorData is JToken)
-                       Util.CamelizeJToken(spCallError.ErrorData as JToken);
+                if (UseCamelCase && spCallError.ErrorData is JsonElement)
+                       Util.CamelizeJElement((JsonElement)spCallError.ErrorData);
 
                 return spCallError;
             }

@@ -1,8 +1,8 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Text.Json;
 
 namespace DirectSp
 {
@@ -17,8 +17,11 @@ namespace DirectSp
         public string Sign(string jwt)
         {
             //  Find certificate by thumb number 
-            var obj = JObject.Parse(jwt);
-            var certificateThumb = (string)obj["CertificateThumb"];
+            var obj = JsonSerializer.Deserialize<JsonElement>(jwt);
+            if (!obj.TryGetProperty("CertificateThumb", out JsonElement je))
+                throw new Exception("CertificateThumb does not exist in jwt");
+            
+            var certificateThumb = je.GetString();
             if (string.IsNullOrEmpty(certificateThumb))
                 throw new NullReferenceException(nameof(certificateThumb));
 
@@ -47,14 +50,14 @@ namespace DirectSp
 
             //  Find certificate by thumb number 
             var payload = StringHelper.FromBase64(jwtParts[1]);
-            var obj = JObject.Parse(payload);
+            var obj = JsonSerializer.Deserialize<JsonElement>(payload);
 
             // Check token expiration
-            var exp = Util.DateTime_FromUnixDate((double)obj["exp"]);
+            var exp = Util.DateTime_FromUnixDate(obj.GetProperty("exp").GetDouble());
             if (DateTime.Now > exp)
                 throw new ArgumentException("Token has been expired.", nameof(jwt));
 
-            var rsa = (RSA)CertificateProvider.GetByThumb((string)obj["CertificateThumb"]).PublicKey.Key;
+            var rsa = (RSA)CertificateProvider.GetByThumb(obj.GetProperty("CertificateThumb").GetString()).PublicKey.Key;
 
             // Check sign by certificate public key
             var sha256 = SHA256.Create();
