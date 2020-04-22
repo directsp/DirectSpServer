@@ -27,7 +27,7 @@ namespace DirectSp.Test.TestClass
                 CommandProvider = new ObjectCommandProvider(new TestObject()),
                 CertificateProvider = new MockCertificateProvider(),
                 CaptchaProvider = new MockCaptchaProvider(),
-                Logger = Logger.Current
+                Logger = Log.Current
 
             };
 

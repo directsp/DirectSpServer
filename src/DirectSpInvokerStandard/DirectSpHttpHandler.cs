@@ -1,5 +1,6 @@
 ﻿using DirectSp.Exceptions;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using System;
 using System.IO;
 using System.Net;
@@ -27,7 +28,6 @@ namespace DirectSp
             return path.IndexOf("/" + _basePath + "/") == 0 || path == "/" + _basePath;
         }
 
-
         public async Task<HttpResponseMessage> Process(HttpRequestMessage requestMessage)
         {
             var uri = requestMessage.RequestUri;
@@ -39,7 +39,11 @@ namespace DirectSp
                 return null;
 
             // prepare json serialize
-            var jsonSerializerSettings = new JsonSerializerSettings();
+            var jsonSerializerSettings = new JsonSerializerSettings()
+            {
+                Converters = new JsonConverter[] { new StringEnumConverter() }
+            };
+
             if (_invoker.UseCamelCase)
                 jsonSerializerSettings.ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver();
 
@@ -67,7 +71,7 @@ namespace DirectSp
             try
             {
                 object result = null;
-                if (lastSegment== "invokebatch")
+                if (lastSegment == "invokebatch")
                 {
                     var invokeParamsBatch = JsonConvert.DeserializeObject<ApiInvokeParamsBatch>(json);
                     spInvokeParams.ApiInvokeOptions = invokeParamsBatch.InvokeOptions;
