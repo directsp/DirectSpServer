@@ -125,45 +125,43 @@ namespace DirectSp.Providers
 
         public async Task<SpSystemApiInfo> GetSystemApi()
         {
-            using (var sqlConnection = new SqlConnection(ConnectionStringReadOnly))
-            using (var sqlCommand = new SqlCommand("api.System_Api", sqlConnection))
-            {
-                var sqlParameters = new List<SqlParameter>()
+            using var sqlConnection = new SqlConnection(ConnectionStringReadOnly);
+            using var sqlCommand = new SqlCommand("api.System_Api", sqlConnection);
+            var sqlParameters = new List<SqlParameter>()
                 {
                     new SqlParameter("@Context",SqlDbType.NVarChar, -1) { Direction = ParameterDirection.InputOutput, Value = "$$" },
                     new SqlParameter("@Api", SqlDbType.NVarChar, -1) { Direction = ParameterDirection.Output},
                 };
 
-                //create command and run it
-                sqlCommand.CommandType = CommandType.StoredProcedure;
-                sqlCommand.Parameters.AddRange(sqlParameters.ToArray());
+            //create command and run it
+            sqlCommand.CommandType = CommandType.StoredProcedure;
+            sqlCommand.Parameters.AddRange(sqlParameters.ToArray());
 
-                sqlConnection.Open();
-                await sqlCommand.ExecuteNonQueryAsync();
+            sqlConnection.Open();
+            await sqlCommand.ExecuteNonQueryAsync();
 
-                var api = sqlParameters.Find(x => x.ParameterName == "@Api").Value as string;
-                api = api.Replace("'sql_variant'", "'variant'");
-                var ret = new SpSystemApiInfo
-                {
-                    ProcInfos = JsonConvert.DeserializeObject<SpInfo[]>(api),
-                    AppName = sqlParameters.Find(x => x.ParameterName == "@AppName").Value as string,
-                    AppVersion= sqlParameters.Find(x => x.ParameterName == "@AppVersion").Value as string //context
-                };
+            var api = sqlParameters.Find(x => x.ParameterName == "@Api").Value as string;
+            api = api.Replace("'sql_variant'", "'variant'");
+            var ret = new SpSystemApiInfo
+            {
+                ProcInfos = JsonConvert.DeserializeObject<SpInfo[]>(api),
+                AppName = sqlParameters.Find(x => x.ParameterName == "@AppName").Value as string,
+                AppVersion = sqlParameters.Find(x => x.ParameterName == "@AppVersion").Value as string //context
+            };
 
-                //remove @ from param names and add return values
-                foreach (var procInfo in ret.ProcInfos)
-                {
-                    foreach (var paramInfo in procInfo.Params)
-                        paramInfo.ParamName = paramInfo.ParamName.Substring(1);
+            //remove @ from param names and add return values
+            foreach (var procInfo in ret.ProcInfos)
+            {
+                foreach (var paramInfo in procInfo.Params)
+                    paramInfo.ParamName = paramInfo.ParamName.Substring(1);
 
-                    //add return value
-                    var paramList = procInfo.Params.ToList();
-                    paramList.Add(new SpParamInfo() { IsOutput = true, ParamName = "returnValue", SystemTypeName = "int", UserTypeName = "int", Length = 4 });
-                    procInfo.Params = paramList.ToArray();
-                }
-
-                return ret;
+                //add return value
+                var paramList = procInfo.Params.ToList();
+                paramList.Add(new SpParamInfo() { IsOutput = true, ParamName = "returnValue", SystemTypeName = "int", UserTypeName = "int", Length = 4 });
+                procInfo.Params = paramList.ToArray();
             }
+
+            return ret;
         }
     }
 }

@@ -37,6 +37,8 @@ namespace DirectSp.Test.Mock
 
         public void Test4_ValidateSign([DirectSpParam(SignType = SpSignType.JwtByCertThumb)] string jwtToken)
         {
+            if (jwtToken is null)
+                throw new ArgumentNullException(nameof(jwtToken));
         }
 
         public void Test_Long(int param1, out int param2)
