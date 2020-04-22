@@ -28,7 +28,6 @@
     <PackageReference Include="log4net.AspNetCore" Version="1.0.0" />
     <PackageReference Include="log4net.Extensions.AspNetCore" Version="1.0.0" />
    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="3.0.0" />
-   <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.0.0" />
   </ItemGroup>
 
 
