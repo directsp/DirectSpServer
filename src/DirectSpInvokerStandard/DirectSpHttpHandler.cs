@@ -1,5 +1,6 @@
 ﻿using DirectSp.Exceptions;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using System;
 using System.IO;
 using System.Net;
@@ -39,7 +40,11 @@ namespace DirectSp
                 return null;
 
             // prepare json serialize
-            var jsonSerializerSettings = new JsonSerializerSettings();
+            var jsonSerializerSettings = new JsonSerializerSettings()
+            {
+                Converters = new JsonConverter[] { new StringEnumConverter() }
+            };
+
             if (_invoker.UseCamelCase)
                 jsonSerializerSettings.ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver();
 
