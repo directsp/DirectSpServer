@@ -435,6 +435,7 @@ namespace DirectSp
             return null;
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0060:Remove unused parameter", Justification = "<Pending>")]
         private object ConvertDataForResource(object value, SpParamInfo param, SpParamInfoEx paramEx, ApiInvokeOptions invokeOptions)
         {
             //fix UserString
@@ -455,6 +456,7 @@ namespace DirectSp
             return value;
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0060:Remove unused parameter", Justification = "<Pending>")]
         private object ConvertDataFromResource(object value, ApiInvokeOptions invokeOptions)
         {
             // try convert json
@@ -496,6 +498,7 @@ namespace DirectSp
                 spCallResult.RecordsetText = ReadRecordsetAsTabSeparatedValues(commandResultTable.Data, spInfo, fieldInfos.ToArray(), invokeOptions);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0060:Remove unused parameter", Justification = "<Pending>")]
         private IEnumerable<IDictionary<string, object>> ReadRecordsetAsObject(object[][] data, SpInfo spInfo, FieldInfo[] fieldInfos, ApiInvokeOptions invokeOptions)
         {
             var recordset = new List<IDictionary<string, object>>();
@@ -519,6 +522,7 @@ namespace DirectSp
             return recordset;
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0060:Remove unused parameter", Justification = "<Pending>")]
         private string ReadRecordsetAsTabSeparatedValues(object[][] data, SpInfo spInfo, FieldInfo[] fieldInfos, ApiInvokeOptions invokeOptions)
         {
             var stringBuilder = new StringBuilder(1 * 1000000); //1MB
@@ -541,13 +545,13 @@ namespace DirectSp
             stringBuilder.AppendLine();
 
             //add records
-            var recordset = new List<IDictionary<string, object>>();
+            //var recordset = new List<IDictionary<string, object>>();
             for (var i = 0; i < data.Length; i++)
             {
-                var row = new Dictionary<string, object>();
+                //var row = new Dictionary<string, object>();
                 for (int j = 0; j < data[i].Length; j++)
                 {
-                    var fieldInfo = fieldInfos[j];
+                    //var fieldInfo = fieldInfos[j];
                     var value = data[i][j];
 
                     // append the next line
@@ -617,7 +621,7 @@ namespace DirectSp
                     throw new SpAccessDeniedOrObjectNotExistsException();
 
                 var fileTitle = string.IsNullOrWhiteSpace(invokeOptions.RecordsetFileTitle) ?
-                    $"{spCall.Method}-{DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss")}" : invokeOptions.RecordsetFileTitle;
+                    $"{spCall.Method}-{DateTime.Now:yyyy-MM-dd HH-mm-ss}" : invokeOptions.RecordsetFileTitle;
 
                 var fileName = $"{fileTitle}.csv";
                 var recordSetId = Util.GetRandomString(40);

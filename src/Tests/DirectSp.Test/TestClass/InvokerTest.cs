@@ -4,7 +4,6 @@ using DirectSp.Test.Mock;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
-using System.Net;
 using System.Threading.Tasks;
 
 namespace DirectSp.Test.TestClass
@@ -89,10 +88,10 @@ namespace DirectSp.Test.TestClass
             var expectedValue = 2;
 
             //set property
-            var result = await _directSpInvoker.Invoke("set_Prop1", new { value = expectedValue });
+            await _directSpInvoker.Invoke("set_Prop1", new { value = expectedValue });
 
             //get property
-            result = await _directSpInvoker.Invoke("get_Prop1", new { });
+            var result = await _directSpInvoker.Invoke("get_Prop1", new { });
             Assert.AreEqual(result["returnValue"], expectedValue);
         }
 
