@@ -1,13 +1,14 @@
 ﻿using DirectSp.Exceptions;
 using DirectSp.ProcedureInfos;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace DirectSp
@@ -434,8 +435,7 @@ namespace DirectSp
             return null;
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0060:Remove unused parameter", Justification = "<Pending>")]
-        private object ConvertDataForResource(object value, SpParamInfo param, SpParamInfoEx _, ApiInvokeOptions invokeOptions)
+        private object ConvertDataForResource(object value, SpParamInfo param, SpParamInfoEx paramEx, ApiInvokeOptions invokeOptions)
         {
             //fix UserString
             if (value is string)
@@ -444,27 +444,27 @@ namespace DirectSp
             if (param.SystemTypeName.ToLower() == "uniqueidentifier")
                 return Guid.Parse(value as string);
 
-            if (value is JsonElement || value is System.Collections.ICollection) //string is an IEnumerable
+            if (value is JToken || value is System.Collections.ICollection) //string is an IEnumerable
             {
                 if (UseCamelCase)
-                    Util.PascalizeJToken((JsonElement)value);
+                    Util.PascalizeJToken(value as JToken);
 
-                value = JsonSerializer.Serialize(value);
+                value = JsonConvert.SerializeObject(value);
             }
 
             return value;
         }
 
-        private object ConvertDataFromResource(object value, ApiInvokeOptions _)
+        private object ConvertDataFromResource(object value, ApiInvokeOptions invokeOptions)
         {
             // try convert json
             if (Util.IsJsonString(value as string))
             {
                 try
                 {
-                    value = JsonSerializer.Deserialize<object>((string)value);
+                    value = JsonConvert.DeserializeObject((string)value);
                     if (UseCamelCase)
-                        Util.CamelizeJElement((JsonElement)value);
+                        Util.CamelizeJToken(value as JToken);
                 }
                 catch { }
             }
@@ -496,7 +496,7 @@ namespace DirectSp
                 spCallResult.RecordsetText = ReadRecordsetAsTabSeparatedValues(commandResultTable.Data, spInfo, fieldInfos.ToArray(), invokeOptions);
         }
 
-        private IEnumerable<IDictionary<string, object>> ReadRecordsetAsObject(object[][] data, SpInfo _, FieldInfo[] fieldInfos, ApiInvokeOptions invokeOptions)
+        private IEnumerable<IDictionary<string, object>> ReadRecordsetAsObject(object[][] data, SpInfo spInfo, FieldInfo[] fieldInfos, ApiInvokeOptions invokeOptions)
         {
             var recordset = new List<IDictionary<string, object>>();
             for (var i = 0; i < data.Length; i++)
@@ -519,7 +519,7 @@ namespace DirectSp
             return recordset;
         }
 
-        private string ReadRecordsetAsTabSeparatedValues(object[][] data, SpInfo _, FieldInfo[] fieldInfos, ApiInvokeOptions invokeOptions)
+        private string ReadRecordsetAsTabSeparatedValues(object[][] data, SpInfo spInfo, FieldInfo[] fieldInfos, ApiInvokeOptions invokeOptions)
         {
             var stringBuilder = new StringBuilder(1 * 1000000); //1MB
 
@@ -541,13 +541,13 @@ namespace DirectSp
             stringBuilder.AppendLine();
 
             //add records
-            //var recordset = new List<IDictionary<string, object>>();
+            var recordset = new List<IDictionary<string, object>>();
             for (var i = 0; i < data.Length; i++)
             {
-                //var row = new Dictionary<string, object>();
+                var row = new Dictionary<string, object>();
                 for (int j = 0; j < data[i].Length; j++)
                 {
-                    //var fieldInfo = fieldInfos[j];
+                    var fieldInfo = fieldInfos[j];
                     var value = data[i][j];
 
                     // append the next line
@@ -574,7 +574,7 @@ namespace DirectSp
                         itemValueString = ((DateTime)itemValue).ToString("yyyy-MM-dd HH:mm:ss");
 
                     // Convert json to string
-                    if (itemValue is JsonElement)
+                    if (itemValue is JToken)
                         itemValueString = Util.ToJsonString(itemValue, UseCamelCase);
 
                     // Write the value
@@ -617,7 +617,7 @@ namespace DirectSp
                     throw new SpAccessDeniedOrObjectNotExistsException();
 
                 var fileTitle = string.IsNullOrWhiteSpace(invokeOptions.RecordsetFileTitle) ?
-                    $"{spCall.Method}-{DateTime.Now:yyyy-MM-dd HH-mm-ss}" : invokeOptions.RecordsetFileTitle;
+                    $"{spCall.Method}-{DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss")}" : invokeOptions.RecordsetFileTitle;
 
                 var fileName = $"{fileTitle}.csv";
                 var recordSetId = Util.GetRandomString(40);

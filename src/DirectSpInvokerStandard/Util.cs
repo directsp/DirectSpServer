@@ -1,7 +1,8 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Linq;
 using System.Security.Claims;
-using System.Text.Json;
 
 namespace DirectSp
 {
@@ -18,7 +19,6 @@ namespace DirectSp
             return (value == DBNull.Value) ? defaultValue : (T)value;
         }
 
-        /*
         public static JToken CamelizeJToken(JToken jToken)
         {
             return RenameJToken(jToken, true);
@@ -54,7 +54,6 @@ namespace DirectSp
 
             return jToken;
         }
-        */
 
         public static string GetClaimUserId(ClaimsPrincipal user)
         {
@@ -96,10 +95,10 @@ namespace DirectSp
 
         public static string ToJsonString(object value, bool camelize)
         {
-            var settings = new JsonSerializerOptions();
+            var settings = new JsonSerializerSettings();
             if (camelize)
-                settings.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-            return JsonSerializer.Serialize(value, settings);
+                settings.ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver();
+            return JsonConvert.SerializeObject(value, settings);
         }
 
         public static string GetRandomString(int length)
@@ -130,8 +129,5 @@ namespace DirectSp
                 : UnixEpoch.AddSeconds(unixDate);
         }
 
-        internal static void CamelizeJElement(JsonElement _) => throw new NotImplementedException();
-
-        internal static void PascalizeJToken(JsonElement _) => throw new NotImplementedException();
     }
 }

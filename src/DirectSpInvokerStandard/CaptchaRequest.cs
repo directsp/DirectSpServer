@@ -1,14 +1,13 @@
-﻿
-using System.Text.Json.Serialization;
+﻿using Newtonsoft.Json;
 
 namespace DirectSp
 {
     public class CaptchaRequest
     {
-        [JsonPropertyName("captchaId")]
+        [JsonProperty("captchaId")]
         public string Id { get; set; }
 
-        [JsonPropertyName("captchaImage")]
+        [JsonProperty("captchaImage")]
         public byte[] ImageBuffer { get; set; }
     }
 }

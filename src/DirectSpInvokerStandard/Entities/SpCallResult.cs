@@ -12,7 +12,7 @@ namespace DirectSp
 
         public T ConvertParam<T>(string paramName)
         {
-            return ContainsKey(paramName) ? JToken.FromObject(this[paramName]).ToObject<T>() : default;
+            return ContainsKey(paramName) ? JToken.FromObject(this[paramName]).ToObject<T>() : default(T);
         }
 
         public T ConvertRecordset<T>() where T : class

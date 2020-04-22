@@ -6,7 +6,7 @@ using System.Reflection;
 
 namespace DirectSp.Host
 {
-    public static class Logger
+    public static class Log
     {
         private static readonly Lazy<ILog> log4Net = new Lazy<ILog>(() => Start());
         public static ILog Current => log4Net.Value;
