@@ -237,7 +237,7 @@ namespace DirectSp.Test.TestClass
                 Method = "AsyncIntMethod"
             };
 
-            var spInvokeParams = new InvokeOptions ();
+            var spInvokeParams = new InvokeOptions();
             var result = await _directSpInvoker.Invoke(spCall, spInvokeParams);
             Assert.AreEqual(result.ReturnValue, 1);
         }
@@ -250,7 +250,7 @@ namespace DirectSp.Test.TestClass
                 Method = "AsyncVoidMethod"
             };
 
-            var spInvokeParams = new InvokeOptions ();
+            var spInvokeParams = new InvokeOptions();
             var result = await _directSpInvoker.Invoke(spCall, spInvokeParams);
 
             try
