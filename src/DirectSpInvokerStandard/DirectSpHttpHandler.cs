@@ -28,7 +28,7 @@ namespace DirectSp
             return path.IndexOf("/" + _basePath + "/") == 0 || path == "/" + _basePath;
         }
 
-        public async Task<HttpResponseMessage> Process(HttpRequestMessage requestMessage)
+        public async Task<HttpResponseMessage>  Process(HttpRequestMessage requestMessage)
         {
             var uri = requestMessage.RequestUri;
             var path = uri.AbsolutePath.TrimEnd('/');
@@ -89,7 +89,7 @@ namespace DirectSp
             }
             catch (Exception ex)
             {
-                var dspError = ex is DirectSpException ? (DirectSpException)ex : new DirectSpException(ex);
+                var dspError = ex is DirectSpException exception ? exception : new DirectSpException(ex);
                 response.Content = new StringContent(JsonConvert.SerializeObject(dspError.SpCallError, jsonSerializerSettings));
                 response.StatusCode = dspError.StatusCode;
             }

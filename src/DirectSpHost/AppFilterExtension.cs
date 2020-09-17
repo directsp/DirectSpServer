@@ -9,5 +9,4 @@ namespace DirectSp.Host
             return app.UseMiddleware<AppFilter>();
         }
     }
-
 }

@@ -1,6 +1,7 @@
 ﻿using DirectSp.ProcedureInfos;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -35,8 +36,10 @@ namespace DirectSp.Test.Mock
             jwtToken = json;
         }
 
+        [SuppressMessage("Microsoft.Performance", "CA1801:ReviewUnusedParameters", MessageId = "jwtToken")]
         public void Test4_ValidateSign([DirectSpParam(SignType = SpSignType.JwtByCertThumb)] string jwtToken)
         {
+            var _ = jwtToken;
         }
 
         public void Test_Long(int param1, out int param2)

@@ -3,27 +3,28 @@ using DirectSp.Providers;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 
 namespace DirectSp.Host
 {
     static class App
     {
-        public static DirectSpInvoker DirectSpInvoker { get; private set; }
-        public static HostSettings HostSettings { get; private set; } = new HostSettings();
-        public static KestrelSettings KestrelSettings { get; private set; } = new KestrelSettings();
-        public static X509Certificate2 KestrelSslCertificate { get; private set; }
+        public static DirectSpInvoker DirectSpInvoker { get; set; }
+        public static HostSettings HostSettings { get; set; }
+        public static KestrelSettings KestrelSettings { get; set; }
+        public static X509Certificate2 KestrelSslCertificate { get; set; }
+        public static AuthProviderSettings[] AuthProviderSettings { get; set; }
 
         public static void Configure(IConfiguration configuration)
         {
             //load settings
-            configuration.GetSection("DirectSpHost").Bind(HostSettings);
-            configuration.GetSection("Kestrel").Bind(KestrelSettings);
+            HostSettings = configuration.GetSection("DirectSpHost").Get<HostSettings>() ?? new HostSettings();
+            KestrelSettings = configuration.GetSection("Kestrel").Get<KestrelSettings>() ?? new KestrelSettings();
+            AuthProviderSettings = configuration.GetSection("AuthProviders").Get<AuthProviderSettings[]>() ?? new AuthProviderSettings[0];
 
-            var directSpInvokerOptions = new DirectSpInvokerOptions() {
-                WorkspaceFolderPath = Path.Combine(HostSettings.WorkspaceFolderPath, "DirectSp")
-            };
-            configuration.GetSection("DirectSpInvoker").Bind(directSpInvokerOptions);
+            var directSpInvokerOptions = configuration.GetSection("DirectSpInvoker").Get<DirectSpInvokerOptions>();
+            directSpInvokerOptions.WorkspaceFolderPath = Path.Combine(HostSettings.WorkspaceFolderPath, "DirectSp");
             Directory.CreateDirectory(HostSettings.WorkspaceFolderPath);
 
             // Create KeyValue instance base of AppSetting.json settings

@@ -5,14 +5,20 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using DirectSp.Host.Auth;
+using Microsoft.IdentityModel.Tokens;
+using System.Net.Http;
 
 namespace DirectSp.Host
 {
+
     public class Startup
     {
         public Startup(IConfiguration configuration)
         {
-            Configuration = configuration;    
+            Configuration = configuration;
         }
 
         public IConfiguration Configuration { get; }
@@ -35,8 +41,38 @@ namespace DirectSp.Host
             }));
 
             // Add framework services.
-            if (App.HostSettings.Authentication != null)
-                services.AddAppAuthentication(App.HostSettings.Authentication);
+            //if (App.HostSettings.Authentication != null)
+            //  services.AddAppAuthentication(App.HostSettings.Authentication);
+            var auth = services
+                //.AddAuthentication(options =>
+                //{
+                //    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                //    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+                //    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                //})
+                .AddAuthentication();
+
+            foreach (var item in App.AuthProviderSettings)
+            {
+                auth.AddJwtBearer(item.Name, options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        NameClaimType = item.NameClaimType,
+                        RequireSignedTokens = false,
+                        ValidIssuers = item.Issuers,
+                        IssuerSigningKey = null,
+                        ValidAudiences = item.ValidAudiences,
+                        ValidateAudience = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidateIssuer = true,
+                        ValidateLifetime = true,
+                        ClockSkew = TimeSpan.FromSeconds(TokenValidationParameters.DefaultClockSkew.TotalSeconds)
+                    };
+                    options.SecurityTokenValidators.Add(new AppSecurityTokenValidator(item));
+
+                });
+            }
 
             //Init MVC
             services.AddMvc().AddNewtonsoftJson(options =>
@@ -58,9 +94,7 @@ namespace DirectSp.Host
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
-            {
                 app.UseDeveloperExceptionPage();
-            }
 
             // Cors must configure before any Authorization to allow token request
             if (App.HostSettings.EnableCors)
@@ -68,8 +102,8 @@ namespace DirectSp.Host
 
             //User Authentication Server and Client (Before Static Files and MVC)
             app.UseAppFilter(); //WARNING: UseAppFilter MUST be called before UseAuthentication
-            if (App.HostSettings.Authentication != null)
-                app.UseAuthentication();
+                                //if (App.HostSettings.Authentication != null) //todo
+            app.UseAppAuthentication();
             app.UseDirectSpFilter(new DirectSpHttpHandler(App.DirectSpInvoker, "api"));
 
             //Add System services
