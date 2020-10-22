@@ -82,7 +82,6 @@ namespace DirectSp.Providers
                             res.OutParams.Add(sqlParameter.ParameterName.Substring(1), sqlParameter.Value != DBNull.Value ? sqlParameter.Value : null);
                         }
                     }
-
                 }
             }
 

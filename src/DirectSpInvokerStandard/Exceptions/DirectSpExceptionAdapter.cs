@@ -31,7 +31,7 @@ namespace DirectSp.Exceptions
                     return new SpMaintenanceReadOnlyException(ret);
 
                 case (int)SpCommonExceptionId.InvalidParamSignature:
-                    return new DirectSpExceptions(ret);
+                    return new SpInvalidParamSignatureException(ret);
 
                 case (int)SpCommonExceptionId.ObjectAlreadyExists:
                     return new SpObjectAlreadyExists(ret);

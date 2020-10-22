@@ -157,7 +157,7 @@ namespace DirectSp.Test.TestClass
                 await _directSpInvoker.Invoke("Test4_ValidateSign", new { jwtToken = JwtToken_unsigned });
 
             }
-            catch (DirectSpExceptions)
+            catch (SpInvalidParamSignatureException)
             {
                 //it is expected
             }

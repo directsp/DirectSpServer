@@ -400,7 +400,7 @@ namespace DirectSp
                     return string.Empty;
 
                 if (!_tokenSigner.CheckSign(token))
-                    throw new DirectSpExceptions(spParam.ParamName);
+                    throw new SpInvalidParamSignatureException(spParam.ParamName);
 
                 // Set param value by token payload
                 return StringHelper.FromBase64(token.Split('.')[1]);
