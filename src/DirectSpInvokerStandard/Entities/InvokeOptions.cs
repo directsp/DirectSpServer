@@ -1,10 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using System.Net;
-using System.Text;
 
 namespace DirectSp
 {
+    [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy))]
     public class InvokeOptions
     {
         public bool IsLocalRequest { get; set; } = true;

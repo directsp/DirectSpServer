@@ -1,8 +1,11 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Serialization;
 using System.Collections.Generic;
 
 namespace DirectSp
 {
+    [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy))]
     public class SpCallResult : Dictionary<string, object>
     {
         public T ConvertParams<T>()

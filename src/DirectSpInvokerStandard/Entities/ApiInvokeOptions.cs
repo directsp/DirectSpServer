@@ -1,5 +1,9 @@
-﻿namespace DirectSp
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
+
+namespace DirectSp
 {
+    [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy))]
     public class ApiInvokeOptions
     {
         public string RequestId { get; set; }

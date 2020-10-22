@@ -36,7 +36,6 @@ namespace DirectSp.Test.Mock
             jwtToken = json;
         }
 
-        [SuppressMessage("Microsoft.Performance", "CA1801:ReviewUnusedParameters", MessageId = "jwtToken")]
         public void Test4_ValidateSign([DirectSpParam(SignType = SpSignType.JwtByCertThumb)] string jwtToken)
         {
             var _ = jwtToken;
