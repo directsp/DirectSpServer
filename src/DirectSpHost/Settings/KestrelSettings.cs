@@ -1,8 +1,10 @@
-﻿namespace DirectSp.Host.Settings
+﻿using System.Net;
+
+namespace DirectSp.Host.Settings
 {
     class KestrelSettings
     {
-        public string ListenIp { get; set; }
-        public string SslCertificateThumb { get; set; }
+        public IPEndPoint EndPoint { get; set; }
+        public string CertificateThumb { get; set; }
     }
 }

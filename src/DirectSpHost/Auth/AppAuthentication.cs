@@ -15,13 +15,15 @@ namespace DirectSp.Host.Auth
     {
         private readonly RequestDelegate _next;
         private readonly ConcurrentDictionary<string, ClaimsPrincipal> _tokenCache = new ConcurrentDictionary<string, ClaimsPrincipal>();
-        private AuthProviderSettings[] AuthProviderSettings => App.AuthProviderSettings;
+        private readonly AuthProviderItem[] _authProviderSettings;
 
-        public AppAuthentication(RequestDelegate next)
+        public AppAuthentication(RequestDelegate next, AuthProviderItem[] authProviderSettings)
         {
             _next = next;
+            _authProviderSettings = authProviderSettings;
         }
 
+        // remove expired tokens
         private DateTime _lastCleanUpTime = DateTime.MinValue;
         private void CleanupCache()
         {
@@ -50,29 +52,23 @@ namespace DirectSp.Host.Auth
             {
                 var tokenString = authHeader.Substring(7);
                 var token = new JwtSecurityTokenHandler().ReadToken(tokenString);
-                
-                // check in cache
-                if ( _tokenCache.TryGetValue(tokenString, out ClaimsPrincipal principal))
-                {
-                    if (DateTime.Now > token.ValidFrom && DateTime.Now < token.ValidTo)
-                    {
-                        context.User = principal;
-                        await _next(context);
-                    }
-                    else
-                    {
-                        _tokenCache.TryRemove(tokenString, out _);
-                    }
-               }
 
-                // find scheme
-                var authProviderSettings = AuthProviderSettings.FirstOrDefault(x => x.Issuers.Contains(token.Issuer));
-                if (authProviderSettings != null)
+                // check in cache
+                if (_tokenCache.TryGetValue(tokenString, out ClaimsPrincipal principal))
                 {
-                    // create new ticket
-                    var result = await context.AuthenticateAsync(authProviderSettings.Name);
-                    context.User = result.Principal;
-                    _tokenCache.TryAdd(tokenString, result.Principal);
+                    context.User = principal;
+                }
+                else
+                {
+                    // find authentication scheme
+                    var authProviderSettings = _authProviderSettings.FirstOrDefault(x => x.Issuers.Contains(token.Issuer));
+                    if (authProviderSettings != null)
+                    {
+                        // create new ticket
+                        var result = await context.AuthenticateAsync(authProviderSettings.Name);
+                        context.User = result.Principal;
+                        _tokenCache.TryAdd(tokenString, result.Principal);
+                    }
                 }
             }
 

@@ -10,17 +10,17 @@ namespace DirectSp.Host.Auth
 {
     public class AppSecurityTokenValidator : JwtSecurityTokenHandler
     {
-        private readonly AuthProviderSettings _settings;
+        private readonly string _signatureValidatorUrl;
 
-        public AppSecurityTokenValidator(AuthProviderSettings settings)
+        public AppSecurityTokenValidator(string signatureValidatorUrl)
         {
-            _settings = settings;
+            _signatureValidatorUrl = signatureValidatorUrl;
         }
 
         protected override JwtSecurityToken ValidateSignature(string token, TokenValidationParameters validationParameters)
         {
             var httpClient = new HttpClient();
-            if (!httpClient.GetAsync(string.Format("https://oauth2.googleapis.com/tokeninfo?id_token={0}", token)).Result.IsSuccessStatusCode)
+            if (!httpClient.GetAsync(string.Format(_signatureValidatorUrl, token)).Result.IsSuccessStatusCode)
                 throw new SecurityTokenInvalidSignatureException();
 
            return ReadJwtToken(token);

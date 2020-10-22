@@ -18,15 +18,15 @@ namespace DirectSp.Providers
         }
 
         private readonly ConcurrentDictionary<string, MemoryKeyValueItem> _keyValueItems = new ConcurrentDictionary<string, MemoryKeyValueItem>();
-        private Timer _timer = new Timer(30 * 60 * 1000);// 30 minutes
+        private readonly Timer _timer = new Timer(30 * 60 * 1000);// 30 minutes
 
         public MemoryKeyValueProvder()
         {
-            _timer.Elapsed += _timer_Elapsed;
+            _timer.Elapsed += Timer_Elapsed;
             _timer.Start();
         }
 
-        private void _timer_Elapsed(object sender, ElapsedEventArgs e)
+        private void Timer_Elapsed(object sender, ElapsedEventArgs e)
         {
             // Cleanup expired KeyValues
             Cleanup();
@@ -84,9 +84,8 @@ namespace DirectSp.Providers
         private void Cleanup()
         {
             var expiredItems = _keyValueItems.Where(item => item.Value.ExpirationTime < DateTime.Now).Select(item => item.Key);
-            MemoryKeyValueItem value;
             foreach (var key in expiredItems)
-                _keyValueItems.TryRemove(key, out value);
+                _keyValueItems.TryRemove(key, out _);
         }
 
         public async Task<bool> Delete(string keyNamePattern)
@@ -97,9 +96,8 @@ namespace DirectSp.Providers
                 return false;
 
             bool result = false;
-            MemoryKeyValueItem value;
             foreach (var item in matchItems)
-                result = _keyValueItems.TryRemove(item.KeyName, out value);
+                result = _keyValueItems.TryRemove(item.KeyName, out _);
             return result;
         }
     }

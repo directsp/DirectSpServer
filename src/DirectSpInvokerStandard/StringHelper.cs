@@ -10,24 +10,6 @@ namespace DirectSp
             return ToCamelCaseSimple(str);
         }
 
-        private static string ToCamelCaseWise(string str)
-        {
-            if (string.IsNullOrEmpty(str))
-                return str;
-
-            var ret = str.ToLower();
-            for (int i = 0; i < str.Length; i++)
-            {
-                if (char.IsLower(str[i]) && i > 1)
-                {
-                    ret = str.Substring(0, i - 1).ToLower() + str.Substring(i - 1);
-                    break;
-                }
-            }
-
-            return ret;
-        }
-
         private static string ToCamelCaseSimple(string str)
         {
             if (string.IsNullOrEmpty(str))

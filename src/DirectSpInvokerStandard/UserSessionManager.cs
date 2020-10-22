@@ -13,7 +13,7 @@ namespace DirectSp
             SessionTimeout = sessionTimeout;
         }
 
-        private ConcurrentDictionary<string, UserSession> UserSessions = new ConcurrentDictionary<string, UserSession>();
+        private readonly ConcurrentDictionary<string, UserSession> UserSessions = new ConcurrentDictionary<string, UserSession>();
         public UserSession GetUserSession(string authUserId, string audience)
         {
             //create default audience
@@ -63,7 +63,7 @@ namespace DirectSp
                 //clear expired sessions
                 foreach (var item in expired)
                 {
-                    UserSessions.TryRemove(item, out UserSession userSession);
+                    UserSessions.TryRemove(item, out _);
                 }
 
                 _lastCleanupTime = DateTime.Now;

@@ -3,13 +3,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using System;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using DirectSp.Host.Auth;
-using Microsoft.IdentityModel.Tokens;
-using System.Net.Http;
 
 namespace DirectSp.Host
 {
@@ -40,39 +35,10 @@ namespace DirectSp.Host
                     .SetPreflightMaxAge(TimeSpan.FromHours(24 * 30));
             }));
 
+
             // Add framework services.
-            //if (App.HostSettings.Authentication != null)
-            //  services.AddAppAuthentication(App.HostSettings.Authentication);
-            var auth = services
-                //.AddAuthentication(options =>
-                //{
-                //    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                //    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-                //    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-                //})
-                .AddAuthentication();
-
-            foreach (var item in App.AuthProviderSettings)
-            {
-                auth.AddJwtBearer(item.Name, options =>
-                {
-                    options.TokenValidationParameters = new TokenValidationParameters
-                    {
-                        NameClaimType = item.NameClaimType,
-                        RequireSignedTokens = false,
-                        ValidIssuers = item.Issuers,
-                        IssuerSigningKey = null,
-                        ValidAudiences = item.ValidAudiences,
-                        ValidateAudience = true,
-                        ValidateIssuerSigningKey = true,
-                        ValidateIssuer = true,
-                        ValidateLifetime = true,
-                        ClockSkew = TimeSpan.FromSeconds(TokenValidationParameters.DefaultClockSkew.TotalSeconds)
-                    };
-                    options.SecurityTokenValidators.Add(new AppSecurityTokenValidator(item));
-
-                });
-            }
+            if (App.AuthProviderSettingsArray.Length > 0)
+                services.AddAppAuthentication(App.AuthProviderSettingsArray);
 
             //Init MVC
             services.AddMvc().AddNewtonsoftJson(options =>
@@ -100,10 +66,13 @@ namespace DirectSp.Host
             if (App.HostSettings.EnableCors)
                 app.UseCors("CorsPolicy");
 
-            //User Authentication Server and Client (Before Static Files and MVC)
-            app.UseAppFilter(); //WARNING: UseAppFilter MUST be called before UseAuthentication
-                                //if (App.HostSettings.Authentication != null) //todo
-            app.UseAppAuthentication();
+            //before UseAuthentication
+            app.UseMiddleware<AppFilter>();
+
+            //before UseAuthentication
+            if (App.AuthProviderSettingsArray.Length > 0)
+                app.UseAppAuthentication(App.AuthProviderSettingsArray);
+
             app.UseDirectSpFilter(new DirectSpHttpHandler(App.DirectSpInvoker, "api"));
 
             //Add System services

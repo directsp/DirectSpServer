@@ -1,7 +1,8 @@
 ﻿using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using System.IO;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
+using System;
 using System.Net;
 
 namespace DirectSp.Host
@@ -13,21 +14,32 @@ namespace DirectSp.Host
             CreateHostBuilder(args).Build().Run();
         }
 
+        private static void ConfigKestrel(WebHostBuilderContext builderContext, KestrelServerOptions options)
+        {
+            // find local endpoint to listen
+            var endPoint = App.KestrelSettings.EndPoint;
+            var appUrl = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
+            if (!string.IsNullOrEmpty(appUrl))
+            {
+                var uri = new Uri(appUrl);
+                endPoint = IPEndPoint.Parse($"{uri.Host}:{uri.Port}");
+            }
+
+            // listen to endpoint
+            if (endPoint != null)
+            {
+                options.Listen(endPoint, listenOptions =>
+                {
+                    listenOptions.UseHttps(App.KestrelCertificate);
+                });
+            }
+        }
+
         public static IWebHostBuilder CreateHostBuilder(string[] args)
         {
-            return 
+            return
                 WebHost.CreateDefaultBuilder(args)
-                .UseKestrel(options =>
-                {
-                    if (!string.IsNullOrEmpty(App.KestrelSettings.ListenIp))
-                    {
-                        options.Listen(IPAddress.Parse(App.KestrelSettings.ListenIp), 443, listenOptions =>
-                        {
-                            listenOptions.UseHttps(App.KestrelSslCertificate);
-                        });
-
-                    }
-                })
+                .UseKestrel(ConfigKestrel)
                 .UseStartup<Startup>();
         }
     }

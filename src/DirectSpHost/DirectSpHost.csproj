@@ -10,6 +10,7 @@
     <Product>DirectSpHost</Product>
     <Company>DirectSp</Company>
     <MvcRazorCompileOnPublish>false</MvcRazorCompileOnPublish>
+    <Version>2.0.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,11 +25,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="log4net" Version="2.0.10" />
+    <PackageReference Include="log4net" Version="2.0.11" />
     <PackageReference Include="log4net.AspNetCore" Version="1.0.0" />
     <PackageReference Include="log4net.Extensions.AspNetCore" Version="1.0.0" />
-   <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="3.1.8" />
-   <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.8" />
+   <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="3.1.9" />
+   <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.9" />
   </ItemGroup>
 
 
@@ -39,11 +40,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Providers\" />
+    <ProjectReference Include="..\DirectSpInvokerNetCore\DirectSpInvokerNetCore.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DirectSpInvokerNetCore\DirectSpInvokerNetCore.csproj" />
+    <None Update="cert\auth-issuer.cer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

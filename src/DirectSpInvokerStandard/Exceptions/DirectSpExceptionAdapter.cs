@@ -6,8 +6,8 @@ namespace DirectSp.Exceptions
     {
         public static DirectSpException Convert(Exception ex, CaptchaController captchaController)
         {
-            if (ex is DirectSpException)
-                return (DirectSpException)ex;
+            if (ex is DirectSpException exception)
+                return exception;
 
             //create invoker exception
             var ret = new DirectSpException(ex);
@@ -31,7 +31,7 @@ namespace DirectSp.Exceptions
                     return new SpMaintenanceReadOnlyException(ret);
 
                 case (int)SpCommonExceptionId.InvalidParamSignature:
-                    return new SpInvalidParamSignature(ret);
+                    return new DirectSpExceptions(ret);
 
                 case (int)SpCommonExceptionId.ObjectAlreadyExists:
                     return new SpObjectAlreadyExists(ret);

@@ -400,7 +400,7 @@ namespace DirectSp
                     return string.Empty;
 
                 if (!_tokenSigner.CheckSign(token))
-                    throw new SpInvalidParamSignature(spParam.ParamName);
+                    throw new DirectSpExceptions(spParam.ParamName);
 
                 // Set param value by token payload
                 return StringHelper.FromBase64(token.Split('.')[1]);
@@ -439,8 +439,8 @@ namespace DirectSp
         private object ConvertDataForResource(object value, SpParamInfo param, SpParamInfoEx paramEx, ApiInvokeOptions invokeOptions)
         {
             //fix UserString
-            if (value is string)
-                value = StringHelper.FixUserString((string)value);
+            if (value is string valueString)
+                value = StringHelper.FixUserString(valueString);
 
             if (param.SystemTypeName.ToLower() == "uniqueidentifier")
                 return Guid.Parse(value as string);
@@ -574,8 +574,8 @@ namespace DirectSp
                             itemValueString = $"={itemValueString}";
                     }
 
-                    if (itemValue is DateTime)
-                        itemValueString = ((DateTime)itemValue).ToString("yyyy-MM-dd HH:mm:ss");
+                    if (itemValue is DateTime time)
+                        itemValueString = time.ToString("yyyy-MM-dd HH:mm:ss");
 
                     // Convert json to string
                     if (itemValue is JToken)
