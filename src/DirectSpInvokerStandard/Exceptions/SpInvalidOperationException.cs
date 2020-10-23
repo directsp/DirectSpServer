@@ -5,7 +5,7 @@
         public SpInvalidOperationException(DirectSpException baseException) : base(baseException) { }
 
         public SpInvalidOperationException(string message)
-            : base(new SpCallError() { ErrorName = SpCommonExceptionId.InvalidOperation.ToString(), ErrorNumber = (int)SpCommonExceptionId.InvalidOperation, ErrorMessage = message })
+            : base(new SpCallError() { ErrorName = SpCommonExceptionId.InvalidOperation.ToString(), ErrorId = (int)SpCommonExceptionId.InvalidOperation, ErrorMessage = message })
         {
         }
     }

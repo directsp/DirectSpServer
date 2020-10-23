@@ -66,7 +66,7 @@ namespace DirectSp.Exceptions
                 {
                     ErrorType = _SpCallError.ErrorType,
                     ErrorName = _SpCallError.ErrorName,
-                    ErrorNumber = _SpCallError.ErrorNumber,
+                    ErrorId = _SpCallError.ErrorId,
                     ErrorMessage = _SpCallError.ErrorMessage,
                     ErrorDescription = _SpCallError.ErrorDescription,
                     ErrorProcName = _SpCallError.ErrorProcName,

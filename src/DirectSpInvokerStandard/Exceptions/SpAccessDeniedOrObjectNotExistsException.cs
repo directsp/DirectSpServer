@@ -4,7 +4,7 @@
     {
         public SpAccessDeniedOrObjectNotExistsException(DirectSpException baseException) : base(baseException) { }
         public SpAccessDeniedOrObjectNotExistsException()
-            : base(new SpCallError() { ErrorName = SpCommonExceptionId.AccessDeniedOrObjectNotExists.ToString(), ErrorNumber = (int)SpCommonExceptionId.AccessDeniedOrObjectNotExists }) { }
+            : base(new SpCallError() { ErrorName = SpCommonExceptionId.AccessDeniedOrObjectNotExists.ToString(), ErrorId = (int)SpCommonExceptionId.AccessDeniedOrObjectNotExists }) { }
     }
 
 

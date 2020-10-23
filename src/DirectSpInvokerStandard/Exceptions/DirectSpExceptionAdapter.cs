@@ -13,7 +13,7 @@ namespace DirectSp.Exceptions
             var ret = new DirectSpException(ex);
 
             // Convert to Sp* exceptions
-            switch (ret.SpCallError.ErrorNumber)
+            switch (ret.SpCallError.ErrorId)
             {
                 case (int)SpCommonExceptionId.AccessDeniedOrObjectNotExists:
                     return new SpAccessDeniedOrObjectNotExistsException(ret);

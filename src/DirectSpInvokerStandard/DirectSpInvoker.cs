@@ -218,7 +218,7 @@ namespace DirectSp
             }
             catch (DirectSpException spException) //catch any read-only errors
             {
-                throw spException.SpCallError.ErrorNumber == 3906 ? new SpMaintenanceReadOnlyException(spCall.Method) : spException;
+                throw spException.SpCallError.ErrorId == 3906 ? new SpMaintenanceReadOnlyException(spCall.Method) : spException;
             }
         }
 

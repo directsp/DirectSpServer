@@ -1,10 +1,12 @@
-﻿using DirectSp.ProcedureInfos;
+﻿using DirectSp.Exceptions;
+using DirectSp.ProcedureInfos;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 
 namespace DirectSp.Providers
@@ -52,10 +54,16 @@ namespace DirectSp.Providers
 
                 //execute reader
                 sqlConnection.Open();
-                using (var dataReader = await sqlCommand.ExecuteReaderAsync())
+                try
                 {
+                    using var dataReader = await sqlCommand.ExecuteReaderAsync();
                     res.Table = GetResultTable(dataReader);
                     dataReader.Close();
+                }
+                catch (Exception ex)
+                {
+                    HandleException(ex);
+                    throw;
                 }
 
                 //return out parameter
@@ -135,7 +143,16 @@ namespace DirectSp.Providers
             sqlCommand.Parameters.AddRange(sqlParameters.ToArray());
 
             sqlConnection.Open();
-            await sqlCommand.ExecuteNonQueryAsync();
+
+            try
+            {
+                await sqlCommand.ExecuteNonQueryAsync();
+            }
+            catch (SqlException ex)
+            {
+                HandleException(ex);
+                throw;
+            }
 
             var api = sqlParameters.Find(x => x.ParameterName == "@api").Value as string;
             api = api.Replace("'sql_variant'", "'variant'");
@@ -160,5 +177,25 @@ namespace DirectSp.Providers
 
             return ret;
         }
+
+        private void HandleException(Exception ex)
+        {
+            if (!(ex is SqlException))
+                return;
+
+            SpCallError spCallError;
+            try
+            {
+                spCallError = JsonConvert.DeserializeObject<SpCallError>(ex.Message);
+            }
+            catch
+            {
+                return;
+            }
+
+            if (spCallError.ErrorId != 0 || !string.IsNullOrEmpty(spCallError.ErrorName))
+                throw new DirectSpException(spCallError, ex);
+        }
+
     }
 }

@@ -4,7 +4,7 @@
     {
         public SpObjectAlreadyExists(DirectSpException baseException) : base(baseException) { }
         public SpObjectAlreadyExists()
-            : base(new SpCallError() { ErrorName = SpCommonExceptionId.ObjectAlreadyExists.ToString(), ErrorNumber = (int)SpCommonExceptionId.ObjectAlreadyExists }) { }
+            : base(new SpCallError() { ErrorName = SpCommonExceptionId.ObjectAlreadyExists.ToString(), ErrorId = (int)SpCommonExceptionId.ObjectAlreadyExists }) { }
     }
 
 

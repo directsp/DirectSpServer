@@ -11,7 +11,7 @@
             : base(new SpCallError()
             {
                 ErrorName = SpCommonExceptionId.InvalidCaptcha.ToString(),
-                ErrorNumber = (int)SpCommonExceptionId.InvalidCaptcha,
+                ErrorId = (int)SpCommonExceptionId.InvalidCaptcha,
                 ErrorMessage = $"Invalid captcha for invoking {spName}",
                 ErrorData = newCaptcha
 
