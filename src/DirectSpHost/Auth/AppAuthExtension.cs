@@ -44,7 +44,7 @@ namespace DirectSp.Host.Auth
                         ClockSkew = TimeSpan.FromSeconds(TokenValidationParameters.DefaultClockSkew.TotalSeconds)
                     };
                     if (item.SignatureValidatorUrl != null)
-                        options.SecurityTokenValidators.Add(new AppSecurityTokenValidator(item.SignatureValidatorUrl));
+                        options.SecurityTokenValidators.Add(new AuthSecurityTokenValidator(item.SignatureValidatorUrl));
                 });
             }
 
