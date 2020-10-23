@@ -14,12 +14,10 @@ namespace DirectSp.Providers
         public string ConnectionStringReadOnly { get; }
         public string ConnectionStringReadWrite { get; }
 
-
         public SqlCommandProvider(string connectionString)
         {
             ConnectionStringReadOnly = new SqlConnectionStringBuilder(connectionString) { ApplicationIntent = ApplicationIntent.ReadOnly }.ToString();
             ConnectionStringReadWrite = new SqlConnectionStringBuilder(connectionString) { ApplicationIntent = ApplicationIntent.ReadWrite }.ToString();
-
         }
 
         public async Task<CommandResult> Execute(SpInfo procInfo, DirectSpContext context, IDictionary<string, object> callParams, bool isReadScale)
@@ -68,7 +66,7 @@ namespace DirectSp.Providers
                     if (sqlParameter.Direction == ParameterDirection.InputOutput || sqlParameter.Direction == ParameterDirection.Output || sqlParameter.Direction == ParameterDirection.ReturnValue)
                     {
                         //process context param
-                        if (sqlParameter.ParameterName.Equals("@Context", StringComparison.OrdinalIgnoreCase))
+                        if (sqlParameter.ParameterName.Equals("@context", StringComparison.OrdinalIgnoreCase))
                         {
                             if (sqlParameter.Value != DBNull.Value)
                             {
@@ -125,11 +123,11 @@ namespace DirectSp.Providers
         public async Task<SpSystemApiInfo> GetSystemApi()
         {
             using var sqlConnection = new SqlConnection(ConnectionStringReadOnly);
-            using var sqlCommand = new SqlCommand("api.System_Api", sqlConnection);
+            using var sqlCommand = new SqlCommand("api.System_api", sqlConnection);
             var sqlParameters = new List<SqlParameter>()
                 {
-                    new SqlParameter("@Context",SqlDbType.NVarChar, -1) { Direction = ParameterDirection.InputOutput, Value = "$$" },
-                    new SqlParameter("@Api", SqlDbType.NVarChar, -1) { Direction = ParameterDirection.Output},
+                    new SqlParameter("@context",SqlDbType.NVarChar, -1) { Direction = ParameterDirection.InputOutput, Value = "$$" },
+                    new SqlParameter("@api", SqlDbType.NVarChar, -1) { Direction = ParameterDirection.Output},
                 };
 
             //create command and run it
@@ -139,13 +137,13 @@ namespace DirectSp.Providers
             sqlConnection.Open();
             await sqlCommand.ExecuteNonQueryAsync();
 
-            var api = sqlParameters.Find(x => x.ParameterName == "@Api").Value as string;
+            var api = sqlParameters.Find(x => x.ParameterName == "@api").Value as string;
             api = api.Replace("'sql_variant'", "'variant'");
             var ret = new SpSystemApiInfo
             {
                 ProcInfos = JsonConvert.DeserializeObject<SpInfo[]>(api),
-                AppName = sqlParameters.Find(x => x.ParameterName == "@AppName").Value as string,
-                AppVersion = sqlParameters.Find(x => x.ParameterName == "@AppVersion").Value as string //context
+                AppName = sqlParameters.Find(x => x.ParameterName == "@appName").Value as string,
+                AppVersion = sqlParameters.Find(x => x.ParameterName == "@appVersion").Value as string //context
             };
 
             //remove @ from param names and add return values

@@ -1,7 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
+using System.Collections.Generic;
 
 namespace DirectSp.ProcedureInfos
 {
+    [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy))]
     public class SpInfoEx
     {
         public SpDataAccessMode DataAccessMode { get; set; } = SpDataAccessMode.Write;

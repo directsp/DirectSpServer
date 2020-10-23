@@ -1,8 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
+using System.Collections.Generic;
 using System.Data;
 
 namespace DirectSp.ProcedureInfos
 {
+    [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy))]
     public class SpInfo
     {
         public string SchemaName { get; set; }

@@ -9,6 +9,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace DirectSp
@@ -39,7 +40,6 @@ namespace DirectSp
         private readonly int _downloadedRecordsetFileLifetime;
         private readonly CultureInfo _alternativeCulture;
         private readonly AlternativeCalendar _alternativeCalendar;
-        private readonly object _lockObject = new object();
         private readonly string _appVersion;
 
         public DirectSpInvoker(DirectSpInvokerOptions options)
@@ -66,19 +66,20 @@ namespace DirectSp
         }
 
         private Dictionary<string, SpInfo> _spInfos;
-        public Dictionary<string, SpInfo> SpInfos
+        private readonly SemaphoreSlim _spInfosSemaphore = new SemaphoreSlim(1);
+        public async Task<Dictionary<string, SpInfo>> GetSpInfos()
         {
-            get
-            {
-                lock (_lockObject)
-                {
-                    if (_spInfos == null)
-                    {
-                        RefreshApi();
-                    }
+            await _spInfosSemaphore.WaitAsync();
 
-                    return _spInfos;
-                }
+            try
+            {
+                if (_spInfos == null)
+                    await RefreshApi();
+                return _spInfos;
+            }
+            finally
+            {
+                _spInfosSemaphore.Release();
             }
         }
 
@@ -102,20 +103,15 @@ namespace DirectSp
                 throw new DirectSpException("Too many request! Please try a few minutes later!");
         }
 
-        private void RefreshApi()
+        private async Task RefreshApi()
         {
-            lock (_lockObject)
-            {
-                var spInfos = new Dictionary<string, SpInfo>();
-                {
-                    var systemApiInfo = _commandProvider.GetSystemApi().Result;
-                    AppName = systemApiInfo.AppName;
-                    AppVersion = _appVersion ?? systemApiInfo.AppVersion;
-                    foreach (var item in systemApiInfo.ProcInfos)
-                        spInfos.Add(item.ProcedureName, item);
-                    _spInfos = spInfos;
-                }
-            }
+            var spInfos = new Dictionary<string, SpInfo>();
+            var systemApiInfo = await _commandProvider.GetSystemApi();
+            AppName = systemApiInfo.AppName;
+            AppVersion = _appVersion ?? systemApiInfo.AppVersion;
+            foreach (var item in systemApiInfo.ProcInfos)
+                spInfos.Add(item.ProcedureName, item);
+            _spInfos = spInfos;
         }
 
         public async Task<SpCallResult[]> Invoke(SpCall[] spCalls, InvokeOptions spInvokeParams)
@@ -123,7 +119,7 @@ namespace DirectSp
             //Check DuplicateRequest if spCalls contian at least one write
             foreach (var spCall in spCalls)
             {
-                var spInfo = FindSpInfo($"{spCall.Method}");
+                var spInfo = await FindSpInfo($"{spCall.Method}");
                 if (spInfo != null && spInfo.ExtendedProps.DataAccessMode == SpDataAccessMode.Write)
                 {
                     await CheckDuplicateRequest(spInvokeParams.ApiInvokeOptions.RequestId, 3600 * 2);
@@ -193,8 +189,11 @@ namespace DirectSp
 
         public async Task<SpCallResult> Invoke(SpCall spCall, InvokeOptions spInvokeParams, bool isSystem = false)
         {
+            if (spCall == null)
+                throw new ArgumentNullException(nameof(spCall));
+
             // Check duplicate request
-            var spInfo = FindSpInfo($"{spCall.Method}");
+            var spInfo = await FindSpInfo($"{spCall.Method}");
             if (spInfo != null && spInfo.ExtendedProps.DataAccessMode == SpDataAccessMode.Write)
                 await CheckDuplicateRequest(spInvokeParams.ApiInvokeOptions.RequestId, spInfo.ExtendedProps.CommandTimeout);
 
@@ -214,7 +213,7 @@ namespace DirectSp
             }
             catch (SpInvokerAppVersionException)
             {
-                RefreshApi();
+                await RefreshApi();
                 return await Invoke(spCall, spi);
             }
             catch (DirectSpException spException) //catch any read-only errors
@@ -245,11 +244,12 @@ namespace DirectSp
             }
         }
 
-        private SpCallResult Help()
+        private async Task<SpCallResult> Help()
         {
+            var spInfos = await GetSpInfos();
             var spCallResults = new SpCallResult
             {
-                ["api"] = SpInfos
+                ["api"] = spInfos
             };
             return spCallResults;
         }
@@ -271,9 +271,9 @@ namespace DirectSp
             //find api
             var spName = spCall.Method;
             if (spCall.Method == "System_api")
-                return Help();
+                return await Help();
 
-            var spInfo = FindSpInfo(spName);
+            var spInfo = await FindSpInfo(spName);
             if (spInfo == null)
             {
                 var ex = new DirectSpException($"Could not find the API: {spName}");
@@ -427,11 +427,11 @@ namespace DirectSp
             return isReadScale;
         }
 
-        public SpInfo FindSpInfo(string spName)
+        public async Task<SpInfo> FindSpInfo(string spName)
         {
-            if (SpInfos.TryGetValue(spName, out SpInfo spInfo))
+            var spInfos = await GetSpInfos();
+            if (spInfos.TryGetValue(spName, out SpInfo spInfo))
                 return spInfo;
-
             return null;
         }
 

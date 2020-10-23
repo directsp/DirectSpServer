@@ -1,5 +1,9 @@
-﻿namespace DirectSp.ProcedureInfos
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
+
+namespace DirectSp.ProcedureInfos
 {
+    [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy))]
     public class SpParamInfo
     {
         public string ParamName { get; set; }
